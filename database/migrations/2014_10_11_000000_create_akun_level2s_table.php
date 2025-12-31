@@ -17,8 +17,8 @@ return new class extends Migration
             $table->string('nama');
             $table->foreignId('parent_id')->constrained('akun_level1s');
             $table->string('jenis_mutasi');
-            $table->string('no_rek_bank');
-            $table->string('atas_nama_rek');
+            $table->string('no_rek_bank')->nullable();
+            $table->string('atas_nama_rek')->nullable();
             $table->timestamps();
         });
     }

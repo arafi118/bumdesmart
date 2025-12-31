@@ -17,11 +17,11 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained('users');
             $table->string('no_pembayaran')->unique();
             $table->dateTime('tanggal_pembayaran');
-            $table->string('jenis_transaksi');
-            $table->unsignedBigInteger('transaction_id');
+            $table->string('jenis_transaksi')->nullable();
+            $table->unsignedBigInteger('transaction_id')->nullable();
             $table->decimal('total_harga', 20, 2);
-            $table->string('metode_pembayaran');
-            $table->string('no_referensi')->nullable();
+            $table->string('metode_pembayaran')->nullable();
+            $table->string('no_referensi')->nullable()->nullable();
             $table->text('catatan')->nullable();
             $table->foreignId('rekening_debit')->constrained('accounts');
             $table->foreignId('rekening_kredit')->constrained('accounts');

@@ -17,8 +17,8 @@ return new class extends Migration
             $table->string('nama');
             $table->unsignedBigInteger('parent_id');
             $table->string('jenis_mutasi');
-            $table->string('no_rek_bank');
-            $table->string('atas_nama_rek');
+            $table->string('no_rek_bank')->nullable();
+            $table->string('atas_nama_rek')->nullable();
             $table->timestamps();
         });
     }
