@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\AuthController;
+use App\Livewire\Dashboard;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -13,6 +15,11 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::get('/', function () {
-    return view('welcome');
+Route::get('/', [AuthController::class, 'login']);
+Route::post('/auth', [AuthController::class, 'auth']);
+
+Route::group([
+    'middleware' => 'auth',
+], function () {
+    Route::get('/dashboard', [Dashboard::class, 'render']);
 });
