@@ -52,6 +52,7 @@ class AccountSeeder extends Seeder
             if ($kodeLevel1 > 0 && $kodeLevel2 > 0 && $kodeLevel3 > 0 && $kodeLevel4 > 0) {
                 $rek['id'] = $idRekening;
                 $rek['parent_id'] = $kodeLevel1.$kodeLevel2.$kodeLevel3;
+                $rek['business_id'] = 1;
                 $akunLevel4[] = $rek;
 
                 $idRekening++;

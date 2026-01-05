@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::create('accounts', function (Blueprint $table) {
             $table->bigIncrements('id');
+            $table->foreignId('business_id')->constrained('businesses')->onDelete('cascade');
             $table->string('kode')->unique();
             $table->string('nama');
             $table->foreignId('parent_id')->constrained('akun_level3s');

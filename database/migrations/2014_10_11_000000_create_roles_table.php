@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::create('roles', function (Blueprint $table) {
             $table->bigIncrements('id');
+            $table->foreignId('business_id')->constrained('businesses')->onDelete('cascade');
             $table->string('nama_role');
             $table->text('deskripsi')->nullable();
             $table->timestamps();
