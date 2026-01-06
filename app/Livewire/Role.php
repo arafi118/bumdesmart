@@ -1,0 +1,119 @@
+<?php
+
+namespace App\Livewire;
+
+use App\Traits\WithTable;
+use App\Utils\TableUtil;
+use Illuminate\Validation\Rule;
+use Livewire\Attributes\On;
+use Livewire\Component;
+
+class Role extends Component
+{
+    use WithTable;
+
+    public $title;
+
+    public $titleModal;
+
+    public $businessId;
+
+    public $id;
+
+    public $namaRole;
+
+    public $deskripsi;
+
+    protected function rules()
+    {
+        return [
+            'namaRole' => [
+                'required',
+                Rule::unique('roles', 'nama_role')->ignore($this->id),
+            ],
+            'deskripsi' => 'nullable',
+        ];
+    }
+
+    public function resetForm()
+    {
+        $this->reset('id', 'namaRole', 'deskripsi');
+    }
+
+    public function create()
+    {
+        $this->resetForm();
+        $this->titleModal = 'Tambah Role';
+
+        $this->dispatch('show-modal', modalId: 'roleModal');
+    }
+
+    public function edit($id)
+    {
+        $this->resetForm();
+        $this->titleModal = 'Ubah Role';
+
+        $role = \App\Models\Role::find($id);
+
+        $this->namaRole = $role->nama_role;
+        $this->deskripsi = $role->deskripsi;
+        $this->id = $role->id;
+
+        $this->dispatch('show-modal', modalId: 'roleModal');
+    }
+
+    public function store()
+    {
+        $this->validate();
+
+        if ($this->id) {
+            \App\Models\Role::find($this->id)->update([
+                'nama_role' => $this->namaRole,
+                'deskripsi' => $this->deskripsi,
+            ]);
+
+            $message = 'Role berhasil diubah';
+        } else {
+            \App\Models\Role::create([
+                'nama_role' => $this->namaRole,
+                'deskripsi' => $this->deskripsi,
+                'business_id' => $this->businessId,
+            ]);
+
+            $message = 'Role berhasil ditambahkan';
+        }
+
+        $this->dispatch('alert', type: 'success', message: $message);
+        $this->dispatch('hide-modal', modalId: 'roleModal');
+        $this->resetForm();
+    }
+
+    #[On('delete-confirmed')]
+    public function destroy($id)
+    {
+        \App\Models\Role::find($id)->delete();
+        $this->dispatch('alert', type: 'success', message: 'Role berhasil dihapus');
+    }
+
+    public function render()
+    {
+        $this->title = 'Role';
+        $this->businessId = auth()->user()->business_id;
+
+        $query = \App\Models\Role::where('business_id', $this->businessId);
+
+        $headers = [
+            TableUtil::setTableHeader('id', '#', false, false),
+            TableUtil::setTableHeader('nama_role', 'Nama Role', true, true),
+            TableUtil::setTableHeader('deskripsi', 'Deskripsi', true, true),
+            TableUtil::setTableHeader('aksi', 'Aksi', false, false),
+        ];
+
+        $roles = TableUtil::paginate($this, $query, $headers, 10);
+
+        return view('livewire.role', [
+            'roles' => $roles,
+            'headers' => $headers,
+        ])->layout('layouts.app', ['title' => $this->title]);
+    }
+}

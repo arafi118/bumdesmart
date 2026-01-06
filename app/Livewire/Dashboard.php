@@ -6,12 +6,12 @@ use Livewire\Component;
 
 class Dashboard extends Component
 {
+    public $title;
+
     public function render()
     {
-        $title = 'Dashboard';
+        $this->title = 'Dashboard';
 
-        return view('livewire.dashboard', [
-            'title' => $title,
-        ]);
+        return view('livewire.dashboard')->layout('layouts.app', ['title' => $this->title]);
     }
 }

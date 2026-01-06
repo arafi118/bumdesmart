@@ -6,7 +6,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta http-equiv="X-UA-Compatible" content="ie=edge" />
-    <title>{{ $title }} &mdash; {{ env('APP_NAME') }} | {{ env('APP_TITLE') }}</title>
+    <title>{{ $title ?? '' }} &mdash; {{ env('APP_NAME') }} | {{ env('APP_TITLE') }}</title>
     <link rel="icon" href="{{ asset('assets/img/logo/logo.png') }}">
 
     <!-- BEGIN PAGE LEVEL STYLES -->
@@ -24,6 +24,10 @@
     <link href="{{ asset('assets/css/tabler-vendors.css') }}" rel="stylesheet" />
     <link href="{{ asset('assets/css/tabler-marketing.css') }}" rel="stylesheet" />
     <link href="{{ asset('assets/css/tabler-themes.css') }}" rel="stylesheet" />
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/sweetalert2/11.23.0/sweetalert2.min.css"
+        integrity="sha512-Ivy7sPrd6LPp20adiK3al16GBelPtqswhJnyXuha3kGtmQ1G2qWpjuipfVDaZUwH26b3RDe8x707asEpvxl7iA=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
 
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
@@ -60,7 +64,7 @@
                     <div class="row g-2 align-items-center">
                         <div class="col">
                             <!-- Page pre-title -->
-                            <h1 class="page-title">{{ $title }}</h1>
+                            <h1 class="page-title">{{ $title ?? '' }}</h1>
                         </div>
                         <!-- Page title actions -->
                         <div class="col-auto ms-auto d-print-none">
@@ -74,7 +78,7 @@
             <!-- BEGIN PAGE BODY -->
             <main id="content" class="page-body">
                 <div class="container-xl">
-                    @yield('content')
+                    {{ $slot }}
                 </div>
             </main>
             <!-- END PAGE BODY -->
@@ -100,18 +104,72 @@
         </div>
     </div>
 
-    @yield('modal')
-
     <!-- BEGIN PAGE LIBRARIES -->
-    <script src="{{ asset('assets/libs/apexcharts/dist/apexcharts.min.js') }}" defer></script>
-    <script src="{{ asset('assets/libs/jsvectormap/dist/jsvectormap.min.js') }}" defer></script>
-    <script src="{{ asset('assets/libs/jsvectormap/dist/maps/world.js') }}" defer></script>
-    <script src="{{ asset('assets/libs/jsvectormap/dist/maps/world-merc.js') }}" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"
+        integrity="sha512-v2CJ7UaYy4JwqLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2iyI61OV8e6M8PP2/4hpQINQ/g=="
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sweetalert2/11.23.0/sweetalert2.all.min.js"
+        integrity="sha512-J+4Nt/+nieSNJjQGCPb8jKf5/wv31QiQM10bOotEHUKc9tB1Pn0gXQS6XXPtDoQhHHao5poTnSByMInzafUqzA=="
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <!-- END PAGE LIBRARIES -->
 
     <!-- BEGIN GLOBAL MANDATORY SCRIPTS -->
     <script src="{{ asset('assets/js/tabler.min.js') }}" defer></script>
     <!-- END GLOBAL MANDATORY SCRIPTS -->
+
+    <script>
+        const Toast = Swal.mixin({
+            toast: true,
+            position: "top-end",
+            showConfirmButton: false,
+            timer: 3000,
+            timerProgressBar: true,
+            didOpen: (toast) => {
+                toast.onmouseenter = Swal.stopTimer;
+                toast.onmouseleave = Swal.resumeTimer;
+            }
+        });
+
+        window.addEventListener('show-modal', (event) => {
+            var modalId = event.detail.modalId;
+
+            $('#' + modalId).modal('show');
+        });
+
+        window.addEventListener('hide-modal', (event) => {
+            var modalId = event.detail.modalId;
+
+            $('#' + modalId).modal('hide');
+        });
+
+        document.addEventListener('livewire:initialized', () => {
+            Livewire.on('confirm-delete', (event) => {
+                Swal.fire({
+                    title: 'Apakah Anda yakin?',
+                    text: "Data yang dihapus tidak dapat dikembalikan!",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'Ya, hapus!',
+                    cancelButtonText: 'Batal'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        Livewire.dispatch('delete-confirmed', {
+                            id: event.id
+                        });
+                    }
+                });
+            });
+        });
+
+        window.addEventListener('alert', (event) => {
+            Toast.fire({
+                icon: event.detail.type,
+                title: event.detail.message,
+            });
+        });
+    </script>
 
     @yield('script')
 

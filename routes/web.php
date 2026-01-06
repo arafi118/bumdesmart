@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AuthController;
 use App\Livewire\Dashboard;
+use App\Livewire\Role;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -21,5 +22,6 @@ Route::post('/auth', [AuthController::class, 'auth']);
 Route::group([
     'middleware' => 'auth',
 ], function () {
-    Route::get('/dashboard', [Dashboard::class, 'render']);
+    Route::get('/dashboard', Dashboard::class);
+    Route::get('/master-data/role', Role::class);
 });

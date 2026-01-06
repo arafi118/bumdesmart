@@ -1,3 +1,127 @@
+@php
+    $listMenu = [
+        [
+            'title' => 'Dashboard',
+            'url' => '/dashboard',
+            'icon' => 'home',
+        ],
+        [
+            'title' => 'Master Data',
+            'url' => '/master-data',
+            'icon' => 'database',
+            'child' => [
+                [
+                    'title' => 'Role',
+                    'url' => '/master-data/role',
+                ],
+                [
+                    'title' => 'User',
+                    'url' => '/master-data/user',
+                ],
+                [
+                    'title' => 'Member',
+                    'url' => '/master-data/member',
+                ],
+                [
+                    'title' => 'Pelanggan',
+                    'url' => '/master-data/pelanggan',
+                ],
+                [
+                    'title' => 'Suplier',
+                    'url' => '/master-data/suplier',
+                ],
+            ],
+        ],
+        [
+            'title' => 'Master Produk',
+            'url' => '/master-produk',
+            'icon' => 'box',
+            'child' => [
+                [
+                    'title' => 'Satuan',
+                    'url' => '/master-produk/satuan',
+                ],
+                [
+                    'title' => 'Kategori',
+                    'url' => '/master-produk/kategori',
+                ],
+                [
+                    'title' => 'Merek',
+                    'url' => '/master-produk/merek',
+                ],
+                [
+                    'title' => 'Produk',
+                    'url' => '/master-produk/produk',
+                ],
+            ],
+        ],
+        [
+            'title' => 'Penjualan',
+            'url' => '/penjualan',
+            'icon' => 'point_of_sale',
+            'child' => [
+                [
+                    'title' => 'Tambah Penjualan',
+                    'url' => '/penjualan/tambah',
+                ],
+                [
+                    'title' => 'Daftar Penjualan',
+                    'url' => '/penjualan/daftar',
+                ],
+                [
+                    'title' => 'Daftar Return',
+                    'url' => '/penjualan/daftar-return',
+                ],
+                [
+                    'title' => 'POS',
+                    'url' => '/penjualan/pos',
+                ],
+            ],
+        ],
+        [
+            'title' => 'Pembelian',
+            'url' => '/pembelian',
+            'icon' => 'add_shopping_cart',
+            'child' => [
+                [
+                    'title' => 'Tambah Pembelian',
+                    'url' => '/pembelian/tambah',
+                ],
+                [
+                    'title' => 'Daftar Pembelian',
+                    'url' => '/pembelian/daftar',
+                ],
+                [
+                    'title' => 'Daftar Return',
+                    'url' => '/pembelian/daftar-return',
+                ],
+            ],
+        ],
+        [
+            'title' => 'Master Stok',
+            'url' => '/master-stok',
+            'icon' => 'inventory',
+            'child' => [
+                [
+                    'title' => 'Tambah Stok',
+                    'url' => '/master-stok/tambah',
+                ],
+                [
+                    'title' => 'Daftar Stok',
+                    'url' => '/master-stok/daftar',
+                ],
+            ],
+        ],
+        [
+            'title' => 'Pengaturan',
+            'url' => '/pengaturan',
+            'icon' => 'settings',
+        ],
+    ];
+
+    $path = '/' . request()->path();
+@endphp
+
 <div class="navbar-expand-md">
     <div class="collapse navbar-collapse" id="navbar-menu">
         <div class="navbar">
@@ -8,120 +132,48 @@
                         <nav aria-label="Primary">
                             <!-- BEGIN NAVBAR MENU -->
                             <ul class="navbar-nav">
-                                <li class="nav-item active">
-                                    <a class="nav-link" href="/dashboard">
-                                        <span class="nav-icon d-md-none d-lg-inline-block">
-                                            <span class="material-symbols-outlined">
-                                                home
-                                            </span>
-                                        </span>
-                                        <span class="nav-link-title"> Dashboard </span>
-                                    </a>
-                                </li>
+                                @foreach ($listMenu as $menu)
+                                    @if (isset($menu['child']))
+                                        @php
+                                            $active = false;
+                                            if (str_contains($path, $menu['url'])) {
+                                                $active = true;
+                                            }
+                                        @endphp
 
-                                <li class="nav-item dropdown">
-                                    <a class="nav-link dropdown-toggle" href="#navbar-form" data-bs-toggle="dropdown"
-                                        data-bs-auto-close="outside" role="button" aria-haspopup="true"
-                                        aria-expanded="false">
-                                        <span class="nav-icon d-md-none d-lg-inline-block">
-                                            <span class="material-symbols-outlined">
-                                                database
-                                            </span>
-                                        </span>
-                                        <span class="nav-link-title"> Master Data </span>
-                                    </a>
-                                    <div class="dropdown-menu">
-                                        <a class="dropdown-item" href="/"> User </a>
-                                        <a class="dropdown-item" href="/"> Member </a>
-                                        <a class="dropdown-item" href="/"> Pelanggan </a>
-                                        <a class="dropdown-item" href="/"> Suplier </a>
-                                    </div>
-                                </li>
-
-                                <li class="nav-item dropdown">
-                                    <a class="nav-link dropdown-toggle" href="#navbar-form" data-bs-toggle="dropdown"
-                                        data-bs-auto-close="outside" role="button" aria-haspopup="true"
-                                        aria-expanded="false">
-                                        <span class="nav-icon d-md-none d-lg-inline-block">
-                                            <span class="material-symbols-outlined">
-                                                box
-                                            </span>
-                                        </span>
-                                        <span class="nav-link-title"> Master Produk </span>
-                                    </a>
-                                    <div class="dropdown-menu">
-                                        <a class="dropdown-item" href="/"> Satuan </a>
-                                        <a class="dropdown-item" href="/"> Kategori </a>
-                                        <a class="dropdown-item" href="/"> Merek </a>
-                                        <a class="dropdown-item" href="/"> Produk </a>
-                                    </div>
-                                </li>
-
-                                <li class="nav-item dropdown">
-                                    <a class="nav-link dropdown-toggle" href="#navbar-form" data-bs-toggle="dropdown"
-                                        data-bs-auto-close="outside" role="button" aria-haspopup="true"
-                                        aria-expanded="false">
-                                        <span class="nav-icon d-md-none d-lg-inline-block">
-                                            <span class="material-symbols-outlined">
-                                                point_of_sale
-                                            </span>
-                                        </span>
-                                        <span class="nav-link-title"> Penjualan </span>
-                                    </a>
-                                    <div class="dropdown-menu">
-                                        <a class="dropdown-item" href="/"> Tambah Penjualan </a>
-                                        <a class="dropdown-item" href="/"> Daftar Penjualan </a>
-                                        <a class="dropdown-item" href="/"> Daftar Return </a>
-                                        <a class="dropdown-item" href="/"> POS </a>
-                                    </div>
-                                </li>
-
-                                <li class="nav-item dropdown">
-                                    <a class="nav-link dropdown-toggle" href="#navbar-form" data-bs-toggle="dropdown"
-                                        data-bs-auto-close="outside" role="button" aria-haspopup="true"
-                                        aria-expanded="false">
-                                        <span class="nav-icon d-md-none d-lg-inline-block">
-                                            <span class="material-symbols-outlined">
-                                                add_shopping_cart
-                                            </span>
-                                        </span>
-                                        <span class="nav-link-title"> Pembelian </span>
-                                    </a>
-                                    <div class="dropdown-menu">
-                                        <a class="dropdown-item" href="/"> Tambah Pembelian </a>
-                                        <a class="dropdown-item" href="/"> Daftar Pembelian </a>
-                                        <a class="dropdown-item" href="/"> Daftar Return </a>
-                                    </div>
-                                </li>
-
-                                <li class="nav-item dropdown">
-                                    <a class="nav-link dropdown-toggle" href="#navbar-form" data-bs-toggle="dropdown"
-                                        data-bs-auto-close="outside" role="button" aria-haspopup="true"
-                                        aria-expanded="false">
-                                        <span class="nav-icon d-md-none d-lg-inline-block">
-                                            <span class="material-symbols-outlined">
-                                                inventory_2
-                                            </span>
-                                        </span>
-                                        <span class="nav-link-title"> Master Stok </span>
-                                    </a>
-                                    <div class="dropdown-menu">
-                                        <a class="dropdown-item" href="/"> Stok Opname </a>
-                                        <a class="dropdown-item" href="/"> Penyesuaian Stok </a>
-                                        <a class="dropdown-item" href="/"> Daftar Stok </a>
-                                    </div>
-                                </li>
-
-                                <li class="nav-item">
-                                    <a class="nav-link" href="/">
-                                        <span class="nav-icon d-md-none d-lg-inline-block">
-                                            <span class="material-symbols-outlined">
-                                                settings
-                                            </span>
-                                        </span>
-                                        <span class="nav-link-title"> Pengaturan </span>
-                                    </a>
-                                </li>
+                                        <li class="nav-item dropdown {{ $active ? 'active' : '' }}">
+                                            <a class="nav-link dropdown-toggle" href="#navbar-form"
+                                                data-bs-toggle="dropdown" data-bs-auto-close="outside" role="button"
+                                                aria-haspopup="true" aria-expanded="false">
+                                                <span class="nav-icon d-md-none d-lg-inline-block">
+                                                    <span class="material-symbols-outlined">
+                                                        {{ $menu['icon'] }}
+                                                    </span>
+                                                </span>
+                                                <span class="nav-link-title"> {{ $menu['title'] }} </span>
+                                            </a>
+                                            <div class="dropdown-menu">
+                                                @foreach ($menu['child'] as $child)
+                                                    <a class="dropdown-item {{ $path == $child['url'] ? 'active' : '' }}"
+                                                        href="{{ $child['url'] }}">
+                                                        {{ $child['title'] }}
+                                                    </a>
+                                                @endforeach
+                                            </div>
+                                        </li>
+                                    @else
+                                        <li class="nav-item {{ $path == $menu['url'] ? 'active' : '' }}">
+                                            <a class="nav-link" href="{{ $menu['url'] }}">
+                                                <span class="nav-icon d-md-none d-lg-inline-block">
+                                                    <span class="material-symbols-outlined">
+                                                        {{ $menu['icon'] }}
+                                                    </span>
+                                                </span>
+                                                <span class="nav-link-title"> {{ $menu['title'] }} </span>
+                                            </a>
+                                        </li>
+                                    @endif
+                                @endforeach
                             </ul>
                             <!-- END NAVBAR MENU -->
                         </nav>
