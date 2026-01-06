@@ -3,6 +3,7 @@
 use App\Http\Controllers\AuthController;
 use App\Livewire\Dashboard;
 use App\Livewire\Role;
+use App\Livewire\User;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -24,4 +25,5 @@ Route::group([
 ], function () {
     Route::get('/dashboard', Dashboard::class);
     Route::get('/master-data/role', Role::class);
+    Route::get('/master-data/user', User::class);
 });

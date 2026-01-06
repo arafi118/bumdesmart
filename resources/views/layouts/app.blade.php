@@ -18,16 +18,13 @@
     <!-- END GLOBAL MANDATORY STYLES -->
 
     <!-- BEGIN PLUGINS STYLES -->
-    <link href="{{ asset('assets/css/tabler-flags.css') }}" rel="stylesheet" />
-    <link href="{{ asset('assets/css/tabler-socials.css') }}" rel="stylesheet" />
-    <link href="{{ asset('assets/css/tabler-payments.css') }}" rel="stylesheet" />
     <link href="{{ asset('assets/css/tabler-vendors.css') }}" rel="stylesheet" />
-    <link href="{{ asset('assets/css/tabler-marketing.css') }}" rel="stylesheet" />
     <link href="{{ asset('assets/css/tabler-themes.css') }}" rel="stylesheet" />
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/sweetalert2/11.23.0/sweetalert2.min.css"
         integrity="sha512-Ivy7sPrd6LPp20adiK3al16GBelPtqswhJnyXuha3kGtmQ1G2qWpjuipfVDaZUwH26b3RDe8x707asEpvxl7iA=="
         crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link href="{{ asset('assets/libs/tom-select/dist/css/tom-select.bootstrap5.min.css') }}" rel="stylesheet" />
 
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
@@ -111,6 +108,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/sweetalert2/11.23.0/sweetalert2.all.min.js"
         integrity="sha512-J+4Nt/+nieSNJjQGCPb8jKf5/wv31QiQM10bOotEHUKc9tB1Pn0gXQS6XXPtDoQhHHao5poTnSByMInzafUqzA=="
         crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="{{ asset('assets/libs/tom-select/dist/js/tom-select.base.min.js') }}"></script>
     <!-- END PAGE LIBRARIES -->
 
     <!-- BEGIN GLOBAL MANDATORY SCRIPTS -->
@@ -118,6 +116,7 @@
     <!-- END GLOBAL MANDATORY SCRIPTS -->
 
     <script>
+        const Select = [];
         const Toast = Swal.mixin({
             toast: true,
             position: "top-end",
@@ -142,6 +141,13 @@
             $('#' + modalId).modal('hide');
         });
 
+        window.addEventListener('alert', (event) => {
+            Toast.fire({
+                icon: event.detail.type,
+                title: event.detail.message,
+            });
+        });
+
         document.addEventListener('livewire:initialized', () => {
             Livewire.on('confirm-delete', (event) => {
                 Swal.fire({
@@ -163,12 +169,68 @@
             });
         });
 
-        window.addEventListener('alert', (event) => {
-            Toast.fire({
-                icon: event.detail.type,
-                title: event.detail.message,
-            });
+        window.addEventListener('set-select-value', (event) => {
+            var selectId = event.detail.selectId;
+            var value = event.detail.value;
+
+            if (!Select[selectId]) {
+                const el = document.getElementById(selectId);
+                if (el && el.classList.contains('tom-select')) {
+                    Select[selectId] = new TomSelect(el, {
+                        copyClassesToDropdown: false,
+                        dropdownParent: "body",
+                        controlInput: "<input>",
+                    });
+                }
+            }
+
+            if (Select[selectId]) {
+                Select[selectId].clear();
+                Select[selectId].setValue(value);
+            }
         });
+
+        document.addEventListener('DOMContentLoaded', function(e) {
+            initTomSelect();
+        });
+
+        function initTomSelect() {
+            document.querySelectorAll('.tom-select').forEach((el) => {
+                const selectId = el.getAttribute('id');
+
+                if (!Select[selectId] && !el.tomselect) {
+                    Select[selectId] = new TomSelect(el, {
+                        copyClassesToDropdown: false,
+                        dropdownParent: "body",
+                        controlInput: "<input>",
+                        render: {
+                            item: function(data, escape) {
+                                if (data.customProperties) {
+                                    return '<div><span class="dropdown-item-indicator">' + data
+                                        .customProperties + "</span>" + escape(data.text) +
+                                        "</div>";
+                                }
+                                return "<div>" + escape(data.text) + "</div>";
+                            },
+                            option: function(data, escape) {
+                                if (data.customProperties) {
+                                    return '<div><span class="dropdown-item-indicator">' + data
+                                        .customProperties + "</span>" + escape(data.text) +
+                                        "</div>";
+                                }
+                                return "<div>" + escape(data.text) + "</div>";
+                            },
+                        },
+                        onChange: function(value) {
+                            el.value = value;
+                            el.dispatchEvent(new Event('change', {
+                                bubbles: true
+                            }));
+                        }
+                    });
+                }
+            });
+        }
     </script>
 
     @yield('script')
