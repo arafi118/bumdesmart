@@ -6,6 +6,7 @@ use App\Traits\WithTable;
 use App\Utils\TableUtil;
 use Hash;
 use Illuminate\Validation\Rule;
+use Livewire\Attributes\On;
 use Livewire\Component;
 
 class User extends Component
@@ -116,6 +117,13 @@ class User extends Component
         $this->dispatch('hide-modal', modalId: 'userModal');
         $this->dispatch('alert', type: 'success', message: $message);
         $this->resetForm();
+    }
+
+    #[On('delete-confirmed')]
+    public function destroy($id)
+    {
+        \App\Models\User::find($id)->delete();
+        $this->dispatch('alert', type: 'success', message: 'User berhasil dihapus');
     }
 
     public function render()
