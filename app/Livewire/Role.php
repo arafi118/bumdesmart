@@ -66,20 +66,17 @@ class Role extends Component
     {
         $this->validate();
 
-        if ($this->id) {
-            \App\Models\Role::find($this->id)->update([
-                'nama_role' => $this->namaRole,
-                'deskripsi' => $this->deskripsi,
-            ]);
+        $data = [
+            'business_id' => $this->businessId,
+            'nama_role' => $this->namaRole,
+            'deskripsi' => $this->deskripsi,
+        ];
 
+        if ($this->id) {
+            \App\Models\Role::find($this->id)->update($data);
             $message = 'Role berhasil diubah';
         } else {
-            \App\Models\Role::create([
-                'nama_role' => $this->namaRole,
-                'deskripsi' => $this->deskripsi,
-                'business_id' => $this->businessId,
-            ]);
-
+            \App\Models\Role::create($data);
             $message = 'Role berhasil ditambahkan';
         }
 

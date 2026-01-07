@@ -53,10 +53,16 @@
                         <div class="mb-3">
                             <label class="form-label">Nama Role</label>
                             <input type="text" class="form-control" wire:model="namaRole" placeholder="Nama Role" />
+                            @error('namaRole')
+                                <small class="text-danger">{{ $message }}</small>
+                            @enderror
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Deskripsi</label>
                             <textarea class="form-control" rows="3" wire:model="deskripsi" placeholder="Deskripsi"></textarea>
+                            @error('deskripsi')
+                                <small class="text-danger">{{ $message }}</small>
+                            @enderror
                         </div>
                     </form>
                 </div>

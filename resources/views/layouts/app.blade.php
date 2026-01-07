@@ -39,6 +39,27 @@
             margin-inline-end: 0.5rem;
             color: inherit;
         }
+
+        .ts-control {
+            padding: 0.5625rem 3rem 0.5625rem 1rem !important;
+            display: flex;
+            flex-wrap: nowrap;
+        }
+
+        .ts-control>div {
+            white-space: nowrap;
+        }
+
+        .ts-control>input {
+            min-width: unset !important;
+        }
+
+        .ts-dropdown,
+        .ts-dropdown.form-control,
+        .ts-dropdown.form-select {
+            z-index: 9999999999;
+            background: #fff;
+        }
     </style>
     <!-- END CUSTOM FONT -->
 
@@ -109,6 +130,7 @@
         integrity="sha512-J+4Nt/+nieSNJjQGCPb8jKf5/wv31QiQM10bOotEHUKc9tB1Pn0gXQS6XXPtDoQhHHao5poTnSByMInzafUqzA=="
         crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script src="{{ asset('assets/libs/tom-select/dist/js/tom-select.base.min.js') }}"></script>
+    <script src="{{ asset('assets/libs/jquery-maskmoney/dist/jquery.maskMoney.min.js') }}"></script>
     <!-- END PAGE LIBRARIES -->
 
     <!-- BEGIN GLOBAL MANDATORY SCRIPTS -->
@@ -116,7 +138,7 @@
     <!-- END GLOBAL MANDATORY SCRIPTS -->
 
     <script>
-        const Select = [];
+        const Select = {};
         const Toast = Swal.mixin({
             toast: true,
             position: "top-end",
@@ -131,12 +153,33 @@
 
         window.addEventListener('show-modal', (event) => {
             var modalId = event.detail.modalId;
-
             $('#' + modalId).modal('show');
+        });
+
+        $(document).on('shown.bs.modal', '.modal', function() {
+            setTimeout(() => {
+                initTomSelect();
+            }, 200);
+        });
+
+        $(document).on('hidden.bs.modal', '.modal', function() {
+            $(this).find('.tom-select').each(function() {
+                if (this.tomselect) {
+                    this.tomselect.destroy();
+                }
+            });
         });
 
         window.addEventListener('hide-modal', (event) => {
             var modalId = event.detail.modalId;
+
+            $('#' + modalId).find('.tom-select').each(function() {
+                const selectId = $(this).attr('id');
+                if (Select[selectId]) {
+                    Select[selectId].destroy();
+                    delete Select[selectId];
+                }
+            });
 
             $('#' + modalId).modal('hide');
         });
@@ -167,69 +210,72 @@
                     }
                 });
             });
-        });
 
-        window.addEventListener('set-select-value', (event) => {
-            var selectId = event.detail.selectId;
-            var value = event.detail.value;
-
-            if (!Select[selectId]) {
-                const el = document.getElementById(selectId);
-                if (el && el.classList.contains('tom-select')) {
-                    Select[selectId] = new TomSelect(el, {
-                        copyClassesToDropdown: false,
-                        dropdownParent: "body",
-                        controlInput: "<input>",
-                    });
-                }
-            }
-
-            if (Select[selectId]) {
-                Select[selectId].clear();
-                Select[selectId].setValue(value);
-            }
-        });
-
-        document.addEventListener('DOMContentLoaded', function(e) {
             initTomSelect();
         });
 
-        function initTomSelect() {
-            document.querySelectorAll('.tom-select').forEach((el) => {
-                const selectId = el.getAttribute('id');
-
-                if (!Select[selectId] && !el.tomselect) {
-                    Select[selectId] = new TomSelect(el, {
-                        copyClassesToDropdown: false,
-                        dropdownParent: "body",
-                        controlInput: "<input>",
-                        render: {
-                            item: function(data, escape) {
-                                if (data.customProperties) {
-                                    return '<div><span class="dropdown-item-indicator">' + data
-                                        .customProperties + "</span>" + escape(data.text) +
-                                        "</div>";
-                                }
-                                return "<div>" + escape(data.text) + "</div>";
-                            },
-                            option: function(data, escape) {
-                                if (data.customProperties) {
-                                    return '<div><span class="dropdown-item-indicator">' + data
-                                        .customProperties + "</span>" + escape(data.text) +
-                                        "</div>";
-                                }
-                                return "<div>" + escape(data.text) + "</div>";
-                            },
-                        },
-                        onChange: function(value) {
-                            el.value = value;
-                            el.dispatchEvent(new Event('change', {
-                                bubbles: true
-                            }));
-                        }
-                    });
-                }
+        document.addEventListener('DOMContentLoaded', function(e) {
+            $('input').on('focus', function() {
+                $(this).select();
             });
+
+            initTomSelect();
+        });
+
+        function initSingleTomSelect(el) {
+            const selectId = el.getAttribute('id');
+            if (!selectId) {
+                return;
+            }
+
+            const initialValue = el.value;
+
+            if (Select[selectId]) {
+                try {
+                    Select[selectId].destroy();
+                } catch (e) {}
+                delete Select[selectId];
+            }
+
+            try {
+                Select[selectId] = new TomSelect(el, {
+                    copyClassesToDropdown: false,
+                    dropdownParent: "body",
+                    controlInput: "<input>",
+                    render: {
+                        item: function(data, escape) {
+                            if (data.customProperties) {
+                                return '<div><span class="dropdown-item-indicator">' + data
+                                    .customProperties + "</span>" + escape(data.text) + "</div>";
+                            }
+                            return "<div>" + escape(data.text) + "</div>";
+                        },
+                        option: function(data, escape) {
+                            if (data.customProperties) {
+                                return '<div><span class="dropdown-item-indicator">' + data
+                                    .customProperties + "</span>" + escape(data.text) + "</div>";
+                            }
+                            return "<div>" + escape(data.text) + "</div>";
+                        },
+                    },
+                    onChange: function(value) {
+                        el.value = value;
+                        el.dispatchEvent(new Event('change', {
+                            bubbles: true
+                        }));
+                    }
+                });
+
+                if (initialValue) {
+                    Select[selectId].setValue(initialValue);
+                }
+            } catch (e) {
+                console.error('Tom Select init error:', e);
+            }
+        }
+
+        function initTomSelect() {
+            document.querySelectorAll('.tom-select').forEach(initSingleTomSelect);
         }
     </script>
 

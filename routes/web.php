@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\AuthController;
 use App\Livewire\Dashboard;
+use App\Livewire\Member;
+use App\Livewire\Pelanggan;
 use App\Livewire\Role;
 use App\Livewire\User;
 use Illuminate\Support\Facades\Route;
@@ -24,6 +26,9 @@ Route::group([
     'middleware' => 'auth',
 ], function () {
     Route::get('/dashboard', Dashboard::class);
+
     Route::get('/master-data/role', Role::class);
     Route::get('/master-data/user', User::class);
+    Route::get('/master-data/member', Member::class);
+    Route::get('/master-data/pelanggan', Pelanggan::class);
 });

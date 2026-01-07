@@ -56,6 +56,9 @@
                                 <label class="form-label">Nama Lengkap</label>
                                 <input type="text" class="form-control" wire:model="namaLengkap"
                                     placeholder="Nama Lengkap" />
+                                @error('namaLengkap')
+                                    <small class="text-danger">{{ $message }}</small>
+                                @enderror
                             </div>
                             <div class="col-md-4 mb-3">
                                 <label class="form-label">Role</label>
@@ -65,24 +68,39 @@
                                         <option value="{{ $role->id }}">{{ $role->nama_role }}</option>
                                     @endforeach
                                 </select>
+                                @error('role')
+                                    <small class="text-danger">{{ $message }}</small>
+                                @enderror
                             </div>
                             <div class="col-md-4 mb-3">
                                 <label class="form-label">Inisial</label>
                                 <input type="text" class="form-control" wire:model="inisial" placeholder="Inisial" />
+                                @error('inisial')
+                                    <small class="text-danger">{{ $message }}</small>
+                                @enderror
                             </div>
                             <div class="col-md-4 mb-3">
                                 <label class="form-label">No HP.</label>
-                                <input type="number" class="form-control" wire:model="noHP" placeholder="No HP" />
+                                <input type="number" class="form-control" wire:model="noHp" placeholder="No HP" />
+                                @error('noHp')
+                                    <small class="text-danger">{{ $message }}</small>
+                                @enderror
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Username</label>
                                 <input type="text" class="form-control" wire:model="username"
                                     placeholder="Username" />
+                                @error('username')
+                                    <small class="text-danger">{{ $message }}</small>
+                                @enderror
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Password</label>
                                 <input type="password" class="form-control" wire:model="password"
                                     placeholder="Password" />
+                                @error('password')
+                                    <small class="text-danger">{{ $message }}</small>
+                                @enderror
                             </div>
                         </div>
                     </form>

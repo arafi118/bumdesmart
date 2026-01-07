@@ -27,7 +27,7 @@ class User extends Component
 
     public $inisial;
 
-    public $noHP;
+    public $noHp;
 
     public $username;
 
@@ -39,7 +39,7 @@ class User extends Component
             'role' => 'required',
             'namaLengkap' => 'required',
             'inisial' => 'required',
-            'noHP' => 'required',
+            'noHp' => 'required',
             'username' => [
                 'required',
                 Rule::unique('users', 'username')->ignore($this->id),
@@ -52,7 +52,7 @@ class User extends Component
 
     public function resetForm()
     {
-        $this->reset('role', 'namaLengkap', 'inisial', 'noHP', 'username', 'password');
+        $this->reset('role', 'namaLengkap', 'inisial', 'noHp', 'username', 'password', 'id');
     }
 
     public function create()
@@ -66,6 +66,7 @@ class User extends Component
     public function edit($id)
     {
         $this->resetForm();
+        $this->resetValidation();
         $this->titleModal = 'Ubah User';
 
         $user = \App\Models\User::find($id);
@@ -73,7 +74,7 @@ class User extends Component
         $this->role = $user->role_id;
         $this->namaLengkap = $user->nama_lengkap;
         $this->inisial = $user->initial;
-        $this->noHP = $user->no_hp;
+        $this->noHp = $user->no_hp;
         $this->username = $user->username;
         $this->id = $user->id;
 
@@ -84,33 +85,24 @@ class User extends Component
     {
         $this->validate();
 
+        $data = [
+            'business_id' => $this->businessId,
+            'role_id' => $this->role,
+            'nama_lengkap' => $this->namaLengkap,
+            'initial' => $this->inisial,
+            'no_hp' => $this->noHp,
+            'username' => $this->username,
+        ];
+
+        if ($this->password) {
+            $data['password'] = Hash::make($this->password);
+        }
+
         if ($this->id) {
-            $update = [
-                'role_id' => $this->role,
-                'nama_lengkap' => $this->namaLengkap,
-                'initial' => $this->inisial,
-                'no_hp' => $this->noHP,
-                'username' => $this->username,
-            ];
-
-            if ($this->password) {
-                $update['password'] = Hash::make($this->password);
-            }
-
-            \App\Models\User::find($this->id)->update($update);
-
+            \App\Models\User::find($this->id)->update($data);
             $message = 'User berhasil diubah';
         } else {
-            \App\Models\User::create([
-                'business_id' => $this->businessId,
-                'role_id' => $this->role,
-                'nama_lengkap' => $this->namaLengkap,
-                'initial' => $this->inisial,
-                'no_hp' => $this->noHP,
-                'username' => $this->username,
-                'password' => Hash::make($this->password),
-            ]);
-
+            \App\Models\User::create($data);
             $message = 'User berhasil ditambahkan';
         }
 
