@@ -15,7 +15,7 @@ return new class extends Migration
             $table->bigIncrements('id');
             $table->foreignId('business_id')->constrained('businesses');
             $table->string('nama_group');
-            $table->string('deskripsi');
+            $table->text('deskripsi')->nullable();
             $table->decimal('diskon_persen', 5, 2)->default(0);
             $table->timestamps();
         });

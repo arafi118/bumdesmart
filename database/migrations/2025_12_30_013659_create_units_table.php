@@ -16,7 +16,8 @@ return new class extends Migration
             $table->foreignId('business_id')->constrained('businesses');
             $table->string('nama_satuan');
             $table->string('inisial_satuan');
-            $table->string('deskripsi');
+            $table->text('deskripsi')->nullable();
+            $table->tinyInteger('desimal')->default(0);
             $table->timestamps();
         });
     }

@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('kode_supplier');
             $table->string('nama_supplier');
             $table->string('no_hp');
-            $table->string('alamat');
+            $table->text('alamat')->nullable();
             $table->string('email')->unique();
             $table->timestamps();
         });

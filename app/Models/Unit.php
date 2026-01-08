@@ -8,4 +8,12 @@ use Illuminate\Database\Eloquent\Model;
 class Unit extends Model
 {
     use HasFactory;
+
+    protected $fillable = [
+        'business_id',
+        'nama_satuan',
+        'inisial_satuan',
+        'deskripsi',
+        'desimal',
+    ];
 }

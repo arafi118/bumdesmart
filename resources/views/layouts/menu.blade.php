@@ -27,8 +27,8 @@
                     'url' => '/master-data/pelanggan',
                 ],
                 [
-                    'title' => 'Suplier',
-                    'url' => '/master-data/suplier',
+                    'title' => 'Supplier',
+                    'url' => '/master-data/supplier',
                 ],
             ],
         ],

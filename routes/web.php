@@ -5,6 +5,8 @@ use App\Livewire\Dashboard;
 use App\Livewire\Member;
 use App\Livewire\Pelanggan;
 use App\Livewire\Role;
+use App\Livewire\Satuan;
+use App\Livewire\Supplier;
 use App\Livewire\User;
 use Illuminate\Support\Facades\Route;
 
@@ -31,4 +33,7 @@ Route::group([
     Route::get('/master-data/user', User::class);
     Route::get('/master-data/member', Member::class);
     Route::get('/master-data/pelanggan', Pelanggan::class);
+    Route::get('/master-data/supplier', Supplier::class);
+
+    Route::get('/master-produk/satuan', Satuan::class);
 });
