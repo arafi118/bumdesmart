@@ -35,6 +35,10 @@
     <style>
         @import url("https://rsms.me/inter/inter.css");
 
+        .material-symbols-outlined {
+            font-size: 20px !important;
+        }
+
         .nav-icon {
             margin-inline-end: 0.5rem;
             color: inherit;
@@ -244,17 +248,37 @@
                     controlInput: "<input>",
                     render: {
                         item: function(data, escape) {
+                            console.log(data);
                             if (data.customProperties) {
                                 return '<div><span class="dropdown-item-indicator">' + data
                                     .customProperties + "</span>" + escape(data.text) + "</div>";
                             }
+
+                            if (el.classList.contains('select-icon')) {
+                                return '<div class="d-flex align-items-center gap-2">' +
+                                    '<span class="material-symbols-outlined">' + escape(data.value) +
+                                    '</span> ' +
+                                    '<span>' + escape(data.text) + '</span>' +
+                                    '</div>';
+                            }
+
                             return "<div>" + escape(data.text) + "</div>";
                         },
                         option: function(data, escape) {
+                            console.log(data);
                             if (data.customProperties) {
                                 return '<div><span class="dropdown-item-indicator">' + data
                                     .customProperties + "</span>" + escape(data.text) + "</div>";
                             }
+
+                            if (el.classList.contains('select-icon')) {
+                                return '<div class="d-flex align-items-center gap-2">' +
+                                    '<span class="material-symbols-outlined">' + escape(data.value) +
+                                    '</span> ' +
+                                    '<span>' + escape(data.text) + '</span>' +
+                                    '</div>';
+                            }
+
                             return "<div>" + escape(data.text) + "</div>";
                         },
                     },

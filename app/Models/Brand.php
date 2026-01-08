@@ -8,4 +8,10 @@ use Illuminate\Database\Eloquent\Model;
 class Brand extends Model
 {
     use HasFactory;
+
+    protected $fillable = [
+        'business_id',
+        'nama_brand',
+        'deskripsi',
+    ];
 }

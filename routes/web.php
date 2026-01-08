@@ -2,7 +2,9 @@
 
 use App\Http\Controllers\AuthController;
 use App\Livewire\Dashboard;
+use App\Livewire\Kategori;
 use App\Livewire\Member;
+use App\Livewire\Merek;
 use App\Livewire\Pelanggan;
 use App\Livewire\Role;
 use App\Livewire\Satuan;
@@ -36,4 +38,6 @@ Route::group([
     Route::get('/master-data/supplier', Supplier::class);
 
     Route::get('/master-produk/satuan', Satuan::class);
+    Route::get('/master-produk/kategori', Kategori::class);
+    Route::get('/master-produk/merek', Merek::class);
 });
