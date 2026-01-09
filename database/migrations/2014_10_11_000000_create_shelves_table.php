@@ -11,13 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('units', function (Blueprint $table) {
+        Schema::create('shelves', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->foreignId('business_id')->constrained('businesses');
-            $table->string('nama_satuan');
-            $table->string('inisial_satuan');
-            $table->text('deskripsi')->nullable();
-            $table->tinyInteger('desimal')->default(0)->nullable();
+            $table->string('kode_rak');
+            $table->string('nama_rak');
+            $table->text('lokasi')->nullable();
+            $table->integer('kapasitas')->nullable();
+            $table->integer('aktif')->default(1)->nullable();
             $table->timestamps();
         });
     }
@@ -27,6 +28,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('units');
+        Schema::dropIfExists('shelves');
     }
 };

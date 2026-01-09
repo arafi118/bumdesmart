@@ -50,6 +50,10 @@
                     'url' => '/master-produk/merek',
                 ],
                 [
+                    'title' => 'Rak',
+                    'url' => '/master-produk/rak',
+                ],
+                [
                     'title' => 'Produk',
                     'url' => '/master-produk/produk',
                 ],

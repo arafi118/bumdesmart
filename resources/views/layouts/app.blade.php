@@ -64,6 +64,10 @@
             z-index: 9999999999;
             background: #fff;
         }
+
+        .table tr td {
+            vertical-align: middle;
+        }
     </style>
     <!-- END CUSTOM FONT -->
 
@@ -155,6 +159,12 @@
             }
         });
 
+        window.addEventListener('switch-tab', (event) => {
+            var tabId = event.detail.tabId;
+
+            $('.nav-tabs a[href="#' + tabId + '"]').tab('show');
+        });
+
         window.addEventListener('show-modal', (event) => {
             var modalId = event.detail.modalId;
             $('#' + modalId).modal('show');
@@ -195,7 +205,7 @@
             });
         });
 
-        document.addEventListener('livewire:initialized', () => {
+        document.addEventListener('livewire:initialized', (e) => {
             Livewire.on('confirm-delete', (event) => {
                 Swal.fire({
                     title: 'Apakah Anda yakin?',
@@ -215,6 +225,12 @@
                 });
             });
 
+            Livewire.hook('morph.updated', () => {
+                setTimeout(() => {
+                    initTomSelect();
+                }, 100);
+            });
+
             initTomSelect();
         });
 
@@ -232,10 +248,10 @@
                 return;
             }
 
-            const initialValue = el.value;
-
+            let initialValue = el.value;
             if (Select[selectId]) {
                 try {
+                    initialValue = Select[selectId].getValue() || el.value;
                     Select[selectId].destroy();
                 } catch (e) {}
                 delete Select[selectId];
@@ -248,7 +264,6 @@
                     controlInput: "<input>",
                     render: {
                         item: function(data, escape) {
-                            console.log(data);
                             if (data.customProperties) {
                                 return '<div><span class="dropdown-item-indicator">' + data
                                     .customProperties + "</span>" + escape(data.text) + "</div>";
@@ -265,7 +280,6 @@
                             return "<div>" + escape(data.text) + "</div>";
                         },
                         option: function(data, escape) {
-                            console.log(data);
                             if (data.customProperties) {
                                 return '<div><span class="dropdown-item-indicator">' + data
                                     .customProperties + "</span>" + escape(data.text) + "</div>";
@@ -293,9 +307,7 @@
                 if (initialValue) {
                     Select[selectId].setValue(initialValue);
                 }
-            } catch (e) {
-                console.error('Tom Select init error:', e);
-            }
+            } catch (e) {}
         }
 
         function initTomSelect() {

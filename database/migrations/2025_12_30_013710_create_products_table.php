@@ -17,6 +17,7 @@ return new class extends Migration
             $table->foreignId('category_id')->constrained('categories');
             $table->foreignId('brand_id')->constrained('brands');
             $table->foreignId('unit_id')->constrained('units');
+            $table->foreignId('shelf_id')->nullable()->default(0);
             $table->string('sku');
             $table->string('nama_produk');
             $table->decimal('harga_beli', 20, 2);
@@ -26,7 +27,7 @@ return new class extends Migration
             $table->string('metode_biaya')->default('SYSTEM');
             $table->decimal('biaya_rata_rata', 20, 2)->default(0);
             $table->string('gambar')->nullable();
-            $table->boolean('is_active')->default(true);
+            $table->tinyInteger('is_active')->default(1)->nullable();
             $table->timestamps();
         });
     }
