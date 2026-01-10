@@ -14,6 +14,7 @@ class Product extends Model
         'category_id',
         'brand_id',
         'unit_id',
+        'shelf_id',
         'sku',
         'nama_produk',
         'harga_beli',
@@ -39,5 +40,10 @@ class Product extends Model
     public function unit()
     {
         return $this->belongsTo(Unit::class);
+    }
+
+    public function shelf()
+    {
+        return $this->belongsTo(Shelves::class);
     }
 }

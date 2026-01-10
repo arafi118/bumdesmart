@@ -48,6 +48,8 @@ class Produk extends Component
 
     public $aktif = 1;
 
+    public $product;
+
     protected function rules()
     {
         return [
@@ -141,6 +143,8 @@ class Produk extends Component
 
         if ($this->id) {
             $produkLama = \App\Models\Product::find($this->id);
+
+            $data['gambar'] = $produkLama->gambar;
             if ($this->gambar) {
                 $data['gambar'] = $this->gambar->storeAs('products', time().'.'.$this->gambar->getClientOriginalExtension());
                 if ($produkLama->gambar != 'products/no-image.png') {
@@ -180,6 +184,20 @@ class Produk extends Component
         $this->dispatch('alert', type: 'success', message: 'Produk berhasil dihapus');
     }
 
+    public function detailProduk($id)
+    {
+        $this->product = \App\Models\Product::find($id)->with([
+            'category',
+            'brand',
+            'unit',
+            'shelf',
+        ])->first();
+
+        $this->titleModal = $this->product->nama_produk;
+
+        $this->dispatch('show-modal', modalId: 'detailProdukModal');
+    }
+
     public function render()
     {
         $this->title = 'Produk';
@@ -189,6 +207,7 @@ class Produk extends Component
             'category',
             'brand',
             'unit',
+            'shelf',
         ]);
 
         $categories = \App\Models\Category::where('business_id', $this->businessId)->get();
@@ -202,8 +221,8 @@ class Produk extends Component
             TableUtil::setTableHeader('sku', 'SKU', true, true),
             TableUtil::setTableHeader('nama_produk', 'Nama Produk', true, true),
             TableUtil::setTableHeader('product.category.nama_kategori', 'Kategori', true, true),
-            TableUtil::setTableHeader('product.brand.nama_merek', 'Merek', true, true),
-            TableUtil::setTableHeader('product.unit.nama_satuan', 'Satuan', true, true),
+            TableUtil::setTableHeader('product.brand.nama_brand', 'Merek', true, true),
+            TableUtil::setTableHeader('product.shelf.nama_rak', 'Rak', true, true),
             TableUtil::setTableHeader('stok_aktual', 'Stok', true, true),
             TableUtil::setTableHeader('aksi', 'Aksi', false, false),
         ];

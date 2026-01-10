@@ -42,17 +42,37 @@
                                 <td>{{ $product->sku }}</td>
                                 <td>{{ $product->nama_produk }}</td>
                                 <td>{{ $product->category->nama_kategori }}</td>
-                                <td>{{ $product->brand->nama_merek }}</td>
-                                <td>{{ $product->unit->nama_satuan }}</td>
+                                <td>{{ $product->brand->nama_brand }}</td>
+                                <td>{{ $product->shelf->nama_rak }}</td>
                                 <td>{{ $product->stok_aktual }}</td>
                                 <td>
-                                    <button class="btn btn-sm btn-primary" wire:click="edit({{ $product->id }})">
-                                        <i class="fas fa-edit"></i> Edit
-                                    </button>
-                                    <button class="btn btn-sm btn-danger"
-                                        wire:click="$dispatch('confirm-delete', {id: {{ $product->id }}})">
-                                        <i class="fas fa-trash"></i> Hapus
-                                    </button>
+                                    <div class="dropdown">
+                                        <button class="btn btn-sm btn-info dropdown-toggle" type="button"
+                                            data-bs-toggle="dropdown" aria-expanded="false">
+                                            <span class="material-symbols-outlined">
+                                                more_vert
+                                            </span>
+                                        </button>
+                                        <div class="dropdown-menu">
+                                            <a class="dropdown-item" href="#"
+                                                wire:click="edit({{ $product->id }})">
+                                                Edit
+                                            </a>
+                                            <a class="dropdown-item" href="#"
+                                                wire:click="detailProduk({{ $product->id }})">
+                                                Detail Produk
+                                            </a>
+                                            <a class="dropdown-item" href="#"
+                                                wire:click="hargaMember({{ $product->id }})">
+                                                Harga Member
+                                            </a>
+                                            <div class="dropdown-divider"></div>
+                                            <a class="dropdown-item text-danger" href="#"
+                                                wire:click="$dispatch('confirm-delete', {id: {{ $product->id }}})">
+                                                Hapus
+                                            </a>
+                                        </div>
+                                    </div>
                                 </td>
                             </tr>
                         @empty
@@ -223,6 +243,25 @@
                     </div>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <div class="modal fade" id="detailProdukModal" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title">Detail Produk {{ $titleModal }}</h4>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary ms-auto" data-bs-dismiss="modal">
+                        Tutup
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 </div>
