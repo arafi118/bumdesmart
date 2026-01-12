@@ -8,4 +8,22 @@ use Illuminate\Database\Eloquent\Model;
 class ProductPrice extends Model
 {
     use HasFactory;
+
+    protected $fillable = [
+        'product_id',
+        'customer_group_id',
+        'harga_spesial',
+        'tanggal_mulai',
+        'tanggal_akhir',
+    ];
+
+    public function product()
+    {
+        return $this->belongsTo(Product::class);
+    }
+
+    public function customerGroup()
+    {
+        return $this->belongsTo(CustomerGroup::class);
+    }
 }

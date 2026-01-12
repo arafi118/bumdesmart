@@ -46,4 +46,9 @@ class Product extends Model
     {
         return $this->belongsTo(Shelves::class);
     }
+
+    public function productPrices()
+    {
+        return $this->hasMany(ProductPrice::class);
+    }
 }

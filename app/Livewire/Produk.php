@@ -50,6 +50,12 @@ class Produk extends Component
 
     public $product;
 
+    public $hargaJualMember = [];
+
+    public $tanggalMulai = [];
+
+    public $tanggalAkhir = [];
+
     protected function rules()
     {
         return [
@@ -191,11 +197,93 @@ class Produk extends Component
             'brand',
             'unit',
             'shelf',
+            'productPrices',
         ])->first();
 
         $this->titleModal = $this->product->nama_produk;
 
         $this->dispatch('show-modal', modalId: 'detailProdukModal');
+    }
+
+    public function hargaMember($id)
+    {
+        $this->reset('hargaJualMember', 'tanggalMulai', 'tanggalAkhir');
+        $this->product = \App\Models\Product::find($id)->with([
+            'category',
+            'brand',
+            'unit',
+            'shelf',
+            'productPrices',
+        ])->first();
+
+        foreach ($this->product->productPrices as $productPrice) {
+            $this->hargaJualMember[$productPrice->customer_group_id] = number_format($productPrice->harga_spesial);
+            $this->tanggalMulai[$productPrice->customer_group_id] = $productPrice->tanggal_mulai;
+            $this->tanggalAkhir[$productPrice->customer_group_id] = $productPrice->tanggal_akhir;
+        }
+
+        $this->titleModal = $this->product->nama_produk;
+        $this->id = $id;
+
+        $this->dispatch('show-modal', modalId: 'hargaMemberModal');
+    }
+
+    public function simpanHargaMember()
+    {
+        $productPrices = [];
+        $customerGroups = \App\Models\CustomerGroup::where('business_id', $this->businessId)->get();
+        foreach ($customerGroups as $customerGroup) {
+            if (isset($this->hargaJualMember[$customerGroup->id]) && $this->hargaJualMember[$customerGroup->id] > 0) {
+                $hargaJualMember = $this->hargaJualMember[$customerGroup->id];
+                $tanggalMulai = $this->tanggalMulai[$customerGroup->id] ?? null;
+                $tanggalAkhir = $this->tanggalAkhir[$customerGroup->id] ?? null;
+
+                $productPrices[] = [
+                    'product_id' => $this->id,
+                    'customer_group_id' => $customerGroup->id,
+                    'harga_spesial' => floatval(str_replace(',', '', $hargaJualMember)),
+                    'tanggal_mulai' => $tanggalMulai,
+                    'tanggal_akhir' => $tanggalAkhir,
+                ];
+            }
+        }
+
+        \App\Models\ProductPrice::where('product_id', $this->id)->delete();
+        \App\Models\ProductPrice::insert($productPrices);
+
+        $this->dispatch('alert', type: 'success', message: 'Harga member berhasil disimpan');
+        $this->dispatch('hide-modal', modalId: 'hargaMemberModal');
+        $this->reset('hargaJualMember', 'tanggalMulai', 'tanggalAkhir');
+    }
+
+    #[\Livewire\Attributes\Computed]
+    public function categories()
+    {
+        return \App\Models\Category::where('business_id', $this->businessId)->get();
+    }
+
+    #[\Livewire\Attributes\Computed]
+    public function brands()
+    {
+        return \App\Models\Brand::where('business_id', $this->businessId)->get();
+    }
+
+    #[\Livewire\Attributes\Computed]
+    public function units()
+    {
+        return \App\Models\Unit::where('business_id', $this->businessId)->get();
+    }
+
+    #[\Livewire\Attributes\Computed]
+    public function shelves()
+    {
+        return \App\Models\Shelves::where('business_id', $this->businessId)->get();
+    }
+
+    #[\Livewire\Attributes\Computed]
+    public function customerGroups()
+    {
+        return \App\Models\CustomerGroup::where('business_id', $this->businessId)->get();
     }
 
     public function render()
@@ -208,12 +296,8 @@ class Produk extends Component
             'brand',
             'unit',
             'shelf',
+            'productPrices',
         ]);
-
-        $categories = \App\Models\Category::where('business_id', $this->businessId)->get();
-        $brands = \App\Models\Brand::where('business_id', $this->businessId)->get();
-        $units = \App\Models\Unit::where('business_id', $this->businessId)->get();
-        $shelves = \App\Models\Shelves::where('business_id', $this->businessId)->get();
 
         $headers = [
             TableUtil::setTableHeader('id', '#', false, false),
@@ -231,10 +315,6 @@ class Produk extends Component
 
         return view('livewire.produk', [
             'products' => $products,
-            'categories' => $categories,
-            'brands' => $brands,
-            'units' => $units,
-            'shelves' => $shelves,
             'headers' => $headers,
         ])->layout('layouts.app', ['title' => $this->title]);
     }

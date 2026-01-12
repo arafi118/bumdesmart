@@ -138,7 +138,7 @@
         integrity="sha512-J+4Nt/+nieSNJjQGCPb8jKf5/wv31QiQM10bOotEHUKc9tB1Pn0gXQS6XXPtDoQhHHao5poTnSByMInzafUqzA=="
         crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script src="{{ asset('assets/libs/tom-select/dist/js/tom-select.base.min.js') }}"></script>
-    <script src="{{ asset('assets/libs/jquery-maskmoney/dist/jquery.maskMoney.min.js') }}"></script>
+    <script src="{{ asset('assets/libs/litepicker/dist/litepicker.js') }}"></script>
     <!-- END PAGE LIBRARIES -->
 
     <!-- BEGIN GLOBAL MANDATORY SCRIPTS -->
@@ -147,6 +147,7 @@
 
     <script>
         const Select = {};
+        const dateLitePicker = {};
         const Toast = Swal.mixin({
             toast: true,
             position: "top-end",
@@ -240,6 +241,7 @@
             });
 
             initTomSelect();
+            initLitepicker();
         });
 
         function initSingleTomSelect(el) {
@@ -308,6 +310,25 @@
                     Select[selectId].setValue(initialValue);
                 }
             } catch (e) {}
+        }
+
+        function initLitepicker() {
+            document.querySelectorAll('.litepicker').forEach((el) => {
+                const selectId = el.getAttribute('id');
+                if (!selectId) {
+                    return;
+                }
+
+                dateLitePicker[selectId] = new Litepicker({
+                    element: el,
+                    buttonText: {
+                        previousMonth: `<!-- Download SVG icon from http://tabler.io/icons/icon/chevron-left -->
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" class="icon icon-1"><path d="M15 6l-6 6l6 6" /></svg>`,
+                        nextMonth: `<!-- Download SVG icon from http://tabler.io/icons/icon/chevron-right -->
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" class="icon icon-1"><path d="M9 6l6 6l-6 6" /></svg>`,
+                    },
+                });
+            });
         }
 
         function initTomSelect() {
