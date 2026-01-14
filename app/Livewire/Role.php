@@ -88,6 +88,12 @@ class Role extends Component
     #[On('delete-confirmed')]
     public function destroy($id)
     {
+        if (\App\Models\User::where('role_id', $id)->exists()) {
+            $this->dispatch('alert', type: 'error', message: 'Role tidak dapat dihapus karena ada user yang terkait');
+
+            return;
+        }
+
         \App\Models\Role::find($id)->delete();
         $this->dispatch('alert', type: 'success', message: 'Role berhasil dihapus');
     }

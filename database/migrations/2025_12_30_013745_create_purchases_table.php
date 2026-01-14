@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('purchases', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->string('no_pembelian')->unique();
+            $table->date('tanggal_pembelian');
             $table->foreignId('business_id')->constrained('businesses');
             $table->foreignId('supplier_id')->constrained('suppliers');
             $table->foreignId('user_id')->constrained('users');

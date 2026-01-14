@@ -36,7 +36,7 @@
         @import url("https://rsms.me/inter/inter.css");
 
         .material-symbols-outlined {
-            font-size: 20px !important;
+            font-size: 20px;
         }
 
         .nav-icon {
@@ -137,7 +137,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/sweetalert2/11.23.0/sweetalert2.all.min.js"
         integrity="sha512-J+4Nt/+nieSNJjQGCPb8jKf5/wv31QiQM10bOotEHUKc9tB1Pn0gXQS6XXPtDoQhHHao5poTnSByMInzafUqzA=="
         crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-    <script src="{{ asset('assets/libs/tom-select/dist/js/tom-select.base.min.js') }}"></script>
+    <script src="{{ asset('assets/libs/tom-select/dist/js/tom-select.complete.min.js') }}"></script>
     <script src="{{ asset('assets/libs/litepicker/dist/litepicker.js') }}"></script>
     <!-- END PAGE LIBRARIES -->
 

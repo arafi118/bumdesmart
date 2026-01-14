@@ -85,6 +85,12 @@ class Merek extends Component
     #[On('delete-confirmed')]
     public function destroy($id)
     {
+        if (\App\Models\Product::where('brand_id', $id)->exists()) {
+            $this->dispatch('alert', type: 'error', message: 'Merek tidak dapat dihapus karena ada produk yang terkait');
+
+            return;
+        }
+
         \App\Models\Brand::find($id)->delete();
         $this->dispatch('alert', type: 'success', message: 'Merek berhasil dihapus');
     }

@@ -43,7 +43,8 @@
                                             <td class="fw-bold">Rak Penyimpanan</td>
                                             <td>:</td>
                                             <td>
-                                                {{ $product->shelf->nama_rak }} ({{ $product->shelf->lokasi }})
+                                                {{ $product->shelf->nama_rak ?? 'Tidak ada' }}
+                                                ({{ $product->shelf->lokasi ?? 'Tidak ada' }})
                                             </td>
                                         </tr>
                                         <tr>

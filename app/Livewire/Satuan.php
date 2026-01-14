@@ -99,6 +99,12 @@ class Satuan extends Component
     #[On('delete-confirmed')]
     public function destroy($id)
     {
+        if (\App\Models\Product::where('unit_id', $id)->exists()) {
+            $this->dispatch('alert', type: 'error', message: 'Satuan tidak dapat dihapus karena ada produk yang terkait');
+
+            return;
+        }
+
         \App\Models\Unit::find($id)->delete();
         $this->dispatch('alert', type: 'success', message: 'Satuan berhasil dihapus');
     }

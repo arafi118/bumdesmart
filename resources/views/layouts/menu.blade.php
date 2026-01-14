@@ -60,6 +60,25 @@
             ],
         ],
         [
+            'title' => 'Pembelian',
+            'url' => '/pembelian',
+            'icon' => 'add_shopping_cart',
+            'child' => [
+                [
+                    'title' => 'Tambah Pembelian',
+                    'url' => '/pembelian/tambah',
+                ],
+                [
+                    'title' => 'Daftar Pembelian',
+                    'url' => '/pembelian/daftar',
+                ],
+                [
+                    'title' => 'Daftar Return',
+                    'url' => '/pembelian/daftar-return',
+                ],
+            ],
+        ],
+        [
             'title' => 'Penjualan',
             'url' => '/penjualan',
             'icon' => 'point_of_sale',
@@ -79,25 +98,6 @@
                 [
                     'title' => 'POS',
                     'url' => '/penjualan/pos',
-                ],
-            ],
-        ],
-        [
-            'title' => 'Pembelian',
-            'url' => '/pembelian',
-            'icon' => 'add_shopping_cart',
-            'child' => [
-                [
-                    'title' => 'Tambah Pembelian',
-                    'url' => '/pembelian/tambah',
-                ],
-                [
-                    'title' => 'Daftar Pembelian',
-                    'url' => '/pembelian/daftar',
-                ],
-                [
-                    'title' => 'Daftar Return',
-                    'url' => '/pembelian/daftar-return',
                 ],
             ],
         ],

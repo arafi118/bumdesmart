@@ -185,6 +185,8 @@ class Produk extends Component
         if ($product->gambar != 'products/no-image.png') {
             Storage::delete($product->gambar);
         }
+
+        \App\Models\ProductPrice::where('product_id', $id)->delete();
         $product->delete();
 
         $this->dispatch('alert', type: 'success', message: 'Produk berhasil dihapus');

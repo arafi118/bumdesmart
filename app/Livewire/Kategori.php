@@ -91,6 +91,12 @@ class Kategori extends Component
     #[On('delete-confirmed')]
     public function destroy($id)
     {
+        if (\App\Models\Product::where('category_id', $id)->exists()) {
+            $this->dispatch('alert', type: 'error', message: 'Kategori tidak dapat dihapus karena ada produk yang terkait');
+
+            return;
+        }
+
         \App\Models\Category::find($id)->delete();
         $this->dispatch('alert', type: 'success', message: 'Kategori berhasil dihapus');
     }

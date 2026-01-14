@@ -89,6 +89,12 @@ class Member extends Component
     #[On('delete-confirmed')]
     public function destroy($id)
     {
+        if (\App\Models\Customer::where('customer_group_id', $id)->exists()) {
+            $this->dispatch('alert', type: 'error', message: 'Member tidak dapat dihapus karena ada pelanggan yang terkait');
+
+            return;
+        }
+
         \App\Models\CustomerGroup::find($id)->delete();
         $this->dispatch('alert', type: 'success', message: 'Member berhasil dihapus');
     }

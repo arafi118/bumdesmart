@@ -11,6 +11,7 @@ use App\Livewire\Rak;
 use App\Livewire\Role;
 use App\Livewire\Satuan;
 use App\Livewire\Supplier;
+use App\Livewire\TambahPembelian;
 use App\Livewire\User;
 use Illuminate\Support\Facades\Route;
 
@@ -44,4 +45,6 @@ Route::group([
     Route::get('/master-produk/merek', Merek::class);
     Route::get('/master-produk/rak', Rak::class);
     Route::get('/master-produk/produk', Produk::class);
+
+    Route::get('/pembelian/tambah', TambahPembelian::class);
 });

@@ -100,6 +100,13 @@ class Rak extends Component
     #[On('delete-confirmed')]
     public function destroy($id)
     {
+
+        if (\App\Models\Product::where('shelf_id', $id)->exists()) {
+            $this->dispatch('alert', type: 'error', message: 'Rak tidak dapat dihapus karena ada produk yang terkait');
+
+            return;
+        }
+
         \App\Models\Shelves::find($id)->delete();
         $this->dispatch('alert', type: 'success', message: 'Rak berhasil dihapus');
     }
