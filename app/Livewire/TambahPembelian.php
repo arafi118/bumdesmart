@@ -5,6 +5,7 @@ namespace App\Livewire;
 use App\Models\Product;
 use App\Models\Supplier;
 use App\Traits\WithTable;
+use Livewire\Attributes\On;
 use Livewire\Component;
 
 class TambahPembelian extends Component
@@ -128,13 +129,6 @@ class TambahPembelian extends Component
         ];
     }
 
-    public function resetNoRekening()
-    {
-        if ($this->jenisPembayaran == 'cash') {
-            $this->noRekening = '';
-        }
-    }
-
     public function addProduct($product)
     {
         if (isset($this->products[$product['id']])) {
@@ -167,54 +161,6 @@ class TambahPembelian extends Component
 
             $this->products[$product['id']] = $addProduct;
         }
-
-        $this->setTotal();
-    }
-
-    public function setDiscountProduct()
-    {
-        $product = $this->product;
-        $hargaBeli = str_replace(',', '', $product['harga_beli']);
-        $jumlahDiskon = str_replace(',', '', $product['diskon']['jumlah']);
-
-        $diskon = 0;
-        if ($product['diskon']['jenis'] == 'nominal') {
-            $diskon = $jumlahDiskon;
-        } else {
-            $diskon = ($jumlahDiskon > 0) ? ($hargaBeli * $product['jumlah_beli'] * $jumlahDiskon / 100) : 0;
-        }
-
-        $product['diskon']['nominal'] = $diskon;
-        $product['diskon']['nominal'] = number_format($diskon);
-        $product['subtotal'] = number_format($hargaBeli * $product['jumlah_beli'] - $diskon);
-
-        $this->dispatch('hide-modal', modalId: $this->modalId);
-        $this->products[$product['id']] = $product;
-        $this->product = [];
-
-        $this->setTotal();
-    }
-
-    public function setCashbackProduct()
-    {
-        $product = $this->product;
-        $hargaBeli = str_replace(',', '', $product['harga_beli']);
-        $diskon = str_replace(',', '', $product['diskon']['nominal']);
-        $jumlahCashback = str_replace(',', '', $product['cashback']['jumlah']);
-
-        $cashback = 0;
-        if ($product['cashback']['jenis'] == 'nominal') {
-            $cashback = $jumlahCashback;
-        } else {
-            $cashback = ($jumlahCashback > 0) ? ($hargaBeli * $product['jumlah_beli'] * $jumlahCashback / 100) : 0;
-        }
-
-        $product['cashback']['nominal'] = number_format($cashback);
-        $product['subtotal'] = number_format($hargaBeli * $product['jumlah_beli'] - $diskon + $cashback);
-
-        $this->dispatch('hide-modal', modalId: $this->modalId);
-        $this->products[$product['id']] = $product;
-        $this->product = [];
 
         $this->setTotal();
     }
@@ -273,13 +219,21 @@ class TambahPembelian extends Component
         $this->calculateTotal();
     }
 
-    public function openModal($id, $modalId)
+    #[On('save-all')]
+    public function saveAll($data)
     {
-        $product = $this->products[$id];
-        $this->product = $product;
+        $this->products = $data['products'];
+        $this->diskon = $data['diskon'];
+        $this->cashback = $data['cashback'];
+        $this->totalProducts = $data['totalProducts'];
+        $this->total = $data['total']; // Ensure this is sanitized if used for anything critical, but we recalculate anyway.
 
-        $this->modalId = $modalId;
-        $this->dispatch('show-modal', modalId: $modalId);
+        $this->simpan();
+    }
+
+    public function resetNoRekening()
+    {
+        $this->noRekening = '';
     }
 
     public function removeProduct($id)
