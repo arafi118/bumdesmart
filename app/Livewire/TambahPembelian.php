@@ -3,8 +3,10 @@
 namespace App\Livewire;
 
 use App\Models\Product;
+use App\Models\Purchase;
 use App\Models\Supplier;
 use App\Traits\WithTable;
+use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\On;
 use Livewire\Component;
 
@@ -109,13 +111,106 @@ class TambahPembelian extends Component
     #[On('save-all')]
     public function saveAll($data)
     {
-        dd($data);
-
         if (empty($data['products'])) {
             $this->dispatch('error', 'Belum ada produk yang dipilih');
 
             return;
         }
+
+        $bayar = $this->parseNumber($data['bayar']);
+        $total = $this->parseNumber($data['grandTotal']);
+
+        $jenisPembayaran = $data['jenisPembayaran'];
+        $status = $data['status'] ?? 'pending';
+
+        // Enforce Server-Side Logic
+        if ($bayar < $total) {
+            // If underpaid, force credit unless it's a preorder
+            if ($jenisPembayaran !== 'preorder') {
+                $jenisPembayaran = 'credit';
+            }
+            $status = 'partial';
+        } else {
+            // If fully paid, force cash if it was credit
+            if ($jenisPembayaran === 'credit') {
+                $jenisPembayaran = 'cash';
+            }
+
+            if ($jenisPembayaran === 'preorder') {
+                $status = 'paid';
+            } else {
+                $status = 'completed';
+            }
+        }
+
+        DB::beginTransaction();
+        try {
+            $subtotal = $this->parseNumber($data['subtotal']);
+
+            $globalDiskonVal = $this->parseNumber($data['globalDiskon']['jumlah']);
+            $globalDiskonAmt = ($data['globalDiskon']['jenis'] === 'nominal')
+                ? $globalDiskonVal
+                : ($subtotal * $globalDiskonVal / 100);
+
+            $taxable = max(0, $subtotal - $globalDiskonAmt);
+            $taxAmount = ($data['jenisPajak'] === 'PPN') ? $taxable * 0.11 : 0;
+
+            $keterangan = $data['catatan'] ?? '';
+            if (! empty($data['noRekening'])) {
+                $keterangan .= ' [Transfer: '.$data['noRekening'].']';
+            }
+
+            $purchase = Purchase::create([
+                'no_pembelian' => $data['nomorPembelian'] ?? 'PO-'.time(),
+                'tanggal_pembelian' => $data['tanggalPembelian'],
+                'business_id' => $this->businessId,
+                'supplier_id' => $data['supplier'],
+                'user_id' => auth()->id(),
+                'jenis_pembayaran' => $jenisPembayaran,
+                'subtotal' => $subtotal,
+                'jenis_diskon' => $data['globalDiskon']['jenis'],
+                'jumlah_diskon' => $globalDiskonVal,
+                'jenis_cashback' => $data['globalCashback']['jenis'],
+                'jumlah_cashback' => $this->parseNumber($data['globalCashback']['jumlah']),
+                'jumlah_pajak' => $taxAmount,
+                'total' => $total,
+                'dibayar' => $bayar,
+                'kembalian' => $this->parseNumber($data['kembalian']),
+                'jumlah_utang' => max(0, $total - $bayar),
+                'status' => $status,
+                'keterangan' => $keterangan,
+            ]);
+
+            foreach ($data['products'] as $item) {
+                $purchase->purchaseDetails()->create([
+                    'product_id' => $item['id'],
+                    'jumlah' => $item['jumlah_beli'],
+                    'harga_satuan' => $this->parseNumber($item['harga_beli']),
+                    'jenis_diskon' => $item['diskon']['jenis'] ?? 'nominal',
+                    'jumlah_diskon' => $this->parseNumber($item['diskon']['jumlah'] ?? 0),
+                    'jenis_cashback' => $item['cashback']['jenis'] ?? 'nominal',
+                    'jumlah_cashback' => $this->parseNumber($item['cashback']['jumlah'] ?? 0),
+                    'subtotal' => $this->parseNumber($item['subtotal']),
+                ]);
+            }
+
+            DB::commit();
+            $this->dispatch('success', 'Transaksi berhasil disimpan');
+            $this->dispatch('reset-cart');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            $this->dispatch('error', 'Gagal menyimpan: '.$e->getMessage());
+        }
+    }
+
+    private function parseNumber($value)
+    {
+        if (is_numeric($value)) {
+            return $value;
+        }
+
+        return (float) str_replace(',', '', $value);
     }
 
     public function render()

@@ -223,27 +223,58 @@
 
                             <div class="mt-4">
                                 <div class="mb-3">
-                                    <label class="form-label">Pembayaran</label>
+                                    <label class="form-label">Status Pembayaran</label>
                                     <select class="form-select tom-select" id="jenisPembayaran"
                                         x-model="jenisPembayaran">
-                                        <option value="cash">Cash</option>
-                                        <option value="transfer">Transfer</option>
-                                        <option value="tempo">Tempo</option>
+                                        <option value="cash">Cash/Lunas</option>
+                                        <option value="credit">Tempo/Hutang</option>
+                                        <option value="preorder">Pre-Order</option>
                                     </select>
                                 </div>
 
-                                <div x-show="jenisPembayaran === 'transfer'" x-transition class="mb-3">
+                                <div class="mb-3">
+                                    <label class="form-label">Nominal Bayar</label>
+                                    <input type="text" class="form-control fs-3" placeholder="Bayar"
+                                        x-mask:dynamic="$money($input)" x-model="bayar"
+                                        x-on:keyup="calculateKembalian">
+                                </div>
+
+                                <div class="mb-3" x-show="parseFormatted(bayar) > 0" x-transition>
+                                    <label class="form-label">Metode Pembayaran</label>
+                                    <div class="form-selectgroup w-100">
+                                        <label class="form-selectgroup-item flex-grow-1">
+                                            <input type="radio" name="metodeBayar" value="tunai"
+                                                class="form-selectgroup-input" x-model="metodeBayar">
+                                            <span class="form-selectgroup-label">
+                                                <div class="d-flex gap-2 align-items-center">
+                                                    <span class="material-symbols-outlined">
+                                                        payments
+                                                    </span>
+                                                    <span>Tunai</span>
+                                                </div>
+                                            </span>
+                                        </label>
+                                        <label class="form-selectgroup-item flex-grow-1">
+                                            <input type="radio" name="metodeBayar" value="transfer"
+                                                class="form-selectgroup-input" x-model="metodeBayar">
+                                            <span class="form-selectgroup-label">
+                                                <div class="d-flex gap-2 align-items-center">
+                                                    <span class="material-symbols-outlined">
+                                                        payment_card
+                                                    </span>
+                                                    <span>Transfer</span>
+                                                </div>
+                                            </span>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div x-show="metodeBayar === 'transfer' && parseFormatted(bayar) > 0" x-transition
+                                    class="mb-3">
                                     <input type="text" class="form-control" x-model="noRekening"
                                         placeholder="Nomor Rekening">
                                 </div>
 
-                                <div class="row g-2 mb-2">
-                                    <div class="col">
-                                        <input type="text" class="form-control fs-3" placeholder="Bayar"
-                                            x-mask:dynamic="$money($input)" x-model="bayar"
-                                            x-on:keyup="calculateKembalian">
-                                    </div>
-                                </div>
                                 <div class="d-flex justify-content-between small">
                                     <span>Kembali:</span>
                                     <span class="fw-bold" x-text="kembalian"></span>
@@ -295,6 +326,7 @@
 
                 // Payment State
                 jenisPembayaran: 'cash',
+                metodeBayar: 'tunai',
                 noRekening: '',
                 bayar: 0,
                 kembalian: 0,
@@ -347,6 +379,16 @@
                     });
                     this.$watch('jenisPajak', () => this.calculateTotal());
                     this.$watch('bayar', () => this.calculateKembalian());
+                    this.$watch('jenisPembayaran', (val) => {
+                        let grand = this.parseFormatted(this.summary.grandTotal);
+                        let pay = this.parseFormatted(this.bayar);
+
+                        // Only auto-fill if switching to CASH and currently underpaid
+                        if (val === 'cash' && pay < grand) {
+                            this.bayar = this.formatRupiah(grand);
+                            this.calculateKembalian();
+                        }
+                    });
                 },
 
                 // --- Helpers ---
@@ -504,6 +546,40 @@
                     } else {
                         this.kembalian = "0";
                     }
+                    this.updatePaymentStatus();
+                },
+
+                updatePaymentStatus() {
+                    let pay = this.parseFormatted(this.bayar);
+                    let grand = this.parseFormatted(this.summary.grandTotal);
+
+                    if (pay < grand) {
+                        // Partial Payment
+                        if (this.jenisPembayaran !== 'preorder') {
+                            this.jenisPembayaran = 'credit';
+                            this.syncTomSelect('jenisPembayaran', 'credit');
+                        }
+                        this.status = 'partial';
+                    } else {
+                        // Full Payment
+                        if (this.jenisPembayaran === 'credit') {
+                            this.jenisPembayaran = 'cash';
+                            this.syncTomSelect('jenisPembayaran', 'cash');
+                        }
+
+                        if (this.jenisPembayaran === 'preorder') {
+                            this.status = 'paid';
+                        } else {
+                            this.status = 'completed';
+                        }
+                    }
+                },
+
+                syncTomSelect(id, value) {
+                    let el = document.getElementById(id);
+                    if (el && el.tomselect) {
+                        el.tomselect.setValue(value, true);
+                    }
                 },
 
                 // --- Modals ---
@@ -629,7 +705,11 @@
                         },
 
                         jenisPembayaran: this.jenisPembayaran,
-                        noRekening: this.noRekening,
+                        status: this.status,
+                        // If transfer, send noRekening
+                        noRekening: (this.metodeBayar === 'transfer') ? this.noRekening : null,
+                        // Could also send metodeBayar if needed by backend, adding it to notes or a new field
+                        // For now, assuming backend infers or doesn't firmly require it column-wise
                         bayar: this.parseFormatted(this.bayar),
                         kembalian: this.parseFormatted(this.kembalian),
 
