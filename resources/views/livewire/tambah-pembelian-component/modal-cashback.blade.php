@@ -1,38 +1,72 @@
 <div class="modal fade" id="cashbackModal" tabindex="-1" role="dialog" aria-hidden="true" wire:ignore.self>
     <div class="modal-dialog modal-dialog-centered" role="document">
-        <div class="modal-content">
+        <div class="modal-content shadow-lg">
             <div class="modal-header">
-                <h4 class="modal-title">Cashback <span x-text="modalProduct.nama_produk"></span></h4>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <h4 class="modal-title d-flex align-items-center">
+                    Cashback Produk
+                </h4>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                    aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <div class="row">
-                    <div class="col-md-12 mb-3">
-                        <label class="form-label">Jenis Cashback</label>
-                        <div class="form-selectgroup w-100">
-                            <label class="form-selectgroup-item flex-grow-1">
-                                <input type="radio" value="nominal" class="form-selectgroup-input"
-                                    x-model="modalProduct.cashback.jenis" />
-                                <span class="form-selectgroup-label">Nominal</span>
-                            </label>
-                            <label class="form-selectgroup-item flex-grow-1">
-                                <input type="radio" value="persen" class="form-selectgroup-input"
-                                    x-model="modalProduct.cashback.jenis" />
-                                <span class="form-selectgroup-label">Persen</span>
-                            </label>
+                <div class="list-group-item mb-3">
+                    <div class="row">
+                        <div class="col-auto">
+                            <img :src="'/storage/' + modalProduct.gambar" alt="Gambar Produk" class="avatar avatar-1">
+                        </div>
+                        <div class="col text-truncate">
+                            <a href="#" class="text-body fw-bold d-block" x-text="modalProduct.nama_produk"></a>
+                            <div class="text-secondary text-truncate mt-n1"
+                                x-text="'Rp ' + formatRupiah(parseFormatted(modalProduct.harga_beli))"></div>
                         </div>
                     </div>
-                    <div class="col-md-12 mb-3">
-                        <label>Jumlah Cashback</label>
-                        <input x-model="modalProduct.cashback.jumlah" type="text" x-mask:dynamic="$money($input)"
-                            class="form-control" placeholder="Jumlah Cashback">
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label small">Cashback</label>
+                    <div class="row g-2 align-items-center mb-2">
+                        <div class="col-auto">
+                            <div class="form-selectgroup">
+                                <label class="form-selectgroup-item">
+                                    <input type="radio" value="nominal" class="form-selectgroup-input"
+                                        x-model="modalProduct.cashback.jenis">
+                                    <span class="form-selectgroup-label px-2">Rp</span>
+                                </label>
+                                <label class="form-selectgroup-item">
+                                    <input type="radio" value="persen" class="form-selectgroup-input"
+                                        x-model="modalProduct.cashback.jenis">
+                                    <span class="form-selectgroup-label px-2">%</span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <input type="text" class="form-control" x-mask:dynamic="$money($input)"
+                                x-model="modalProduct.cashback.jumlah">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Live Calculation Preview -->
+                <div class="card bg-purple-lt" x-show="parseFormatted(modalProduct.cashback.jumlah) > 0" x-transition>
+                    <div class="card-body p-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="text-muted">Cashback per item:</span>
+                            <span class="fw-bold fs-3 text-purple">
+                                <span
+                                    x-text="'Rp ' + formatRupiah(
+                                    modalProduct.cashback.jenis === 'nominal' 
+                                    ? parseFormatted(modalProduct.cashback.jumlah) 
+                                    : (parseFormatted(modalProduct.harga_beli) * parseFormatted(modalProduct.cashback.jumlah) / 100)
+                                )"></span>
+                            </span>
+                        </div>
                     </div>
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn" data-bs-dismiss="modal">Batal</button>
                 <button type="button" class="btn btn-primary ms-auto" x-on:click="saveCashback">
-                    Simpan
+                    Simpan Cashback
                 </button>
             </div>
         </div>

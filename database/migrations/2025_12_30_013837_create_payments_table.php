@@ -23,8 +23,8 @@ return new class extends Migration
             $table->string('metode_pembayaran')->nullable();
             $table->string('no_referensi')->nullable()->nullable();
             $table->text('catatan')->nullable();
-            $table->foreignId('rekening_debit')->constrained('accounts');
-            $table->foreignId('rekening_kredit')->constrained('accounts');
+            $table->string('rekening_debit', 20);
+            $table->string('rekening_kredit', 20);
             $table->timestamps();
         });
     }

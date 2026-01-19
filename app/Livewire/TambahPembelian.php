@@ -3,8 +3,11 @@
 namespace App\Livewire;
 
 use App\Models\Product;
+use App\Models\Purchase;
 use App\Models\Supplier;
 use App\Traits\WithTable;
+use App\Utils\PaymentUtil;
+use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\On;
 use Livewire\Component;
 
@@ -14,86 +17,50 @@ class TambahPembelian extends Component
 
     public $title;
 
-    public $titleModal;
-
-    public $modalId;
-
     public $businessId;
 
+    // Form Fields (Livewire still tracks these for initial binding/validation if needed,
+    // but primary interaction is client-side)
     public $nomorPembelian;
 
     public $tanggalPembelian;
 
     public $supplier;
 
-    public $products = [];
-
-    public $product = [
-        'id' => '',
-        'sku' => '',
-        'nama_produk' => '',
-        'harga_beli' => '',
-        'jumlah_beli' => '',
-        'diskon' => [
-            'jenis' => 'nominal',
-            'jumlah' => '',
-            'nominal' => '',
-        ],
-        'cashback' => [
-            'jenis' => 'nominal',
-            'jumlah' => '',
-            'nominal' => '',
-        ],
-        'subtotal' => '',
-    ];
-
-    public $totalProducts = [
-        'harga_beli' => 0,
-        'jumlah_beli' => 0,
-        'diskon' => 0,
-        'cashback' => 0,
-        'subtotal' => 0,
-    ];
-
-    public $diskon = [
-        'jenis' => 'nominal',
-        'jumlah' => '',
-        'nominal' => '',
-    ];
-
-    public $cashback = [
-        'jenis' => 'nominal',
-        'jumlah' => '',
-        'nominal' => '',
-    ];
-
-    public $jenisPajak;
-
-    public $total;
-
     public $catatan;
 
+    // Payment Fields
     public $jenisPembayaran = 'cash';
 
     public $noRekening;
 
+    // Search Fields (Livewire handles the search queries)
     public $searchTerm = '';
 
     public $searchProduct = '';
+
+    public function mount()
+    {
+        $this->title = 'Tambah Pembelian';
+        $this->businessId = auth()->user()->business_id;
+        $this->tanggalPembelian = date('Y-m-d');
+    }
 
     public function loadSuppliers($query, $offset = 0)
     {
         $perPage = 50;
 
-        $suppliers = Supplier::select(
-            'id',
-            'nama_supplier',
-        )->where('nama_supplier', 'LIKE', "%{$query}%")
+        $suppliers = Supplier::select('id', 'nama_supplier')
+            ->where('business_id', $this->businessId) // Ensure business scope
+            ->where('nama_supplier', 'LIKE', "%{$query}%")
             ->offset($offset)
             ->limit($perPage)
             ->get();
 
-        $total = Supplier::where('nama_supplier', 'LIKE', "%{$query}%")->count();
+        $total = Supplier::where('business_id', $this->businessId)
+            ->where('nama_supplier', 'LIKE', "%{$query}%")
+            ->count();
+
         $hasMore = ($offset + $perPage) < $total;
 
         return [
@@ -106,12 +73,22 @@ class TambahPembelian extends Component
     {
         $perPage = 20;
 
-        $productsQuery = Product::where('nama_produk', 'LIKE', "%{$query}%")->orWhere('sku', 'LIKE', "%{$query}%")
+        $productsQuery = Product::where('business_id', $this->businessId)
+            ->where(function ($q) use ($query) {
+                $q->where('nama_produk', 'LIKE', "%{$query}%")
+                    ->orWhere('sku', 'LIKE', "%{$query}%");
+            })
             ->offset($offset)
             ->limit($perPage)
             ->get();
 
-        $total = Product::where('nama_produk', 'LIKE', "%{$query}%")->orWhere('sku', 'LIKE', "%{$query}%")->count();
+        $total = Product::where('business_id', $this->businessId)
+            ->where(function ($q) use ($query) {
+                $q->where('nama_produk', 'LIKE', "%{$query}%")
+                    ->orWhere('sku', 'LIKE', "%{$query}%");
+            })
+            ->count();
+
         $hasMore = ($offset + $perPage) < $total;
 
         $products = [];
@@ -119,7 +96,10 @@ class TambahPembelian extends Component
             $products[] = [
                 'id' => $product->id,
                 'nama_produk' => $product->nama_produk,
-                'product' => $product,
+                'sku' => $product->sku,
+                'harga_beli' => $product->harga_beli,
+                'gambar' => $product->gambar,
+                // Pass full object if needed, but array is usually enough
             ];
         }
 
@@ -129,126 +109,134 @@ class TambahPembelian extends Component
         ];
     }
 
-    public function addProduct($product)
-    {
-        if (isset($this->products[$product['id']])) {
-            $newProduct = $this->products[$product['id']];
-            $newProduct['harga_beli'] = str_replace(',', '', $newProduct['harga_beli']);
-
-            $newProduct['jumlah_beli']++;
-            $newProduct['subtotal'] = number_format($newProduct['harga_beli'] * $newProduct['jumlah_beli']);
-            $newProduct['harga_beli'] = number_format($newProduct['harga_beli']);
-            $this->products[$product['id']] = $newProduct;
-        } else {
-            $addProduct = [
-                'id' => $product['id'],
-                'sku' => $product['sku'],
-                'nama_produk' => $product['nama_produk'],
-                'harga_beli' => number_format($product['harga_beli']),
-                'jumlah_beli' => 1,
-                'diskon' => [
-                    'jenis' => 'nominal',
-                    'jumlah' => 0,
-                    'nominal' => 0,
-                ],
-                'cashback' => [
-                    'jenis' => 'nominal',
-                    'jumlah' => 0,
-                    'nominal' => 0,
-                ],
-                'subtotal' => number_format($product['harga_beli']),
-            ];
-
-            $this->products[$product['id']] = $addProduct;
-        }
-
-        $this->setTotal();
-    }
-
-    public function updatedProducts($value, $key)
-    {
-        $parts = explode('.', $key);
-        if (count($parts) >= 2) {
-            $productId = $parts[0];
-            $field = $parts[1];
-
-            if (in_array($field, ['harga_beli', 'jumlah_beli'])) {
-                $product = $this->products[$productId];
-                $hargaBeli = str_replace(',', '', $product['harga_beli']);
-                $jumlahBeli = $product['jumlah_beli'];
-                $diskon = str_replace(',', '', $product['diskon']['nominal']);
-                $cashback = str_replace(',', '', $product['cashback']['nominal']);
-
-                $this->products[$productId]['subtotal'] = number_format($hargaBeli * $jumlahBeli - $diskon + $cashback);
-                $this->calculateTotal();
-            }
-        }
-    }
-
-    public function calculateTotal()
-    {
-        $totalHargaBeli = 0;
-        $totalJumlahBeli = 0;
-        $totalDiskon = 0;
-        $totalCashback = 0;
-        $totalSubtotal = 0;
-
-        foreach ($this->products as $product) {
-            $hargaBeli = str_replace(',', '', $product['harga_beli']);
-            $jumlahBeli = $product['jumlah_beli'];
-            $diskon = str_replace(',', '', $product['diskon']['nominal']);
-            $cashback = str_replace(',', '', $product['cashback']['nominal']);
-            $subtotal = $hargaBeli * $jumlahBeli - $diskon + $cashback;
-
-            $totalHargaBeli += $hargaBeli;
-            $totalJumlahBeli += $jumlahBeli;
-            $totalDiskon += $diskon;
-            $totalCashback += $cashback;
-            $totalSubtotal += $subtotal;
-        }
-
-        $this->totalProducts['harga_beli'] = $totalHargaBeli;
-        $this->totalProducts['jumlah_beli'] = $totalJumlahBeli;
-        $this->totalProducts['diskon'] = $totalDiskon;
-        $this->totalProducts['cashback'] = $totalCashback;
-        $this->totalProducts['subtotal'] = $totalSubtotal;
-    }
-
-    public function setTotal()
-    {
-        $this->calculateTotal();
-    }
-
     #[On('save-all')]
     public function saveAll($data)
     {
-        $this->products = $data['products'];
-        $this->diskon = $data['diskon'];
-        $this->cashback = $data['cashback'];
-        $this->totalProducts = $data['totalProducts'];
-        $this->total = $data['total']; // Ensure this is sanitized if used for anything critical, but we recalculate anyway.
+        if (empty($data['products'])) {
+            $this->dispatch('error', 'Belum ada produk yang dipilih');
 
-        $this->simpan();
+            return;
+        }
+
+        $bayar = $this->parseNumber($data['bayar']);
+        $total = $this->parseNumber($data['grandTotal']);
+
+        $jenisPembayaran = $data['jenisPembayaran'];
+        $status = $data['status'] ?? 'pending';
+
+        // Enforce Server-Side Logic
+        if ($bayar < $total) {
+            // If underpaid, force credit unless it's a preorder
+            if ($jenisPembayaran !== 'preorder') {
+                $jenisPembayaran = 'credit';
+            }
+            $status = 'partial';
+        } else {
+            // If fully paid, force cash if it was credit
+            if ($jenisPembayaran === 'credit') {
+                $jenisPembayaran = 'cash';
+            }
+
+            if ($jenisPembayaran === 'preorder') {
+                $status = 'paid';
+            } else {
+                $status = 'completed';
+            }
+        }
+
+        DB::beginTransaction();
+        try {
+            $subtotal = $this->parseNumber($data['subtotal']);
+
+            $globalDiskonVal = $this->parseNumber($data['globalDiskon']['jumlah']);
+            $globalDiskonAmt = ($data['globalDiskon']['jenis'] === 'nominal')
+                ? $globalDiskonVal
+                : ($subtotal * $globalDiskonVal / 100);
+
+            $taxable = max(0, $subtotal - $globalDiskonAmt);
+            $taxAmount = ($data['jenisPajak'] === 'PPN') ? $taxable * 0.11 : 0;
+
+            $keterangan = $data['catatan'] ?? '';
+            if (! empty($data['noRekening'])) {
+                $keterangan .= ' [Transfer: '.$data['noRekening'].']';
+            }
+
+            $purchase = Purchase::create([
+                'no_pembelian' => $data['nomorPembelian'] ?? 'PO-'.time(),
+                'tanggal_pembelian' => $data['tanggalPembelian'],
+                'business_id' => $this->businessId,
+                'supplier_id' => $data['supplier'],
+                'user_id' => auth()->id(),
+                'jenis_pembayaran' => $jenisPembayaran,
+                'subtotal' => $subtotal,
+                'jenis_diskon' => $data['globalDiskon']['jenis'],
+                'jumlah_diskon' => $globalDiskonVal,
+                'jenis_cashback' => $data['globalCashback']['jenis'],
+                'jumlah_cashback' => $this->parseNumber($data['globalCashback']['jumlah']),
+                'jumlah_pajak' => $taxAmount,
+                'total' => $total,
+                'dibayar' => $bayar,
+                'kembalian' => $this->parseNumber($data['kembalian']),
+                'jumlah_utang' => max(0, $total - $bayar),
+                'status' => $status,
+                'keterangan' => $keterangan,
+            ]);
+
+            $details = [];
+            foreach ($data['products'] as $item) {
+                $details[] = [
+                    'product_id' => $item['id'],
+                    'jumlah' => $item['jumlah_beli'],
+                    'harga_satuan' => $this->parseNumber($item['harga_beli']),
+                    'jenis_diskon' => $item['diskon']['jenis'] ?? 'nominal',
+                    'jumlah_diskon' => $this->parseNumber($item['diskon']['jumlah'] ?? 0),
+                    'jenis_cashback' => $item['cashback']['jenis'] ?? 'nominal',
+                    'jumlah_cashback' => $this->parseNumber($item['cashback']['jumlah'] ?? 0),
+                    'subtotal' => $this->parseNumber($item['subtotal']),
+                ];
+
+                Product::where('id', $item['id'])->increment('stok_aktual', $item['jumlah_beli']);
+            }
+
+            $purchase->purchaseDetails()->createMany($details);
+
+            $kodeRekening = PaymentUtil::ambilRekening($data['metodeBayar']);
+            $paymment = \App\Models\Payment::create([
+                'business_id' => $this->businessId,
+                'user_id' => auth()->user()->id,
+                'no_pembayaran' => $data['nomorPembelian'],
+                'tanggal_pembayaran' => $data['tanggalPembelian'],
+                'jenis_transaksi' => 'purchase',
+                'transaction_id' => $purchase->id,
+                'total_harga' => $bayar,
+                'metode_pembayaran' => $data['metodeBayar'],
+                'no_referensi' => $data['noRekening'],
+                'catatan' => $keterangan,
+                'rekening_debit' => $kodeRekening['rekening_debit'],
+                'rekening_kredit' => $kodeRekening['rekening_kredit'],
+            ]);
+
+            DB::commit();
+            $this->dispatch('alert', type: 'success', message: 'Transaksi berhasil disimpan');
+            $this->dispatch('reset-form');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            $this->dispatch('alert', type: 'error', message: $e->getMessage());
+        }
     }
 
-    public function resetNoRekening()
+    private function parseNumber($value)
     {
-        $this->noRekening = '';
-    }
+        if (is_numeric($value)) {
+            return $value;
+        }
 
-    public function removeProduct($id)
-    {
-        unset($this->products[$id]);
-        $this->setTotal();
+        return (float) str_replace(',', '', $value);
     }
 
     public function render()
     {
-        $this->title = 'Tambah Pembelian';
-        $this->businessId = auth()->user()->business_id;
-
-        $this->tanggalPembelian = date('Y-m-d');
-
         return view('livewire.tambah-pembelian')->layout('layouts.app', ['title' => $this->title]);
     }
 }
