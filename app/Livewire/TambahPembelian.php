@@ -6,6 +6,7 @@ use App\Models\Product;
 use App\Models\Purchase;
 use App\Models\Supplier;
 use App\Traits\WithTable;
+use App\Utils\PaymentUtil;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\On;
 use Livewire\Component;
@@ -181,8 +182,9 @@ class TambahPembelian extends Component
                 'keterangan' => $keterangan,
             ]);
 
+            $details = [];
             foreach ($data['products'] as $item) {
-                $purchase->purchaseDetails()->create([
+                $details[] = [
                     'product_id' => $item['id'],
                     'jumlah' => $item['jumlah_beli'],
                     'harga_satuan' => $this->parseNumber($item['harga_beli']),
@@ -191,16 +193,36 @@ class TambahPembelian extends Component
                     'jenis_cashback' => $item['cashback']['jenis'] ?? 'nominal',
                     'jumlah_cashback' => $this->parseNumber($item['cashback']['jumlah'] ?? 0),
                     'subtotal' => $this->parseNumber($item['subtotal']),
-                ]);
+                ];
+
+                Product::where('id', $item['id'])->increment('stok_aktual', $item['jumlah_beli']);
             }
 
+            $purchase->purchaseDetails()->createMany($details);
+
+            $kodeRekening = PaymentUtil::ambilRekening($data['metodeBayar']);
+            $paymment = \App\Models\Payment::create([
+                'business_id' => $this->businessId,
+                'user_id' => auth()->user()->id,
+                'no_pembayaran' => $data['nomorPembelian'],
+                'tanggal_pembayaran' => $data['tanggalPembelian'],
+                'jenis_transaksi' => 'purchase',
+                'transaction_id' => $purchase->id,
+                'total_harga' => $bayar,
+                'metode_pembayaran' => $data['metodeBayar'],
+                'no_referensi' => $data['noRekening'],
+                'catatan' => $keterangan,
+                'rekening_debit' => $kodeRekening['rekening_debit'],
+                'rekening_kredit' => $kodeRekening['rekening_kredit'],
+            ]);
+
             DB::commit();
-            $this->dispatch('success', 'Transaksi berhasil disimpan');
-            $this->dispatch('reset-cart');
+            $this->dispatch('alert', type: 'success', message: 'Transaksi berhasil disimpan');
+            $this->dispatch('reset-form');
 
         } catch (\Exception $e) {
             DB::rollBack();
-            $this->dispatch('error', 'Gagal menyimpan: '.$e->getMessage());
+            $this->dispatch('alert', type: 'error', message: $e->getMessage());
         }
     }
 

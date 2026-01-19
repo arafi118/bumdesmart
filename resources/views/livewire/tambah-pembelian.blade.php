@@ -1,4 +1,4 @@
-<div wire:ignore x-data="pembelianHandler()">
+<div wire:ignore x-data="pembelianHandler()" @reset-form.window="resetForm">
     <div class="card">
         <div class="card-body">
             <!-- Header Form -->
@@ -293,471 +293,501 @@
             </div>
 
         </div>
+        <!-- Includes for Modals -->
+        @include('livewire.tambah-pembelian-component.modal-diskon')
+        @include('livewire.tambah-pembelian-component.modal-cashback')
     </div>
 
-    <!-- Includes for Modals -->
-    @include('livewire.tambah-pembelian-component.modal-diskon')
-    @include('livewire.tambah-pembelian-component.modal-cashback')
-</div>
+    @section('script')
+        <script>
+            document.addEventListener('alpine:init', () => {
+                Alpine.data('pembelianHandler', () => ({
+                    // Basic Fields
+                    nomorPembelian: '',
+                    tanggalPembelian: new Date().toISOString().slice(0, 10),
+                    supplier: '',
+                    catatan: '',
 
-@section('script')
-    <script>
-        document.addEventListener('alpine:init', () => {
-            Alpine.data('pembelianHandler', () => ({
-                // Basic Fields
-                nomorPembelian: '',
-                tanggalPembelian: new Date().toISOString().slice(0, 10),
-                supplier: '',
-                catatan: '',
+                    // The Cart
+                    products: {},
 
-                // The Cart
-                products: {},
-
-                // Global State
-                jenisPajak: 'tidak ada',
-                globalDiskon: {
-                    jenis: 'nominal',
-                    jumlah: 0
-                },
-                globalCashback: {
-                    jenis: 'nominal',
-                    jumlah: 0
-                },
-
-                // Payment State
-                jenisPembayaran: 'cash',
-                metodeBayar: 'tunai',
-                noRekening: '',
-                bayar: 0,
-                kembalian: 0,
-
-                // Computed Summaries (for display)
-                totalProducts: {
-                    subtotal: 0,
-                    diskon: 0,
-                    cashback: 0,
-                    jumlah_beli: 0
-                },
-                summary: {
-                    itemCount: 0,
-                    subtotal: 0,
-                    orderDiscount: 0,
-                    orderTax: 0,
-                    grandTotal: 0,
-                    orderCashback: 0
-                },
-
-                isLoading: false,
-
-                // Modal Handlers
-                activeModalId: null,
-                modalProduct: {
-                    diskon: {
+                    // Global State
+                    jenisPajak: 'tidak ada',
+                    globalDiskon: {
                         jenis: 'nominal',
-                        jumlah: 0,
-                        nominal: 0
+                        jumlah: 0
                     },
-                    cashback: {
+                    globalCashback: {
                         jenis: 'nominal',
-                        jumlah: 0,
-                        nominal: 0
+                        jumlah: 0
                     },
-                    nama_produk: '',
-                    gambar: ''
-                },
 
-                init() {
-                    // Auto-calculate when things change
-                    this.$watch('products', () => this.calculateTotal(), {
-                        deep: true
-                    });
-                    this.$watch('globalDiskon', () => this.calculateTotal(), {
-                        deep: true
-                    });
-                    this.$watch('globalCashback', () => this.calculateTotal(), {
-                        deep: true
-                    });
-                    this.$watch('jenisPajak', () => this.calculateTotal());
-                    this.$watch('bayar', () => this.calculateKembalian());
-                    this.$watch('jenisPembayaran', (val) => {
-                        let grand = this.parseFormatted(this.summary.grandTotal);
-                        let pay = this.parseFormatted(this.bayar);
+                    // Payment State
+                    jenisPembayaran: 'cash',
+                    metodeBayar: 'tunai',
+                    noRekening: '',
+                    bayar: 0,
+                    kembalian: 0,
 
-                        // Only auto-fill if switching to CASH and currently underpaid
-                        if (val === 'cash' && pay < grand) {
-                            this.bayar = this.formatRupiah(grand);
-                            this.calculateKembalian();
-                        }
-                    });
-                },
+                    // Computed Summaries (for display)
+                    totalProducts: {
+                        subtotal: 0,
+                        diskon: 0,
+                        cashback: 0,
+                        jumlah_beli: 0
+                    },
+                    summary: {
+                        itemCount: 0,
+                        subtotal: 0,
+                        orderDiscount: 0,
+                        orderTax: 0,
+                        grandTotal: 0,
+                        orderCashback: 0
+                    },
 
-                // --- Helpers ---
-                formatRupiah(num) {
-                    return new Intl.NumberFormat('en-US').format(num || 0);
-                },
+                    isLoading: false,
 
-                parseMoney(str) {
-                    if (!str) return 0;
-                    // Remove commas, keep dots and numbers
-                    return parseFloat(String(str).replace(/,/g, '')) || 0;
-                },
+                    // Modal Handlers
+                    activeModalId: null,
+                    modalProduct: {
+                        diskon: {
+                            jenis: 'nominal',
+                            jumlah: 0,
+                            nominal: 0
+                        },
+                        cashback: {
+                            jenis: 'nominal',
+                            jumlah: 0,
+                            nominal: 0
+                        },
+                        nama_produk: '',
+                        gambar: ''
+                    },
 
-                parseFormatted(val) {
-                    if (typeof val === 'number') return val;
-                    // Remove commas for standard float parsing
-                    return parseFloat(String(val).replace(/,/g, '')) || 0;
-                },
+                    init() {
+                        // Auto-calculate when things change
+                        this.$watch('products', () => this.calculateTotal(), {
+                            deep: true
+                        });
+                        this.$watch('globalDiskon', () => this.calculateTotal(), {
+                            deep: true
+                        });
+                        this.$watch('globalCashback', () => this.calculateTotal(), {
+                            deep: true
+                        });
+                        this.$watch('jenisPajak', () => this.calculateTotal());
+                        this.$watch('bayar', () => this.calculateKembalian());
+                        this.$watch('jenisPembayaran', (val) => {
+                            let grand = this.parseFormatted(this.summary.grandTotal);
+                            let pay = this.parseFormatted(this.bayar);
 
-                // --- Cart Logic ---
-                addProduct(product) {
-                    let id = product.id;
-                    if (this.products[id]) {
-                        this.products[id].jumlah_beli++;
-                    } else {
-                        this.products[id] = {
-                            id: product.id,
-                            nama_produk: product.nama_produk,
-                            gambar: product.gambar,
-                            sku: product.sku,
-                            harga_beli: this.formatRupiah(parseInt(product
-                                .harga_beli)), // Store as string for input support
-                            jumlah_beli: 1,
-                            diskon: {
-                                jenis: 'nominal',
-                                jumlah: 0,
-                                nominal: 0
-                            },
-                            cashback: {
-                                jenis: 'nominal',
-                                jumlah: 0,
-                                nominal: 0
-                            },
-                            subtotal: this.formatRupiah(parseInt(product.harga_beli))
-                        };
-                    }
-                    this.updateRow(id);
-                },
+                            // Only auto-fill if switching to CASH and currently underpaid
+                            if (val === 'cash' && pay < grand) {
+                                this.bayar = this.formatRupiah(grand);
+                                this.calculateKembalian();
+                            }
+                        });
+                    },
 
-                removeProduct(id) {
-                    Swal.fire({
-                        title: 'Hapus Produk',
-                        text: 'Yakin ingin menghapus produk ini?',
-                        icon: 'warning',
-                        showCancelButton: true,
-                        confirmButtonColor: '#3085d6',
-                        cancelButtonColor: '#d33',
-                        confirmButtonText: 'Ya, Hapus!',
-                        cancelButtonText: 'Batal'
-                    }).then((result) => {
-                        if (result.isConfirmed) {
-                            delete this.products[id];
-                        }
-                    });
-                },
+                    // --- Helpers ---
+                    formatRupiah(num) {
+                        return new Intl.NumberFormat('en-US').format(num || 0);
+                    },
 
-                updateRow(id) {
-                    if (!this.products[id]) return;
+                    parseMoney(str) {
+                        if (!str) return 0;
+                        // Remove commas, keep dots and numbers
+                        return parseFloat(String(str).replace(/,/g, '')) || 0;
+                    },
 
-                    let p = this.products[id];
-                    let harga = this.parseFormatted(p.harga_beli);
-                    let qty = parseInt(p.jumlah_beli) || 0;
-                    let diskon = this.parseFormatted(p.diskon.nominal);
+                    parseFormatted(val) {
+                        if (typeof val === 'number') return val;
+                        // Remove commas for standard float parsing
+                        return parseFloat(String(val).replace(/,/g, '')) || 0;
+                    },
 
-                    let sub = (harga * qty) - diskon;
-                    if (sub < 0) sub = 0;
-
-                    this.products[id].subtotal = this.formatRupiah(sub);
-                },
-
-                calculateTotal() {
-                    let totalSub = 0;
-                    let totalQty = 0;
-                    let sumDiskon = 0;
-                    let sumCashback = 0;
-
-                    // Loop through cart
-                    Object.values(this.products).forEach(p => {
-                        let sub = this.parseFormatted(p.subtotal);
-                        let qty = parseInt(p.jumlah_beli) || 0;
-                        let d = this.parseFormatted(p.diskon.nominal);
-                        let c = this.parseFormatted(p.cashback.nominal);
-
-                        totalSub += sub;
-                        totalQty += qty;
-                        sumDiskon += d;
-                        sumCashback += c;
-                    });
-
-                    // Global Discount
-                    let gDiskonVal = this.parseFormatted(this.globalDiskon.jumlah);
-                    let gDiskonAmt = 0;
-                    if (this.globalDiskon.jenis === 'nominal') {
-                        gDiskonAmt = gDiskonVal;
-                    } else {
-                        gDiskonAmt = (totalSub * gDiskonVal) / 100;
-                    }
-
-                    // Global Cashback
-                    let gCashbackVal = this.parseFormatted(this.globalCashback.jumlah);
-                    let gCashbackAmt = 0;
-                    if (this.globalCashback.jenis === 'nominal') {
-                        gCashbackAmt = gCashbackVal;
-                    } else {
-                        gCashbackAmt = (totalSub * gCashbackVal) / 100;
-                    }
-
-                    // Tax
-                    let taxable = totalSub - gDiskonAmt;
-                    if (taxable < 0) taxable = 0;
-
-                    let taxAmt = 0;
-                    if (this.jenisPajak === 'PPN') {
-                        taxAmt = taxable * 0.11;
-                    }
-
-                    let grand = taxable + taxAmt;
-
-                    // Update Display State
-                    this.totalProducts = {
-                        subtotal: this.formatRupiah(totalSub),
-                        diskon: sumDiskon,
-                        cashback: sumCashback,
-                        jumlah_beli: totalQty
-                    };
-
-                    this.summary = {
-                        itemCount: totalQty,
-                        subtotal: this.formatRupiah(totalSub),
-                        orderDiscount: this.formatRupiah(gDiskonAmt),
-                        orderTax: this.formatRupiah(taxAmt),
-                        grandTotal: this.formatRupiah(grand),
-                        orderCashback: this.formatRupiah(gCashbackAmt)
-                    };
-
-                    this.calculateKembalian();
-                },
-
-                calculateKembalian() {
-                    let pay = this.parseFormatted(this.bayar);
-                    let grand = this.parseFormatted(this.summary.grandTotal);
-
-                    if (pay >= grand) {
-                        this.kembalian = this.formatRupiah(pay - grand);
-                    } else {
-                        this.kembalian = "0";
-                    }
-                    this.updatePaymentStatus();
-                },
-
-                updatePaymentStatus() {
-                    let pay = this.parseFormatted(this.bayar);
-                    let grand = this.parseFormatted(this.summary.grandTotal);
-
-                    if (pay < grand) {
-                        // Partial Payment
-                        if (this.jenisPembayaran !== 'preorder') {
-                            this.jenisPembayaran = 'credit';
-                            this.syncTomSelect('jenisPembayaran', 'credit');
-                        }
-                        this.status = 'partial';
-                    } else {
-                        // Full Payment
-                        if (this.jenisPembayaran === 'credit') {
-                            this.jenisPembayaran = 'cash';
-                            this.syncTomSelect('jenisPembayaran', 'cash');
-                        }
-
-                        if (this.jenisPembayaran === 'preorder') {
-                            this.status = 'paid';
+                    // --- Cart Logic ---
+                    addProduct(product) {
+                        let id = product.id;
+                        if (this.products[id]) {
+                            this.products[id].jumlah_beli++;
                         } else {
-                            this.status = 'completed';
+                            this.products[id] = {
+                                id: product.id,
+                                nama_produk: product.nama_produk,
+                                gambar: product.gambar,
+                                sku: product.sku,
+                                harga_beli: this.formatRupiah(parseInt(product
+                                    .harga_beli)), // Store as string for input support
+                                jumlah_beli: 1,
+                                diskon: {
+                                    jenis: 'nominal',
+                                    jumlah: 0,
+                                    nominal: 0
+                                },
+                                cashback: {
+                                    jenis: 'nominal',
+                                    jumlah: 0,
+                                    nominal: 0
+                                },
+                                subtotal: this.formatRupiah(parseInt(product.harga_beli))
+                            };
                         }
-                    }
-                },
-
-                syncTomSelect(id, value) {
-                    let el = document.getElementById(id);
-                    if (el && el.tomselect) {
-                        el.tomselect.setValue(value, true);
-                    }
-                },
-
-                // --- Modals ---
-                openDiscountModal(id) {
-                    this.activeModalId = id;
-                    this.modalProduct = JSON.parse(JSON.stringify(this.products[id]));
-                    // Ensure plain numbers or formatted?
-                    // x-mask expects formatted? Let's treat it as existing value.
-                    // If it was already formatted in product state, it's fine.
-                    // Assuming `jumlah` tracks the input value.
-                    $('#discountModal').modal('show');
-                },
-
-                openCashbackModal(id) {
-                    this.activeModalId = id;
-                    this.modalProduct = JSON.parse(JSON.stringify(this.products[id]));
-                    $('#cashbackModal').modal('show');
-                },
-
-                saveDiscount() {
-                    if (!this.activeModalId) return;
-                    let id = this.activeModalId;
-
-                    let p = this.products[id];
-                    let m = this.modalProduct;
-
-                    let harga = this.parseFormatted(p.harga_beli);
-                    let qty = parseInt(p.jumlah_beli) || 0;
-
-
-                    // FIX: Use parseFormatted
-                    let val = this.parseFormatted(m.diskon.jumlah);
-
-                    let nominal = 0;
-                    if (m.diskon.jenis === 'nominal') {
-                        nominal = val;
-                    } else {
-                        nominal = (harga * qty * val) / 100;
-                    }
-
-                    console.log(nominal, harga, qty, val)
-                    // Save back to cart
-                    this.products[id].diskon = {
-                        jenis: m.diskon.jenis,
-                        jumlah: m.diskon.jumlah, // keep the formatted input value
-                        nominal: this.formatRupiah(nominal)
-                    };
-
-                    this.updateRow(id);
-                    this.$watch('products', () => {});
-                    $('#discountModal').modal('hide');
-                },
-
-                saveCashback() {
-                    if (!this.activeModalId) return;
-                    let id = this.activeModalId;
-                    let p = this.products[id];
-                    let m = this.modalProduct;
-
-                    let harga = this.parseFormatted(p.harga_beli);
-                    let qty = parseInt(p.jumlah_beli) || 0;
-
-                    // FIX: Use parseFormatted
-                    let val = this.parseFormatted(m.cashback.jumlah);
-
-                    let nominal = 0;
-                    if (m.cashback.jenis === 'nominal') {
-                        nominal = val;
-                    } else {
-                        nominal = (harga * qty * val) / 100;
-                    }
-
-                    this.products[id].cashback = {
-                        jenis: m.cashback.jenis,
-                        jumlah: m.cashback.jumlah,
-                        nominal: this.formatRupiah(nominal)
-                    };
-
-                    this.updateRow(id);
-                    $('#cashbackModal').modal('hide');
-                },
-
-                // --- Server Sync ---
-                saveAll() {
-                    this.isLoading = true;
-
-                    let cleanProducts = [];
-                    Object.values(this.products).forEach(p => {
-                        cleanProducts.push({
-                            id: p.id,
-                            jumlah_beli: p.jumlah_beli,
-                            harga_beli: this.parseFormatted(p.harga_beli),
-                            diskon: {
-                                jenis: p.diskon.jenis,
-                                jumlah: this.parseFormatted(p.diskon.jumlah),
-                                nominal: this.parseFormatted(p.diskon.nominal)
-                            },
-                            cashback: {
-                                jenis: p.cashback.jenis,
-                                jumlah: this.parseFormatted(p.cashback.jumlah),
-                                nominal: this.parseFormatted(p.cashback.nominal)
-                            },
-                            subtotal: this.parseFormatted(p.subtotal)
-                        });
-                    });
-
-                    let payload = {
-                        nomorPembelian: this.nomorPembelian,
-                        tanggalPembelian: this.tanggalPembelian,
-                        supplier: this.supplier,
-                        catatan: this.catatan,
-                        products: cleanProducts,
-
-                        subtotal: this.parseFormatted(this.totalProducts.subtotal),
-                        jenisPajak: this.jenisPajak,
-                        globalDiskon: {
-                            jenis: this.globalDiskon.jenis,
-                            jumlah: this.parseFormatted(this.globalDiskon.jumlah)
-                        },
-                        globalCashback: {
-                            jenis: this.globalCashback.jenis,
-                            jumlah: this.parseFormatted(this.globalCashback.jumlah)
-                        },
-
-                        jenisPembayaran: this.jenisPembayaran,
-                        status: this.status,
-                        // If transfer, send noRekening
-                        noRekening: (this.metodeBayar === 'transfer') ? this.noRekening : null,
-                        // Could also send metodeBayar if needed by backend, adding it to notes or a new field
-                        // For now, assuming backend infers or doesn't firmly require it column-wise
-                        bayar: this.parseFormatted(this.bayar),
-                        kembalian: this.parseFormatted(this.kembalian),
-
-                        grandTotal: this.parseFormatted(this.summary.grandTotal)
-                    };
-
-                    @this.call('saveAll', payload)
-                        .then(() => {
-                            this.isLoading = false;
-                        })
-                        .catch(err => {
-                            this.isLoading = false;
-                            console.error(err);
-                            alert('Gagal menyimpan transaksi');
-                        });
-                }
-            }));
-        });
-
-        // TomSelect Initialization
-        document.addEventListener('DOMContentLoaded', () => {
-            // Supplier
-            if (document.getElementById('supplier')) {
-                new TomSelect('#supplier', {
-                    valueField: 'id',
-                    labelField: 'nama_supplier',
-                    searchField: 'nama_supplier',
-                    load: function(query, callback) {
-                        if (query.length < 2) return callback();
-                        @this.call('loadSuppliers', query, 0).then(res => callback(res.data)).catch(
-                            () => callback());
+                        this.updateRow(id);
                     },
-                    onChange: function(value) {
-                        let el = document.querySelector('[x-data]');
-                        if (el) Alpine.$data(el).supplier = value;
-                    }
-                });
-            }
 
-            // Product Search
-            if (document.getElementById('searchProduct')) {
-                new TomSelect('#searchProduct', {
-                    valueField: 'id',
-                    labelField: 'nama_produk',
-                    searchField: ['nama_produk', 'sku'],
-                    render: {
-                        option: function(data, escape) {
-                            return `<div class="d-flex align-items-center py-2 border-bottom">
+                    removeProduct(id) {
+                        Swal.fire({
+                            title: 'Hapus Produk',
+                            text: 'Yakin ingin menghapus produk ini?',
+                            icon: 'warning',
+                            showCancelButton: true,
+                            confirmButtonColor: '#3085d6',
+                            cancelButtonColor: '#d33',
+                            confirmButtonText: 'Ya, Hapus!',
+                            cancelButtonText: 'Batal'
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                delete this.products[id];
+                            }
+                        });
+                    },
+
+                    updateRow(id) {
+                        if (!this.products[id]) return;
+
+                        let p = this.products[id];
+                        let harga = this.parseFormatted(p.harga_beli);
+                        let qty = parseInt(p.jumlah_beli) || 0;
+                        let diskon = this.parseFormatted(p.diskon.nominal);
+
+                        let sub = (harga * qty) - diskon;
+                        if (sub < 0) sub = 0;
+
+                        this.products[id].subtotal = this.formatRupiah(sub);
+                    },
+
+                    calculateTotal() {
+                        let totalSub = 0;
+                        let totalQty = 0;
+                        let sumDiskon = 0;
+                        let sumCashback = 0;
+
+                        // Loop through cart
+                        Object.values(this.products).forEach(p => {
+                            let sub = this.parseFormatted(p.subtotal);
+                            let qty = parseInt(p.jumlah_beli) || 0;
+                            let d = this.parseFormatted(p.diskon.nominal);
+                            let c = this.parseFormatted(p.cashback.nominal);
+
+                            totalSub += sub;
+                            totalQty += qty;
+                            sumDiskon += d;
+                            sumCashback += c;
+                        });
+
+                        // Global Discount
+                        let gDiskonVal = this.parseFormatted(this.globalDiskon.jumlah);
+                        let gDiskonAmt = 0;
+                        if (this.globalDiskon.jenis === 'nominal') {
+                            gDiskonAmt = gDiskonVal;
+                        } else {
+                            gDiskonAmt = (totalSub * gDiskonVal) / 100;
+                        }
+
+                        // Global Cashback
+                        let gCashbackVal = this.parseFormatted(this.globalCashback.jumlah);
+                        let gCashbackAmt = 0;
+                        if (this.globalCashback.jenis === 'nominal') {
+                            gCashbackAmt = gCashbackVal;
+                        } else {
+                            gCashbackAmt = (totalSub * gCashbackVal) / 100;
+                        }
+
+                        // Tax
+                        let taxable = totalSub - gDiskonAmt;
+                        if (taxable < 0) taxable = 0;
+
+                        let taxAmt = 0;
+                        if (this.jenisPajak === 'PPN') {
+                            taxAmt = taxable * 0.11;
+                        }
+
+                        let grand = taxable + taxAmt;
+
+                        // Update Display State
+                        this.totalProducts = {
+                            subtotal: this.formatRupiah(totalSub),
+                            diskon: sumDiskon,
+                            cashback: sumCashback,
+                            jumlah_beli: totalQty
+                        };
+
+                        this.summary = {
+                            itemCount: totalQty,
+                            subtotal: this.formatRupiah(totalSub),
+                            orderDiscount: this.formatRupiah(gDiskonAmt),
+                            orderTax: this.formatRupiah(taxAmt),
+                            grandTotal: this.formatRupiah(grand),
+                            orderCashback: this.formatRupiah(gCashbackAmt)
+                        };
+
+                        this.calculateKembalian();
+                    },
+
+                    calculateKembalian() {
+                        let pay = this.parseFormatted(this.bayar);
+                        let grand = this.parseFormatted(this.summary.grandTotal);
+
+                        if (pay >= grand) {
+                            this.kembalian = this.formatRupiah(pay - grand);
+                        } else {
+                            this.kembalian = "0";
+                        }
+                        this.updatePaymentStatus();
+                    },
+
+                    updatePaymentStatus() {
+                        let pay = this.parseFormatted(this.bayar);
+                        let grand = this.parseFormatted(this.summary.grandTotal);
+
+                        if (pay < grand) {
+                            // Partial Payment
+                            if (this.jenisPembayaran !== 'preorder') {
+                                this.jenisPembayaran = 'credit';
+                                this.syncTomSelect('jenisPembayaran', 'credit');
+                            }
+                            this.status = 'partial';
+                        } else {
+                            // Full Payment
+                            if (this.jenisPembayaran === 'credit') {
+                                this.jenisPembayaran = 'cash';
+                                this.syncTomSelect('jenisPembayaran', 'cash');
+                            }
+
+                            if (this.jenisPembayaran === 'preorder') {
+                                this.status = 'paid';
+                            } else {
+                                this.status = 'completed';
+                            }
+                        }
+                    },
+
+                    syncTomSelect(id, value) {
+                        let el = document.getElementById(id);
+                        if (el && el.tomselect) {
+                            el.tomselect.setValue(value, true);
+                        }
+                    },
+
+                    // --- Modals ---
+                    openDiscountModal(id) {
+                        this.activeModalId = id;
+                        this.modalProduct = JSON.parse(JSON.stringify(this.products[id]));
+                        // Ensure plain numbers or formatted?
+                        // x-mask expects formatted? Let's treat it as existing value.
+                        // If it was already formatted in product state, it's fine.
+                        // Assuming `jumlah` tracks the input value.
+                        $('#discountModal').modal('show');
+                    },
+
+                    openCashbackModal(id) {
+                        this.activeModalId = id;
+                        this.modalProduct = JSON.parse(JSON.stringify(this.products[id]));
+                        $('#cashbackModal').modal('show');
+                    },
+
+                    saveDiscount() {
+                        if (!this.activeModalId) return;
+                        let id = this.activeModalId;
+
+                        let p = this.products[id];
+                        let m = this.modalProduct;
+
+                        let harga = this.parseFormatted(p.harga_beli);
+                        let qty = parseInt(p.jumlah_beli) || 0;
+
+
+                        // FIX: Use parseFormatted
+                        let val = this.parseFormatted(m.diskon.jumlah);
+
+                        let nominal = 0;
+                        if (m.diskon.jenis === 'nominal') {
+                            nominal = val;
+                        } else {
+                            nominal = (harga * qty * val) / 100;
+                        }
+
+                        console.log(nominal, harga, qty, val)
+                        // Save back to cart
+                        this.products[id].diskon = {
+                            jenis: m.diskon.jenis,
+                            jumlah: m.diskon.jumlah, // keep the formatted input value
+                            nominal: this.formatRupiah(nominal)
+                        };
+
+                        this.updateRow(id);
+                        this.$watch('products', () => {});
+                        $('#discountModal').modal('hide');
+                    },
+
+                    saveCashback() {
+                        if (!this.activeModalId) return;
+                        let id = this.activeModalId;
+                        let p = this.products[id];
+                        let m = this.modalProduct;
+
+                        let harga = this.parseFormatted(p.harga_beli);
+                        let qty = parseInt(p.jumlah_beli) || 0;
+
+                        // FIX: Use parseFormatted
+                        let val = this.parseFormatted(m.cashback.jumlah);
+
+                        let nominal = 0;
+                        if (m.cashback.jenis === 'nominal') {
+                            nominal = val;
+                        } else {
+                            nominal = (harga * qty * val) / 100;
+                        }
+
+                        this.products[id].cashback = {
+                            jenis: m.cashback.jenis,
+                            jumlah: m.cashback.jumlah,
+                            nominal: this.formatRupiah(nominal)
+                        };
+
+                        this.updateRow(id);
+                        $('#cashbackModal').modal('hide');
+                    },
+
+                    resetForm() {
+                        this.nomorPembelian = '';
+                        this.tanggalPembelian = new Date().toISOString().slice(0, 10);
+                        this.supplier = '';
+                        this.catatan = '';
+                        this.products = {};
+                        this.jenisPajak = 'tidak ada';
+                        this.globalDiskon = {
+                            jenis: 'nominal',
+                            jumlah: 0
+                        };
+                        this.globalCashback = {
+                            jenis: 'nominal',
+                            jumlah: 0
+                        };
+                        this.jenisPembayaran = 'cash';
+                        this.metodeBayar = 'tunai';
+                        this.noRekening = '';
+                        this.bayar = 0;
+                        this.kembalian = 0;
+
+                        this.calculateTotal();
+
+                        let supplierSelect = document.getElementById('supplier');
+                        if (supplierSelect && supplierSelect.tomselect) supplierSelect.tomselect.clear();
+
+                        this.syncTomSelect('jenisPembayaran', 'cash');
+                    },
+
+                    // --- Server Sync ---
+                    saveAll() {
+                        this.isLoading = true;
+
+                        let cleanProducts = [];
+                        Object.values(this.products).forEach(p => {
+                            cleanProducts.push({
+                                id: p.id,
+                                jumlah_beli: p.jumlah_beli,
+                                harga_beli: this.parseFormatted(p.harga_beli),
+                                diskon: {
+                                    jenis: p.diskon.jenis,
+                                    jumlah: this.parseFormatted(p.diskon.jumlah),
+                                    nominal: this.parseFormatted(p.diskon.nominal)
+                                },
+                                cashback: {
+                                    jenis: p.cashback.jenis,
+                                    jumlah: this.parseFormatted(p.cashback.jumlah),
+                                    nominal: this.parseFormatted(p.cashback.nominal)
+                                },
+                                subtotal: this.parseFormatted(p.subtotal)
+                            });
+                        });
+
+                        let payload = {
+                            nomorPembelian: this.nomorPembelian,
+                            tanggalPembelian: this.tanggalPembelian,
+                            supplier: this.supplier,
+                            catatan: this.catatan,
+                            products: cleanProducts,
+
+                            subtotal: this.parseFormatted(this.totalProducts.subtotal),
+                            jenisPajak: this.jenisPajak,
+                            globalDiskon: {
+                                jenis: this.globalDiskon.jenis,
+                                jumlah: this.parseFormatted(this.globalDiskon.jumlah)
+                            },
+                            globalCashback: {
+                                jenis: this.globalCashback.jenis,
+                                jumlah: this.parseFormatted(this.globalCashback.jumlah)
+                            },
+
+                            jenisPembayaran: this.jenisPembayaran,
+                            status: this.status,
+                            // If transfer, send noRekening
+                            noRekening: (this.metodeBayar === 'transfer') ? this.noRekening : null,
+                            // Could also send metodeBayar if needed by backend, adding it to notes or a new field
+                            // For now, assuming backend infers or doesn't firmly require it column-wise
+                            bayar: this.parseFormatted(this.bayar),
+                            kembalian: this.parseFormatted(this.kembalian),
+
+                            grandTotal: this.parseFormatted(this.summary.grandTotal),
+                            metodeBayar: this.metodeBayar,
+                        };
+
+                        @this.call('saveAll', payload)
+                            .then(() => {
+                                this.isLoading = false;
+                            })
+                            .catch(err => {
+                                this.isLoading = false;
+                                console.error(err);
+                                alert('Gagal menyimpan transaksi');
+                            });
+                    }
+                }));
+            });
+
+
+
+            // TomSelect Initialization
+            document.addEventListener('DOMContentLoaded', () => {
+                // Supplier
+                if (document.getElementById('supplier')) {
+                    new TomSelect('#supplier', {
+                        valueField: 'id',
+                        labelField: 'nama_supplier',
+                        searchField: 'nama_supplier',
+                        load: function(query, callback) {
+                            if (query.length < 2) return callback();
+                            @this.call('loadSuppliers', query, 0).then(res => callback(res.data)).catch(
+                                () => callback());
+                        },
+                        onChange: function(value) {
+                            let el = document.querySelector('[x-data]');
+                            if (el) Alpine.$data(el).supplier = value;
+                        }
+                    });
+                }
+
+                // Product Search
+                if (document.getElementById('searchProduct')) {
+                    new TomSelect('#searchProduct', {
+                        valueField: 'id',
+                        labelField: 'nama_produk',
+                        searchField: ['nama_produk', 'sku'],
+                        render: {
+                            option: function(data, escape) {
+                                return `<div class="d-flex align-items-center py-2 border-bottom">
                                     <div class="col-auto">
                                         <span class="avatar avatar-1" style="background-image: url(${'/storage/' + data.gambar})"></span>
                                     </div>
@@ -769,29 +799,29 @@
                                     </div>
                                   </div>
                                 </div>`;
-                        }
-                    },
-                    load: function(query, callback) {
-                        if (query.length < 2) return callback();
-                        @this.call('loadSearchProducts', query, 0).then(res => callback(res.data))
-                            .catch(() => callback());
-                    },
-                    onChange: function(value) {
-                        if (!value) return;
-                        let instance = this;
-                        let selected = instance.options[value];
+                            }
+                        },
+                        load: function(query, callback) {
+                            if (query.length < 2) return callback();
+                            @this.call('loadSearchProducts', query, 0).then(res => callback(res.data))
+                                .catch(() => callback());
+                        },
+                        onChange: function(value) {
+                            if (!value) return;
+                            let instance = this;
+                            let selected = instance.options[value];
 
-                        this.clear();
-                        this.clearOptions();
+                            this.clear();
+                            this.clearOptions();
 
-                        let el = document.querySelector('[x-data]');
-                        if (el) {
-                            Alpine.$data(el).addProduct(selected);
-                            instance.clear();
+                            let el = document.querySelector('[x-data]');
+                            if (el) {
+                                Alpine.$data(el).addProduct(selected);
+                                instance.clear();
+                            }
                         }
-                    }
-                });
-            }
-        });
-    </script>
-@endsection
+                    });
+                }
+            });
+        </script>
+    @endsection
