@@ -118,7 +118,7 @@
         ],
         [
             'title' => 'Pengaturan',
-            'url' => '/pengaturan',
+            'url' => '/master-pengaturan',
             'icon' => 'settings',
         ],
     ];

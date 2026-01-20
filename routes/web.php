@@ -6,6 +6,7 @@ use App\Livewire\Kategori;
 use App\Livewire\Member;
 use App\Livewire\Merek;
 use App\Livewire\Pelanggan;
+use App\Livewire\pengaturan;
 use App\Livewire\Produk;
 use App\Livewire\Rak;
 use App\Livewire\Role;
@@ -45,6 +46,8 @@ Route::group([
     Route::get('/master-produk/merek', Merek::class);
     Route::get('/master-produk/rak', Rak::class);
     Route::get('/master-produk/produk', Produk::class);
+
+    Route::get('/master-pengaturan', pengaturan::class);
 
     Route::get('/pembelian/tambah', TambahPembelian::class);
 });
