@@ -28,7 +28,7 @@ class PaymentUtil
             $rekeningDebit = '1.1.03.01';
 
             if ($jenisPembayaran == 'credit') {
-                $rekeningKredit = '2.1.01.01';
+                $rekeningKredit = $rekeningKas;
             }
 
             $return['purchase'] = [
@@ -40,8 +40,8 @@ class PaymentUtil
         if ($jenisTransaksi == 'purchase-diskon') {
             $rekeningDebit = '5.1.01.02';
             $return['purchase-diskon'] = [
-                'rekening_kredit' => $rekeningKredit,
-                'rekening_debit' => $rekeningDebit,
+                'rekening_kredit' => $rekeningDebit,
+                'rekening_debit' => $rekeningKredit,
             ];
         }
 

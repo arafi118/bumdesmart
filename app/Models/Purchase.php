@@ -30,8 +30,18 @@ class Purchase extends Model
         'keterangan',
     ];
 
+    public function supplier()
+    {
+        return $this->belongsTo(Supplier::class);
+    }
+
     public function purchaseDetails()
     {
         return $this->hasMany(PurchaseDetail::class);
+    }
+
+    public function payments()
+    {
+        return $this->hasMany(Payment::class, 'transaction_id', 'id')->where('jenis_transaksi', 'purchase');
     }
 }

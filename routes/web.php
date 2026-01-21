@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Livewire\DaftarPembelian;
 use App\Livewire\Dashboard;
 use App\Livewire\Kategori;
 use App\Livewire\Member;
@@ -48,9 +49,10 @@ Route::group([
     Route::get('/master-produk/rak', Rak::class);
     Route::get('/master-produk/produk', Produk::class);
 
-    Route::get('/master-pengaturan', pengaturan::class);
-
     Route::get('/pembelian/tambah', TambahPembelian::class);
+    Route::get('/pembelian/daftar', DaftarPembelian::class);
 
     Route::get('/penjualan/tambah', TambahPenjualan::class);
+
+    Route::get('/master-pengaturan', Pengaturan::class);
 });
