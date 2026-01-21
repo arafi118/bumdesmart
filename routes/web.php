@@ -12,6 +12,7 @@ use App\Livewire\Role;
 use App\Livewire\Satuan;
 use App\Livewire\Supplier;
 use App\Livewire\TambahPembelian;
+use App\Livewire\TambahPenjualan;
 use App\Livewire\User;
 use Illuminate\Support\Facades\Route;
 
@@ -47,4 +48,6 @@ Route::group([
     Route::get('/master-produk/produk', Produk::class);
 
     Route::get('/pembelian/tambah', TambahPembelian::class);
+
+    Route::get('/penjualan/tambah', TambahPenjualan::class);
 });

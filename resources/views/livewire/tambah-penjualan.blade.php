@@ -1,21 +1,21 @@
-<div wire:ignore x-data="pembelianHandler()" @reset-form.window="resetForm">
+<div wire:ignore x-data="penjualanHandler()" @reset-form.window="resetForm">
     <div class="card">
         <div class="card-body">
             <!-- Header Form -->
             <div class="row">
                 <div class="col-md-4 mb-3">
-                    <label class="form-label">Nomor Pembelian</label>
-                    <input type="text" class="form-control" x-model="nomorPembelian" placeholder="Nomor Pembelian" />
+                    <label class="form-label">Nomor Penjualan</label>
+                    <input type="text" class="form-control" x-model="nomorPenjualan" placeholder="Nomor Penjualan" />
                 </div>
                 <div class="col-md-4 mb-3">
-                    <label class="form-label">Tanggal Pembelian</label>
-                    <input type="text" class="form-control litepicker" id="tanggalPembelian"
-                        x-model="tanggalPembelian" placeholder="Tanggal Pembelian" />
+                    <label class="form-label">Tanggal Penjualan</label>
+                    <input type="text" class="form-control litepicker" id="tanggalPenjualan"
+                        x-model="tanggalPenjualan" placeholder="Tanggal Penjualan" />
                 </div>
-                <!-- Supplier Select -->
-                <div class="col-md-4 mb-3" wire:ignore>
-                    <label class="form-label">Supplier</label>
-                    <select class="form-select" id="supplier" x-model="supplier">
+                <!-- Customer Select -->
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Customer</label>
+                    <select class="form-select" id="customer" x-model="customer" wire:ignore>
                         <option value=""></option>
                     </select>
                 </div>
@@ -37,12 +37,11 @@
                     <thead>
                         <tr>
                             <th width="5%">No</th>
-                            <th width="25%">Nama Produk</th>
-                            <th width="15%">Harga Satuan</th>
+                            <th width="30%">Nama Produk</th>
+                            <th width="15%">Harga</th>
                             <th width="10%">Qty</th>
                             <th width="15%">Diskon</th>
-                            <th width="15%">Cashback</th>
-                            <th width="15%">Subtotal</th>
+                            <th width="20%">Subtotal</th>
                             <th width="5%"></th>
                         </tr>
                     </thead>
@@ -55,26 +54,19 @@
                                     <div x-text="product.sku" class="text-secondary small"></div>
                                 </td>
                                 <td>
-                                    <input type="text" class="form-control" x-model="product.harga_beli"
-                                        x-on:input="updateRow(product.id)" x-mask:dynamic="$money($input)"
-                                        x-on:focus="$el.select()">
+                                    <input type="text" class="form-control" x-model="product.harga_jual" readonly
+                                        x-mask:dynamic="$money($input)">
                                 </td>
                                 <td>
-                                    <input type="number" class="form-control" x-model="product.jumlah_beli"
-                                        x-on:input="updateRow(product.id)" x-on:focus="$el.select()">
+                                    <input type="number" class="form-control" x-model="product.jumlah_jual"
+                                        x-on:input="updateRow(product.id)" x-on:focus="$el.select()"
+                                        :max="product.stok_tersedia" min="1">
                                 </td>
                                 <td>
                                     <!-- Trigger Modal Diskon -->
                                     <div class="input-group cursor-pointer" x-on:click="openDiscountModal(product.id)">
                                         <input type="text" class="form-control bg-white cursor-pointer" readonly
                                             x-bind:value="product.diskon.nominal">
-                                    </div>
-                                </td>
-                                <td>
-                                    <!-- Trigger Modal Cashback -->
-                                    <div class="input-group cursor-pointer" x-on:click="openCashbackModal(product.id)">
-                                        <input type="text" class="form-control bg-white cursor-pointer" readonly
-                                            x-bind:value="product.cashback.nominal">
                                     </div>
                                 </td>
                                 <td>
@@ -90,7 +82,7 @@
                             </tr>
                         </template>
                         <tr x-show="Object.keys(products).length === 0">
-                            <td colspan="8" class="text-center text-muted py-4">
+                            <td colspan="7" class="text-center text-muted py-4">
                                 <i>Belum ada produk yang dipilih</i>
                             </td>
                         </tr>
@@ -100,7 +92,6 @@
                             <td colspan="3" class="text-end">TOTAL</td>
                             <td x-text="summary.itemCount"></td>
                             <td x-text="formatRupiah(totalProducts.diskon)"></td>
-                            <td x-text="formatRupiah(totalProducts.cashback)"></td>
                             <td x-text="totalProducts.subtotal"></td>
                             <td></td>
                         </tr>
@@ -123,7 +114,7 @@
                                             x-model="totalProducts.subtotal" />
                                     </div>
                                     <div class="mb-3">
-                                        <label class="form-label">Jenis Pajak (11%)</label>
+                                        <label class="form-label">Jenis Pajak</label>
                                         <select class="form-select tom-select" id="jenisPajak" x-model="jenisPajak">
                                             <option value="tidak ada">Tidak Ada</option>
                                             <option value="PPN">PPN</option>
@@ -227,8 +218,7 @@
                                     <select class="form-select tom-select" id="jenisPembayaran"
                                         x-model="jenisPembayaran">
                                         <option value="cash">Cash/Lunas</option>
-                                        <option value="credit">Tempo/Hutang</option>
-                                        <option value="preorder">Pre-Order</option>
+                                        <option value="credit">Tempo/Piutang</option>
                                     </select>
                                 </div>
 
@@ -293,20 +283,20 @@
             </div>
 
         </div>
-        <!-- Includes for Modals -->
-        @include('livewire.tambah-pembelian-component.modal-diskon')
-        @include('livewire.tambah-pembelian-component.modal-cashback')
     </div>
+    <!-- Includes for Modals -->
+    @include('livewire.tambah-pembelian-component.modal-diskon')
+</div>
 </div>
 
 @section('script')
     <script>
         document.addEventListener('alpine:init', () => {
-            Alpine.data('pembelianHandler', () => ({
+            Alpine.data('penjualanHandler', () => ({
                 // Basic Fields
-                nomorPembelian: '',
-                tanggalPembelian: new Date().toISOString().slice(0, 10),
-                supplier: '',
+                nomorPenjualan: '',
+                tanggalPenjualan: new Date().toISOString().slice(0, 10),
+                customer: '',
                 catatan: '',
 
                 // The Cart
@@ -323,27 +313,26 @@
                     jumlah: 0
                 },
 
-                // Payment State
-                jenisPembayaran: 'cash',
-                metodeBayar: 'tunai',
+                // Sales usually focus on Payment
+                jenisPembayaran: 'cash', // cash, credit
+                metodeBayar: 'tunai', // tunai, transfer
                 noRekening: '',
                 bayar: 0,
                 kembalian: 0,
+                status: 'completed',
 
-                // Computed Summaries (for display)
+                // Summaries
                 totalProducts: {
                     subtotal: 0,
                     diskon: 0,
-                    cashback: 0,
-                    jumlah_beli: 0
+                    jumlah_jual: 0
                 },
                 summary: {
                     itemCount: 0,
                     subtotal: 0,
                     orderDiscount: 0,
                     orderTax: 0,
-                    grandTotal: 0,
-                    orderCashback: 0
+                    grandTotal: 0
                 },
 
                 isLoading: false,
@@ -356,17 +345,11 @@
                         jumlah: 0,
                         nominal: 0
                     },
-                    cashback: {
-                        jenis: 'nominal',
-                        jumlah: 0,
-                        nominal: 0
-                    },
                     nama_produk: '',
                     gambar: ''
                 },
 
                 init() {
-                    // Auto-calculate when things change
                     this.$watch('products', () => this.calculateTotal(), {
                         deep: true
                     });
@@ -378,16 +361,6 @@
                     });
                     this.$watch('jenisPajak', () => this.calculateTotal());
                     this.$watch('bayar', () => this.calculateKembalian());
-                    this.$watch('jenisPembayaran', (val) => {
-                        let grand = this.parseFormatted(this.summary.grandTotal);
-                        let pay = this.parseFormatted(this.bayar);
-
-                        // Only auto-fill if switching to CASH and currently underpaid
-                        if (val === 'cash' && pay < grand) {
-                            this.bayar = this.formatRupiah(grand);
-                            this.calculateKembalian();
-                        }
-                    });
                 },
 
                 // --- Helpers ---
@@ -395,15 +368,8 @@
                     return new Intl.NumberFormat('en-US').format(num || 0);
                 },
 
-                parseMoney(str) {
-                    if (!str) return 0;
-                    // Remove commas, keep dots and numbers
-                    return parseFloat(String(str).replace(/,/g, '')) || 0;
-                },
-
                 parseFormatted(val) {
                     if (typeof val === 'number') return val;
-                    // Remove commas for standard float parsing
                     return parseFloat(String(val).replace(/,/g, '')) || 0;
                 },
 
@@ -411,80 +377,88 @@
                 addProduct(product) {
                     let id = product.id;
                     if (this.products[id]) {
-                        this.products[id].jumlah_beli++;
+                        // Check if incrementing would exceed stock (use stored stock from cart)
+                        let maxStock = this.products[id].stok_tersedia;
+                        if (this.products[id].jumlah_jual >= maxStock) {
+                            alert(`Stok tidak mencukupi! Maksimal ${maxStock} unit`);
+                            return;
+                        }
+                        this.products[id].jumlah_jual++;
                     } else {
+                        // New product - ensure stok_tersedia exists
+                        if (!product.stok_tersedia || product.stok_tersedia <= 0) {
+                            alert('Produk tidak tersedia atau stok habis');
+                            return;
+                        }
+
+                        // Logic for pricing precedence will be handled in Backend search, 
+                        // here we just receive the final 'selling_price' (harga_jual)
                         this.products[id] = {
                             id: product.id,
                             nama_produk: product.nama_produk,
                             gambar: product.gambar,
                             sku: product.sku,
-                            harga_beli: this.formatRupiah(parseInt(product
-                                .harga_beli)), // Store as string for input support
-                            jumlah_beli: 1,
+                            harga_jual: this.formatRupiah(product.harga_jual),
+                            jumlah_jual: 1,
+                            stok_tersedia: product.stok_tersedia, // Store stock info
                             diskon: {
                                 jenis: 'nominal',
                                 jumlah: 0,
                                 nominal: 0
                             },
-                            cashback: {
-                                jenis: 'nominal',
-                                jumlah: 0,
-                                nominal: 0
-                            },
-                            subtotal: this.formatRupiah(parseInt(product.harga_beli))
+                            subtotal: this.formatRupiah(product.harga_jual),
+                            batch_info: product.batch_info || '' // Optional info
                         };
                     }
                     this.updateRow(id);
                 },
 
                 removeProduct(id) {
-                    Swal.fire({
-                        title: 'Hapus Produk',
-                        text: 'Yakin ingin menghapus produk ini?',
-                        icon: 'warning',
-                        showCancelButton: true,
-                        confirmButtonColor: '#3085d6',
-                        cancelButtonColor: '#d33',
-                        confirmButtonText: 'Ya, Hapus!',
-                        cancelButtonText: 'Batal'
-                    }).then((result) => {
-                        if (result.isConfirmed) {
-                            delete this.products[id];
-                        }
-                    });
+                    delete this.products[id];
+                    this.calculateTotal();
                 },
 
                 updateRow(id) {
                     if (!this.products[id]) return;
 
                     let p = this.products[id];
-                    let harga = this.parseFormatted(p.harga_beli);
-                    let qty = parseInt(p.jumlah_beli) || 0;
+                    let harga = this.parseFormatted(p.harga_jual);
+                    let qty = parseInt(p.jumlah_jual) || 0;
+
+                    // Validate qty against stock
+                    if (qty > p.stok_tersedia) {
+                        alert(`Stok tidak mencukupi! Maksimal ${p.stok_tersedia} unit`);
+                        p.jumlah_jual = p.stok_tersedia;
+                        qty = p.stok_tersedia;
+                    }
+
+                    if (qty < 1) {
+                        p.jumlah_jual = 1;
+                        qty = 1;
+                    }
+
                     let diskon = this.parseFormatted(p.diskon.nominal);
 
                     let sub = (harga * qty) - diskon;
                     if (sub < 0) sub = 0;
 
                     this.products[id].subtotal = this.formatRupiah(sub);
+                    this.calculateTotal(); // Ensure totals update immediately
                 },
 
                 calculateTotal() {
                     let totalSub = 0;
                     let totalQty = 0;
                     let sumDiskon = 0;
-                    let sumCashback = 0;
 
-                    // Loop through cart
                     Object.values(this.products).forEach(p => {
                         let sub = this.parseFormatted(p.subtotal);
-                        let qty = parseInt(p.jumlah_beli) || 0;
+                        let qty = parseInt(p.jumlah_jual) || 0;
                         let d = this.parseFormatted(p.diskon.nominal);
-                        let c = this.parseFormatted(p.cashback.nominal);
 
                         totalSub += sub;
                         totalQty += qty;
                         sumDiskon += d;
-                        sumCashback += c;
                     });
 
                     // Global Discount
@@ -494,15 +468,6 @@
                         gDiskonAmt = gDiskonVal;
                     } else {
                         gDiskonAmt = (totalSub * gDiskonVal) / 100;
-                    }
-
-                    // Global Cashback
-                    let gCashbackVal = this.parseFormatted(this.globalCashback.jumlah);
-                    let gCashbackAmt = 0;
-                    if (this.globalCashback.jenis === 'nominal') {
-                        gCashbackAmt = gCashbackVal;
-                    } else {
-                        gCashbackAmt = (totalSub * gCashbackVal) / 100;
                     }
 
                     // Tax
@@ -516,12 +481,10 @@
 
                     let grand = taxable + taxAmt;
 
-                    // Update Display State
                     this.totalProducts = {
                         subtotal: this.formatRupiah(totalSub),
                         diskon: sumDiskon,
-                        cashback: sumCashback,
-                        jumlah_beli: totalQty
+                        jumlah_jual: totalQty
                     };
 
                     this.summary = {
@@ -530,54 +493,31 @@
                         orderDiscount: this.formatRupiah(gDiskonAmt),
                         orderTax: this.formatRupiah(taxAmt),
                         grandTotal: this.formatRupiah(grand),
-                        orderCashback: this.formatRupiah(gCashbackAmt)
+                        orderCashback: this.formatRupiah(this.calculateGlobalCashback(totalSub))
                     };
 
                     this.calculateKembalian();
+                },
+
+                calculateGlobalCashback(subtotal) {
+                    let val = this.parseFormatted(this.globalCashback.jumlah);
+                    if (this.globalCashback.jenis === 'nominal') return val;
+                    return (subtotal * val) / 100;
                 },
 
                 calculateKembalian() {
                     let pay = this.parseFormatted(this.bayar);
                     let grand = this.parseFormatted(this.summary.grandTotal);
 
-                    if (pay >= grand) {
-                        this.kembalian = this.formatRupiah(pay - grand);
-                    } else {
-                        this.kembalian = "0";
-                    }
-                    this.updatePaymentStatus();
-                },
+                    this.kembalian = this.formatRupiah(pay - grand);
 
-                updatePaymentStatus() {
-                    let pay = this.parseFormatted(this.bayar);
-                    let grand = this.parseFormatted(this.summary.grandTotal);
-
+                    // Auto-detect Credit status
                     if (pay < grand) {
-                        // Partial Payment
-                        if (this.jenisPembayaran !== 'preorder') {
-                            this.jenisPembayaran = 'credit';
-                            this.syncTomSelect('jenisPembayaran', 'credit');
-                        }
+                        this.jenisPembayaran = 'credit';
                         this.status = 'partial';
                     } else {
-                        // Full Payment
-                        if (this.jenisPembayaran === 'credit') {
-                            this.jenisPembayaran = 'cash';
-                            this.syncTomSelect('jenisPembayaran', 'cash');
-                        }
-
-                        if (this.jenisPembayaran === 'preorder') {
-                            this.status = 'paid';
-                        } else {
-                            this.status = 'completed';
-                        }
-                    }
-                },
-
-                syncTomSelect(id, value) {
-                    let el = document.getElementById(id);
-                    if (el && el.tomselect) {
-                        el.tomselect.setValue(value, true);
+                        this.jenisPembayaran = 'cash';
+                        this.status = 'completed';
                     }
                 },
 
@@ -585,31 +525,17 @@
                 openDiscountModal(id) {
                     this.activeModalId = id;
                     this.modalProduct = JSON.parse(JSON.stringify(this.products[id]));
-                    // Ensure plain numbers or formatted?
-                    // x-mask expects formatted? Let's treat it as existing value.
-                    // If it was already formatted in product state, it's fine.
-                    // Assuming `jumlah` tracks the input value.
                     $('#discountModal').modal('show');
-                },
-
-                openCashbackModal(id) {
-                    this.activeModalId = id;
-                    this.modalProduct = JSON.parse(JSON.stringify(this.products[id]));
-                    $('#cashbackModal').modal('show');
                 },
 
                 saveDiscount() {
                     if (!this.activeModalId) return;
                     let id = this.activeModalId;
-
-                    let p = this.products[id];
                     let m = this.modalProduct;
+                    let p = this.products[id];
 
-                    let harga = this.parseFormatted(p.harga_beli);
-                    let qty = parseInt(p.jumlah_beli) || 0;
-
-
-                    // FIX: Use parseFormatted
+                    let harga = this.parseFormatted(p.harga_jual);
+                    let qty = parseInt(p.jumlah_jual) || 0;
                     let val = this.parseFormatted(m.diskon.jumlah);
 
                     let nominal = 0;
@@ -619,75 +545,28 @@
                         nominal = (harga * qty * val) / 100;
                     }
 
-                    console.log(nominal, harga, qty, val)
-                    // Save back to cart
                     this.products[id].diskon = {
                         jenis: m.diskon.jenis,
-                        jumlah: m.diskon.jumlah, // keep the formatted input value
+                        jumlah: m.diskon.jumlah,
                         nominal: this.formatRupiah(nominal)
                     };
 
                     this.updateRow(id);
-                    this.$watch('products', () => {});
                     $('#discountModal').modal('hide');
                 },
 
-                saveCashback() {
-                    if (!this.activeModalId) return;
-                    let id = this.activeModalId;
-                    let p = this.products[id];
-                    let m = this.modalProduct;
-
-                    let harga = this.parseFormatted(p.harga_beli);
-                    let qty = parseInt(p.jumlah_beli) || 0;
-
-                    // FIX: Use parseFormatted
-                    let val = this.parseFormatted(m.cashback.jumlah);
-
-                    let nominal = 0;
-                    if (m.cashback.jenis === 'nominal') {
-                        nominal = val;
-                    } else {
-                        nominal = (harga * qty * val) / 100;
-                    }
-
-                    this.products[id].cashback = {
-                        jenis: m.cashback.jenis,
-                        jumlah: m.cashback.jumlah,
-                        nominal: this.formatRupiah(nominal)
-                    };
-
-                    this.updateRow(id);
-                    $('#cashbackModal').modal('hide');
-                },
-
                 resetForm() {
-                    this.nomorPembelian = '';
-                    this.tanggalPembelian = new Date().toISOString().slice(0, 10);
-                    this.supplier = '';
+                    this.nomorPenjualan = '';
+                    this.tanggalPenjualan = new Date().toISOString().slice(0, 10);
+                    this.customer = '';
                     this.catatan = '';
                     this.products = {};
-                    this.jenisPajak = 'tidak ada';
-                    this.globalDiskon = {
-                        jenis: 'nominal',
-                        jumlah: 0
-                    };
-                    this.globalCashback = {
-                        jenis: 'nominal',
-                        jumlah: 0
-                    };
-                    this.jenisPembayaran = 'cash';
-                    this.metodeBayar = 'tunai';
-                    this.noRekening = '';
                     this.bayar = 0;
                     this.kembalian = 0;
-
                     this.calculateTotal();
 
-                    let supplierSelect = document.getElementById('supplier');
-                    if (supplierSelect && supplierSelect.tomselect) supplierSelect.tomselect.clear();
-
-                    this.syncTomSelect('jenisPembayaran', 'cash');
+                    let customerSelect = document.getElementById('customer');
+                    if (customerSelect && customerSelect.tomselect) customerSelect.tomselect.clear();
                 },
 
                 // --- Server Sync ---
@@ -698,26 +577,21 @@
                     Object.values(this.products).forEach(p => {
                         cleanProducts.push({
                             id: p.id,
-                            jumlah_beli: p.jumlah_beli,
-                            harga_beli: this.parseFormatted(p.harga_beli),
+                            jumlah_jual: p.jumlah_jual,
+                            harga_jual: this.parseFormatted(p.harga_jual),
                             diskon: {
                                 jenis: p.diskon.jenis,
                                 jumlah: this.parseFormatted(p.diskon.jumlah),
                                 nominal: this.parseFormatted(p.diskon.nominal)
-                            },
-                            cashback: {
-                                jenis: p.cashback.jenis,
-                                jumlah: this.parseFormatted(p.cashback.jumlah),
-                                nominal: this.parseFormatted(p.cashback.nominal)
                             },
                             subtotal: this.parseFormatted(p.subtotal)
                         });
                     });
 
                     let payload = {
-                        nomorPembelian: this.nomorPembelian,
-                        tanggalPembelian: this.tanggalPembelian,
-                        supplier: this.supplier,
+                        // nomorPenjualan handled by backend if empty
+                        tanggalPenjualan: this.tanggalPenjualan,
+                        customer: this.customer,
                         catatan: this.catatan,
                         products: cleanProducts,
 
@@ -733,16 +607,11 @@
                         },
 
                         jenisPembayaran: this.jenisPembayaran,
-                        status: this.status,
-                        // If transfer, send noRekening
+                        metodeBayar: this.metodeBayar,
                         noRekening: (this.metodeBayar === 'transfer') ? this.noRekening : null,
-                        // Could also send metodeBayar if needed by backend, adding it to notes or a new field
-                        // For now, assuming backend infers or doesn't firmly require it column-wise
                         bayar: this.parseFormatted(this.bayar),
                         kembalian: this.parseFormatted(this.kembalian),
-
                         grandTotal: this.parseFormatted(this.summary.grandTotal),
-                        metodeBayar: this.metodeBayar,
                     };
 
                     @this.call('saveAll', payload)
@@ -760,30 +629,30 @@
 
         // TomSelect Initialization
         document.addEventListener('DOMContentLoaded', () => {
-            // Supplier
-            if (document.getElementById('supplier')) {
-                new TomSelect('#supplier', {
+            // Customer Select
+            if (document.getElementById('customer')) {
+                new TomSelect('#customer', {
                     valueField: 'id',
-                    labelField: 'nama_supplier',
-                    searchField: 'nama_supplier',
+                    labelField: 'nama_pelanggan',
+                    searchField: 'nama_pelanggan',
                     load: function(query, callback) {
                         if (query.length < 2) return callback();
-                        @this.call('loadSuppliers', query, 0).then(res => callback(res.data)).catch(
+                        @this.call('loadCustomers', query, 0).then(res => callback(res.data)).catch(
                             () => callback());
                     },
                     onChange: function(value) {
                         let el = document.querySelector('[x-data]');
-                        if (el) Alpine.$data(el).supplier = value;
+                        if (el) Alpine.$data(el).customer = value;
                     }
                 });
             }
 
-            // Product Search
+            // Product Search (with Barcode support via type detection)
             if (document.getElementById('searchProduct')) {
-                new TomSelect('#searchProduct', {
+                let tsProduct = new TomSelect('#searchProduct', {
                     valueField: 'id',
                     labelField: 'nama_produk',
-                    searchField: ['nama_produk', 'sku'],
+                    searchField: ['nama_produk', 'sku'], // Added barcode field if logical
                     render: {
                         option: function(data, escape) {
                             return `<div class="d-flex align-items-center py-2 border-bottom">
@@ -794,16 +663,20 @@
                                     <div class="fw-bold">${escape(data.nama_produk)}</div>
                                     <div class="d-flex justify-content-between small text-muted">
                                         <span>${escape(data.sku)}</span>
-                                        <span class="text-success">Rp ${new Intl.NumberFormat('en-US').format(data.harga_beli)}</span>
+                                        <span class="text-success fw-bold">Rp ${new Intl.NumberFormat('en-US').format(data.harga_jual)}</span>
                                     </div>
+                                    ${data.promo_label ? `<div class="badge bg-green-lt mt-1">${escape(data.promo_label)}</div>` : ''}
                                   </div>
                                 </div>`;
                         }
                     },
                     load: function(query, callback) {
-                        if (query.length < 2) return callback();
-                        @this.call('loadSearchProducts', query, 0).then(res => callback(res.data))
-                            .catch(() => callback());
+                        // Pass current customer ID to get special prices
+                        let customerId = document.getElementById('customer').value;
+
+                        @this.call('loadSearchProducts', query, customerId).then(res => {
+                            callback(res.data);
+                        }).catch(() => callback());
                     },
                     onChange: function(value) {
                         if (!value) return;
