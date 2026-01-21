@@ -1,4 +1,4 @@
-<div wire:ignore x-data="pembelianHandler()" @reset-form.window="resetForm">
+<div wire:ignore x-data="pembelianHandler()" x-init="initData(@js($existingData))" @reset-form.window="resetForm">
     <div class="card">
         <div class="card-body">
             <!-- Header Form -->
@@ -379,6 +379,8 @@
                     this.$watch('jenisPajak', () => this.calculateTotal());
                     this.$watch('bayar', () => this.calculateKembalian());
                     this.$watch('jenisPembayaran', (val) => {
+                        if ('{{ $purchaseId }}') return;
+
                         let grand = this.parseFormatted(this.summary.grandTotal);
                         let pay = this.parseFormatted(this.bayar);
 
@@ -387,6 +389,61 @@
                             this.bayar = this.formatRupiah(grand);
                             this.calculateKembalian();
                         }
+                    });
+                },
+
+                initData(data) {
+                    if (!data) return;
+                    this.nomorPembelian = data.nomorPembelian;
+                    this.tanggalPembelian = data.tanggalPembelian;
+                    this.catatan = data.catatan || '';
+                    this.supplier = data.supplier;
+
+                    // Pre-populate Supplier TomSelect if possible
+                    let supplierSelect = document.getElementById('supplier');
+                    if (supplierSelect && data.supplier && data.supplier_name) {
+                        if (supplierSelect.tomselect) {
+                            supplierSelect.tomselect.addOption({
+                                id: data.supplier,
+                                nama_supplier: data.supplier_name
+                            });
+                            supplierSelect.tomselect.setValue(data.supplier);
+                        } else {
+                            // If TomSelect not yet ready, add fallback option or wait
+                            let opt = document.createElement('option');
+                            opt.value = data.supplier;
+                            opt.text = data.supplier_name;
+                            supplierSelect.add(opt);
+                        }
+                    }
+
+                    // Populate Products
+                    if (data.products && Object.keys(data.products).length > 0) {
+                        // Deep copy to ensure reactivity
+                        this.products = JSON.parse(JSON.stringify(data.products));
+                    }
+
+                    // Global Configs
+                    this.jenisPajak = data.jenisPajak;
+                    this.globalDiskon = data.globalDiskon;
+                    this.globalCashback = data.globalCashback;
+
+                    // Payment
+                    this.jenisPembayaran = data.jenisPembayaran;
+                    this.bayar = this.formatRupiah(data.bayar);
+                    this.status = data.status;
+
+                    // Sync Payment Type
+                    setTimeout(() => {
+                        this.syncTomSelect('jenisPembayaran', data.jenisPembayaran);
+                        this.syncTomSelect('jenisPajak', data.jenisPajak);
+                    }, 500);
+
+                    // Recalculate
+                    this.$nextTick(() => {
+                        this.calculateTotal();
+                        // Force kembalian calc after total update
+                        this.calculateKembalian();
                     });
                 },
 
@@ -619,7 +676,6 @@
                         nominal = (harga * qty * val) / 100;
                     }
 
-                    console.log(nominal, harga, qty, val)
                     // Save back to cart
                     this.products[id].diskon = {
                         jenis: m.diskon.jenis,

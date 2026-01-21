@@ -6,7 +6,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                @if ($detailPurchase)
+                @if (!empty($detailPurchase))
                     <ul class="list-group ">
                         <li class="list-group-item border-0 p-2 ps-0 pt-0">
                             <strong>Tanggal :</strong>
@@ -45,91 +45,91 @@
                             <div>{{ $detailPurchase->business->alamat }}</div>
                         </div>
                     </div>
-                @endif
-
-                <table class="table table-bordered mt-2">
-                    <thead>
-                        <tr>
-                            <th width="5%">No.</th>
-                            <th width="25%">Nama Produk</th>
-                            <th width="15%">Harga Satuan</th>
-                            <th width="10%">Jumlah</th>
-                            <th width="15%">Diskon</th>
-                            <th width="15%">Cashback</th>
-                            <th width="15%">Subtotal</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach ($detailPurchase->purchaseDetails as $purchaseDetail)
+                    <table class="table table-bordered mt-2">
+                        <thead>
                             <tr>
-                                <td class="text-center">{{ $loop->iteration }}</td>
-                                <td>{{ $purchaseDetail->product->nama_produk }}</td>
-                                <td class="text-end">{{ number_format($purchaseDetail->harga_satuan) }}</td>
-                                <td class="text-center">{{ $purchaseDetail->jumlah }}</td>
-                                <td class="text-end">
-                                    @if ($purchaseDetail->jenis_diskon == 'persen')
-                                        {{ $purchaseDetail->jumlah_diskon }}%
-                                    @else
-                                        {{ number_format($purchaseDetail->jumlah_diskon) }}
-                                    @endif
-                                </td>
-                                <td class="text-end">
-                                    @if ($purchaseDetail->jenis_cashback == 'persen')
-                                        {{ $purchaseDetail->jumlah_cashback }}%
-                                    @else
-                                        {{ number_format($purchaseDetail->jumlah_cashback) }}
-                                    @endif
-                                </td>
-                                <td class="text-end">{{ number_format($purchaseDetail->subtotal) }}</td>
+                                <th width="5%">No.</th>
+                                <th width="25%">Nama Produk</th>
+                                <th width="15%">Harga Satuan</th>
+                                <th width="10%">Jumlah</th>
+                                <th width="15%">Diskon</th>
+                                <th width="15%">Cashback</th>
+                                <th width="15%">Subtotal</th>
                             </tr>
-                        @endforeach
-                    </tbody>
-                    <tfoot>
-                        <tr>
-                            <td colspan="6" class="text-end fw-bold">Total</td>
-                            <td class="text-end fw-bold">{{ number_format($detailPurchase->total) }}</td>
-                        </tr>
-                        <tr>
-                            <td colspan="6" class="text-end fw-bold">Diskon</td>
-                            <td class="text-end fw-bold">
-                                @if ($detailPurchase->jenis_diskon == 'persen')
-                                    {{ $detailPurchase->jumlah_diskon }}%
-                                @else
-                                    {{ number_format($detailPurchase->jumlah_diskon) }}
-                                @endif
-                            </td>
-                        </tr>
-                        <tr>
-                            <td colspan="6" class="text-end fw-bold">Cashback</td>
-                            <td class="text-end fw-bold">
-                                @if ($detailPurchase->jenis_cashback == 'persen')
-                                    {{ $detailPurchase->jumlah_cashback }}%
-                                @else
-                                    {{ number_format($detailPurchase->jumlah_cashback) }}
-                                @endif
-                            </td>
-                        </tr>
-                        <tr>
-                            <td colspan="6" class="text-end fw-bold">Total Keseluruhan</td>
-                            <td class="text-end fw-bold">{{ number_format($detailPurchase->total) }}</td>
-                        </tr>
-                        <tr>
-                            <td colspan="6" class="text-end fw-bold">Total Dibayar</td>
-                            <td class="text-end fw-bold">{{ number_format($detailPurchase->dibayar) }}
-                            </td>
-                        </tr>
-                        <tr>
-                            <td colspan="6" class="text-end fw-bold">Kembalian</td>
-                            <td class="text-end fw-bold">
-                                {{ number_format($detailPurchase->kembalian) }}
-                            </td>
-                        </tr>
-                    </tfoot>
-                </table>
+                        </thead>
+                        <tbody>
+                            @foreach ($detailPurchase->purchaseDetails as $purchaseDetail)
+                                <tr>
+                                    <td class="text-center">{{ $loop->iteration }}</td>
+                                    <td>{{ $purchaseDetail->product->nama_produk }}</td>
+                                    <td class="text-end">{{ number_format($purchaseDetail->harga_satuan) }}</td>
+                                    <td class="text-center">{{ $purchaseDetail->jumlah }}</td>
+                                    <td class="text-end">
+                                        @if ($purchaseDetail->jenis_diskon == 'persen')
+                                            {{ $purchaseDetail->jumlah_diskon }}%
+                                        @else
+                                            {{ number_format($purchaseDetail->jumlah_diskon) }}
+                                        @endif
+                                    </td>
+                                    <td class="text-end">
+                                        @if ($purchaseDetail->jenis_cashback == 'persen')
+                                            {{ $purchaseDetail->jumlah_cashback }}%
+                                        @else
+                                            {{ number_format($purchaseDetail->jumlah_cashback) }}
+                                        @endif
+                                    </td>
+                                    <td class="text-end">{{ number_format($purchaseDetail->subtotal) }}</td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="6" class="text-end fw-bold">Total</td>
+                                <td class="text-end fw-bold">{{ number_format($detailPurchase->total) }}</td>
+                            </tr>
+                            <tr>
+                                <td colspan="6" class="text-end fw-bold">Diskon</td>
+                                <td class="text-end fw-bold">
+                                    @if ($detailPurchase->jenis_diskon == 'persen')
+                                        {{ $detailPurchase->jumlah_diskon }}%
+                                    @else
+                                        {{ number_format($detailPurchase->jumlah_diskon) }}
+                                    @endif
+                                </td>
+                            </tr>
+                            <tr>
+                                <td colspan="6" class="text-end fw-bold">Cashback</td>
+                                <td class="text-end fw-bold">
+                                    @if ($detailPurchase->jenis_cashback == 'persen')
+                                        {{ $detailPurchase->jumlah_cashback }}%
+                                    @else
+                                        {{ number_format($detailPurchase->jumlah_cashback) }}
+                                    @endif
+                                </td>
+                            </tr>
+                            <tr>
+                                <td colspan="6" class="text-end fw-bold">Total Keseluruhan</td>
+                                <td class="text-end fw-bold">{{ number_format($detailPurchase->total) }}</td>
+                            </tr>
+                            <tr>
+                                <td colspan="6" class="text-end fw-bold">Total Dibayar</td>
+                                <td class="text-end fw-bold">{{ number_format($detailPurchase->dibayar) }}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td colspan="6" class="text-end fw-bold">Kembalian</td>
+                                <td class="text-end fw-bold">
+                                    {{ number_format($detailPurchase->kembalian) }}
+                                </td>
+                            </tr>
+                        </tfoot>
+                    </table>
 
-                <div class="mt-3 fw-bold">Catatan :</div>
-                <div class="px-3 py-2 border rounded">
-                    {{ $detailPurchase->keterangan != '' ? $detailPurchase->keterangan : '-' }}</div>
+                    <div class="mt-3 fw-bold">Catatan :</div>
+                    <div class="px-3 py-2 border rounded">
+                        {{ $detailPurchase->keterangan != '' ? $detailPurchase->keterangan : '-' }}</div>
+
+                @endif
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn ms-auto" data-bs-dismiss="modal">

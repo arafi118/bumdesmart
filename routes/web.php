@@ -51,6 +51,7 @@ Route::group([
 
     Route::get('/pembelian/tambah', TambahPembelian::class);
     Route::get('/pembelian/daftar', DaftarPembelian::class);
+    Route::get('/pembelian/edit/{id}', TambahPembelian::class);
 
     Route::get('/penjualan/tambah', TambahPenjualan::class);
 
