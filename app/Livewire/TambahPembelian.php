@@ -182,8 +182,7 @@ class TambahPembelian extends Component
                 'keterangan' => $keterangan,
             ]);
 
-            $batchData = [];
-            $movementData = [];
+            $batchMovementData = [];
             $timestamp = now();
 
             foreach ($data['products'] as $item) {
@@ -199,23 +198,21 @@ class TambahPembelian extends Component
                     'subtotal' => $this->parseNumber($item['subtotal']),
                 ]);
 
-                // 2. Prepare Product Batch Data
-                $batchData[] = [
+                // 2. Create Product Batch (One by one to get ID)
+                $batch = \App\Models\ProductBatch::create([
                     'business_id' => $this->businessId,
                     'product_id' => $item['id'],
                     'purchase_detail_id' => $detail->id,
-                    'no_batch' => 'BATCH-'.$purchase->id.'-'.time().'-'.$item['id'], // Unique batch per item
+                    'no_batch' => 'BATCH-'.$purchase->id.'-'.time().'-'.$item['id'],
                     'tanggal_pembelian' => $data['tanggalPembelian'],
                     'harga_satuan' => $this->parseNumber($item['harga_beli']),
                     'jumlah_awal' => $item['jumlah_beli'],
                     'jumlah_saat_ini' => $item['jumlah_beli'],
                     'status' => 'ACTIVE',
-                    'created_at' => $timestamp,
-                    'updated_at' => $timestamp,
-                ];
+                ]);
 
-                // 3. Prepare Stock Movement Data
-                $movementData[] = [
+                // 3. Create Stock Movement
+                $stockMovement = \App\Models\StockMovement::create([
                     'business_id' => $this->businessId,
                     'product_id' => $item['id'],
                     'tanggal_perubahan_stok' => $data['tanggalPembelian'],
@@ -224,20 +221,30 @@ class TambahPembelian extends Component
                     'reference_id' => $purchase->id,
                     'reference_type' => 'purchase',
                     'catatan' => 'Pembelian via PO '.($data['nomorPembelian'] ?? ''),
+                ]);
+
+                // 4. Create Batch Movement (Linkage)
+                $batchMovementData[] = [
+                    'business_id' => $this->businessId,
+                    'batch_id' => $batch->id,
+                    'stock_movement_id' => $stockMovement->id,
+                    'tanggal_perubahan' => $data['tanggalPembelian'],
+                    'jenis_transaksi' => 'purchase', // Incoming
+                    'transaction_detail_id' => $detail->id,
+                    'jumlah' => $item['jumlah_beli'], // Positive for incoming in context of batch size? Or just magnitude?
+                    // Usually BatchMovement tracks "change". For initial creation, it's the full amount.
+                    'harga_satuan' => $this->parseNumber($item['harga_beli']),
                     'created_at' => $timestamp,
                     'updated_at' => $timestamp,
                 ];
 
-                // 4. Update Actual Stock (Keep atomic increment for safety)
+                // 5. Update Actual Stock
                 Product::where('id', $item['id'])->increment('stok_aktual', $item['jumlah_beli']);
             }
 
-            // Bulk Insert for Performance
-            if (! empty($batchData)) {
-                \App\Models\ProductBatch::insert($batchData);
-            }
-            if (! empty($movementData)) {
-                \App\Models\StockMovement::insert($movementData);
+            // Bulk Insert Batch Movements
+            if (! empty($batchMovementData)) {
+                \App\Models\BatchMovement::insert($batchMovementData);
             }
 
             // 5. Create Payment Records (Double-Entry Accounting) - OPTIMIZED
@@ -325,6 +332,7 @@ class TambahPembelian extends Component
             DB::commit();
             $this->dispatch('alert', type: 'success', message: 'Transaksi berhasil disimpan');
             $this->dispatch('reset-form');
+            $this->dispatch('redirect', url: '/pembelian', timeout: 2000);
 
         } catch (\Exception $e) {
             DB::rollBack();

@@ -14,6 +14,28 @@ class DaftarPembelian extends Component
 
     public $businessId;
 
+    public $detailPurchase = [];
+
+    public function detailPembelian($id)
+    {
+        $purchase = \App\Models\Purchase::with([
+            'supplier',
+            'business',
+            'purchaseDetails.product',
+            'payments' => function ($query) {
+                $query->where(function ($query) {
+                    $query->where('rekening_debit', '1.1.03.01')->where('rekening_kredit', 'like', '1.1.01%');
+                })->orWhere(function ($query) {
+                    $query->where('rekening_debit', '2.1.01.01')->where('rekening_kredit', 'like', '1.1.01%');
+                });
+            },
+        ])->where('id', $id)->first();
+
+        $this->detailPurchase = $purchase;
+
+        $this->dispatch('show-modal', modalId: 'detailPembelianModal');
+    }
+
     public function render()
     {
         $this->title = 'Daftar Pembelian';

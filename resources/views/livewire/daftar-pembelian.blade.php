@@ -27,18 +27,58 @@
                         <td>{{ $purchase->no_pembelian }}</td>
                         <td>{{ $purchase->tanggal_pembelian }}</td>
                         <td>{{ $purchase->supplier->nama_supplier }}</td>
-                        <td>{{ $purchase->status }}</td>
+                        <td>
+                            @if ($purchase->status == 'completed')
+                                <span class="badge text-light bg-success">Selesai</span>
+                            @elseif ($purchase->status == 'partial')
+                                <span class="badge text-light bg-warning">Sebagian</span>
+                            @elseif ($purchase->status == 'pending')
+                                <span class="badge text-light bg-danger">Pending</span>
+                            @endif
+                        </td>
                         <td>{{ number_format($purchase->total) }}</td>
                         <td>{{ number_format($totalDibayar) }}</td>
                         <td>{{ number_format($purchase->total - $totalDibayar) }}</td>
                         <td>
-                            <a href="/pembelian/edit/{{ $purchase->id }}" class="btn btn-sm btn-primary">
-                                <i class="fas fa-edit"></i> Edit
-                            </a>
-                            <button class="btn btn-sm btn-danger"
-                                wire:click="$dispatch('confirm-delete', {id: {{ $purchase->id }}})">
-                                <i class="fas fa-trash"></i> Hapus
-                            </button>
+                            <div class="dropdown">
+                                <button class="btn btn-sm btn-info dropdown-toggle" type="button"
+                                    data-bs-toggle="dropdown" aria-expanded="false">
+                                    <span class="material-symbols-outlined">
+                                        more_vert
+                                    </span>
+                                </button>
+                                <div class="dropdown-menu">
+                                    <a class="dropdown-item" href="#"
+                                        wire:click="detailPembelian({{ $purchase->id }})">
+                                        Detail Pembelian
+                                    </a>
+                                    <a class="dropdown-item" href="/pembelian/edit/{{ $purchase->id }}">
+                                        Edit
+                                    </a>
+
+                                    @if ($purchase->total - $totalDibayar > 0)
+                                        <a class="dropdown-item" href="#"
+                                            wire:click="tambahPembayaran({{ $purchase->id }})">
+                                            Tambahkan Pembayaran
+                                        </a>
+                                    @else
+                                        <a class="dropdown-item" href="#"
+                                            wire:click="lihatPembayaran({{ $purchase->id }})">
+                                            Lihat Pembayaran
+                                        </a>
+                                    @endif
+                                    <div class="dropdown-divider"></div>
+                                    <a class="dropdown-item" href="#"
+                                        wire:click="returPembelian({{ $purchase->id }})">
+                                        Retur Pembelian
+                                    </a>
+                                    <div class="dropdown-divider"></div>
+                                    <a class="dropdown-item text-danger" href="#"
+                                        wire:click="$dispatch('confirm-delete', {id: {{ $purchase->id }}})">
+                                        Hapus
+                                    </a>
+                                </div>
+                            </div>
                         </td>
                     </tr>
                 @empty
@@ -52,4 +92,6 @@
             </x-table>
         </div>
     </div>
+
+    @include('livewire.daftar-pembelian-component.modal-pembelian')
 </div>

@@ -206,6 +206,12 @@
             });
         });
 
+        window.addEventListener('redirect', (event) => {
+            setTimeout(() => {
+                window.location.href = event.detail.url;
+            }, event.detail.timeout || 0);
+        });
+
         document.addEventListener('livewire:initialized', (e) => {
             Livewire.on('confirm-delete', (event) => {
                 Swal.fire({
