@@ -67,13 +67,13 @@ class DaftarPembelian extends Component
     public function deletePayment($id)
     {
         $payment = \App\Models\Payment::where('id', $id)->first();
+        $payment->delete();
+
         \App\Models\Purchase::where('id', $payment->transaction_id)->update([
             'dibayar' => $this->detailPurchase->dibayar - $payment->total_harga,
             'kembalian' => ($this->detailPurchase->kembalian - $payment->total_harga > 0) ? $this->detailPurchase->kembalian - $payment->total_harga : 0,
             'status' => 'partial',
         ]);
-
-        $payment->delete();
 
         $this->dispatch('hide-modal', modalId: 'detailPembayaranModal');
         $this->dispatch('alert', type: 'success', message: 'Pembayaran berhasil dihapus');
@@ -108,6 +108,15 @@ class DaftarPembelian extends Component
         // Clean up formatted number
         $jumlahBayar = (float) str_replace(',', '', $this->jumlahPembayaran);
 
+        // Limit payment amount to remaining debt
+        $jumlahBayarInput = $jumlahBayar;
+        $kembalian = 0;
+
+        if ($jumlahBayar > $this->sisaTagihan) {
+            $jumlahBayar = $this->sisaTagihan;
+            $kembalian = $jumlahBayarInput - $this->sisaTagihan;
+        }
+
         // Auto generate number if empty
         if (empty($this->nomorPembayaran)) {
             $this->nomorPembayaran = 'PAY-'.date('YmdHis');
@@ -137,8 +146,10 @@ class DaftarPembelian extends Component
             $status = 'completed';
         }
 
-        $this->detailPurchase->update([
+        \App\Models\Purchase::where('id', $this->detailPurchase->id)->update([
             'status' => $status,
+            'dibayar' => $totalDibayar + $kembalian,
+            'kembalian' => $kembalian,
         ]);
 
         $this->dispatch('hide-modal', modalId: 'tambahPembayaranModal');
