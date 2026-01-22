@@ -102,17 +102,32 @@
             ],
         ],
         [
-            'title' => 'Master Stok',
-            'url' => '/master-stok',
+            'title' => 'Stok Opname',
+            'url' => '/stok-opname',
             'icon' => 'inventory',
             'child' => [
                 [
                     'title' => 'Tambah Stok',
-                    'url' => '/master-stok/tambah',
+                    'url' => '/stock-opname/tambah',
                 ],
                 [
                     'title' => 'Daftar Stok',
-                    'url' => '/master-stok/daftar',
+                    'url' => '/stock-opname/daftar',
+                ],
+            ],
+        ],
+        [
+            'title' => 'Stok Adjustment',
+            'url' => '/stok-adjustment',
+            'icon' => 'inventory',
+            'child' => [
+                [
+                    'title' => 'Tambah Stok',
+                    'url' => '/stock-adjustment/tambah',
+                ],
+                [
+                    'title' => 'Daftar Stok',
+                    'url' => '/stock-adjustment/daftar',
                 ],
             ],
         ],

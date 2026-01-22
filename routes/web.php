@@ -15,6 +15,10 @@ use App\Livewire\Satuan;
 use App\Livewire\Supplier;
 use App\Livewire\TambahPembelian;
 use App\Livewire\TambahPenjualan;
+use App\Livewire\TambahStockOpname;
+use App\Livewire\TambahStockAdjustment;
+use App\Livewire\StockOpname;
+use App\Livewire\StockAdjustment;
 use App\Livewire\User;
 use Illuminate\Support\Facades\Route;
 
@@ -52,6 +56,11 @@ Route::group([
     Route::get('/pembelian/tambah', TambahPembelian::class);
     Route::get('/pembelian/daftar', DaftarPembelian::class);
     Route::get('/pembelian/edit/{id}', TambahPembelian::class);
+
+    Route::get('/stock-opname/tambah', TambahStockOpname::class);
+    Route::get('/stock-opname/daftar', StockOpname::class);
+    Route::get('/stock-adjustment/tambah', TambahStockAdjustment::class);
+    Route::get('/stock-adjustment/daftar', StockAdjustment::class);
 
     Route::get('/penjualan/tambah', TambahPenjualan::class);
 
