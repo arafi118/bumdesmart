@@ -56,18 +56,17 @@
                                         Edit
                                     </a>
 
+                                    <a class="dropdown-item" href="#"
+                                        wire:click="lihatPembayaran({{ $purchase->id }})">
+                                        Lihat Pembayaran
+                                    </a>
+                                    <div class="dropdown-divider"></div>
                                     @if ($purchase->total - $totalDibayar > 0)
                                         <a class="dropdown-item" href="#"
                                             wire:click="tambahPembayaran({{ $purchase->id }})">
                                             Tambahkan Pembayaran
                                         </a>
-                                    @else
-                                        <a class="dropdown-item" href="#"
-                                            wire:click="lihatPembayaran({{ $purchase->id }})">
-                                            Lihat Pembayaran
-                                        </a>
                                     @endif
-                                    <div class="dropdown-divider"></div>
                                     <a class="dropdown-item" href="#"
                                         wire:click="returPembelian({{ $purchase->id }})">
                                         Retur Pembelian
@@ -94,4 +93,29 @@
     </div>
 
     @include('livewire.daftar-pembelian-component.modal-pembelian')
+    @include('livewire.daftar-pembelian-component.modal-pembayaran')
+    @include('livewire.daftar-pembelian-component.modal-tambah-pembayaran')
 </div>
+
+@section('script')
+    <script>
+        function deletePayment(id) {
+            Swal.fire({
+                title: 'Apakah Anda yakin?',
+                text: "Data yang dihapus tidak dapat dikembalikan!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Ya, hapus!',
+                cancelButtonText: 'Batal'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    Livewire.dispatch('deletePayment', {
+                        id
+                    });
+                }
+            });
+        }
+    </script>
+@endsection

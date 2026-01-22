@@ -3,7 +3,9 @@
 namespace App\Livewire;
 
 use App\Traits\WithTable;
+use App\Utils\PaymentUtil;
 use App\Utils\TableUtil;
+use Livewire\Attributes\On;
 use Livewire\Component;
 
 class DaftarPembelian extends Component
@@ -16,12 +18,37 @@ class DaftarPembelian extends Component
 
     public $detailPurchase = [];
 
+    // Payment Form Properties
+    public $nomorPembayaran;
+
+    public $tanggalPembayaran;
+
+    public $sudahDibayar = 0;
+
+    public $jumlahPembayaran = 0;
+
+    public $keterangan;
+
+    public $kembalian = 0;
+
+    public $sisaTagihan = 0;
+
     public function detailPembelian($id)
     {
         $purchase = \App\Models\Purchase::with([
             'supplier',
             'business',
             'purchaseDetails.product',
+        ])->where('id', $id)->first();
+
+        $this->detailPurchase = $purchase;
+
+        $this->dispatch('show-modal', modalId: 'detailPembelianModal');
+    }
+
+    public function lihatPembayaran($id)
+    {
+        $purchase = \App\Models\Purchase::with([
             'payments' => function ($query) {
                 $query->where(function ($query) {
                     $query->where('rekening_debit', '1.1.03.01')->where('rekening_kredit', 'like', '1.1.01%');
@@ -33,7 +60,89 @@ class DaftarPembelian extends Component
 
         $this->detailPurchase = $purchase;
 
-        $this->dispatch('show-modal', modalId: 'detailPembelianModal');
+        $this->dispatch('show-modal', modalId: 'detailPembayaranModal');
+    }
+
+    #[On('deletePayment')]
+    public function deletePayment($id)
+    {
+        $payment = \App\Models\Payment::where('id', $id)->first();
+        \App\Models\Purchase::where('id', $payment->transaction_id)->update([
+            'dibayar' => $this->detailPurchase->dibayar - $payment->total_harga,
+            'kembalian' => ($this->detailPurchase->kembalian - $payment->total_harga > 0) ? $this->detailPurchase->kembalian - $payment->total_harga : 0,
+            'status' => 'partial',
+        ]);
+
+        $payment->delete();
+
+        $this->dispatch('hide-modal', modalId: 'detailPembayaranModal');
+        $this->dispatch('alert', type: 'success', message: 'Pembayaran berhasil dihapus');
+    }
+
+    public function tambahPembayaran($id)
+    {
+        $purchase = \App\Models\Purchase::with('payments')->where('id', $id)->first();
+        $this->detailPurchase = $purchase;
+
+        // Reset form
+        $this->nomorPembayaran = null; // Auto-generate if empty
+        $this->tanggalPembayaran = date('Y-m-d');
+        $this->keterangan = '';
+        $this->jumlahPembayaran = 0;
+        $this->kembalian = 0;
+
+        // Calculate paid and remaining
+        $this->sudahDibayar = $purchase->payments->sum('total_harga');
+        $this->sisaTagihan = $purchase->total - $this->sudahDibayar;
+
+        $this->dispatch('show-modal', modalId: 'tambahPembayaranModal');
+    }
+
+    public function simpanPembayaran()
+    {
+        $this->validate([
+            'jumlahPembayaran' => 'required|numeric|min:1',
+            'tanggalPembayaran' => 'required|date',
+        ]);
+
+        // Clean up formatted number
+        $jumlahBayar = (float) str_replace(',', '', $this->jumlahPembayaran);
+
+        // Auto generate number if empty
+        if (empty($this->nomorPembayaran)) {
+            $this->nomorPembayaran = 'PAY-'.date('YmdHis');
+        }
+
+        $rekening = PaymentUtil::ambilRekening('purchase', 'cash', 'cash');
+
+        $payment = \App\Models\Payment::create([
+            'business_id' => $this->businessId,
+            'user_id' => auth()->user()->id,
+            'no_pembayaran' => $this->nomorPembayaran,
+            'tanggal_pembayaran' => $this->tanggalPembayaran,
+            'jenis_transaksi' => 'purchase',
+            'transaction_id' => $this->detailPurchase->id,
+            'total_harga' => $jumlahBayar,
+            'metode_pembayaran' => 'cash',
+            'no_referensi' => null,
+            'catatan' => $this->keterangan,
+            'rekening_debit' => $rekening['purchase']['rekening_debit'],
+            'rekening_kredit' => $rekening['purchase']['rekening_kredit'],
+        ]);
+
+        // Update Purchase Status
+        $totalDibayar = $this->sudahDibayar + $jumlahBayar;
+        $status = 'partial';
+        if ($totalDibayar >= $this->detailPurchase->total) {
+            $status = 'completed';
+        }
+
+        $this->detailPurchase->update([
+            'status' => $status,
+        ]);
+
+        $this->dispatch('hide-modal', modalId: 'tambahPembayaranModal');
+        $this->dispatch('alert', type: 'success', message: 'Pembayaran berhasil disimpan');
     }
 
     public function render()
