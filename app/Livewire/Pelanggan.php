@@ -48,13 +48,6 @@ class Pelanggan extends Component
             'namaPelanggan' => 'required',
             'noHp' => 'required',
             'alamat' => 'nullable',
-            'username' => [
-                'required',
-                Rule::unique('users', 'username')->ignore($this->id),
-            ],
-            'password' => [
-                Rule::requiredIf($this->id == null),
-            ],
             'limitHutang' => 'nullable',
         ];
     }

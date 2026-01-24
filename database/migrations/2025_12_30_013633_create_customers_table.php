@@ -19,8 +19,8 @@ return new class extends Migration
             $table->string('nama_pelanggan');
             $table->string('no_hp');
             $table->text('alamat')->nullable();
-            $table->string('username')->unique();
-            $table->string('password');
+            $table->string('username')->unique()->nullable();
+            $table->string('password')->nullable();
             $table->decimal('limit_hutang', 20, 2)->default(0);
             $table->timestamps();
         });

@@ -67,8 +67,7 @@
                                             Tambahkan Pembayaran
                                         </a>
                                     @endif
-                                    <a class="dropdown-item" href="#"
-                                        wire:click="returPembelian({{ $purchase->id }})">
+                                    <a class="dropdown-item" href="/pembelian/retur/{{ $purchase->id }}">
                                         Retur Pembelian
                                     </a>
                                     <div class="dropdown-divider"></div>
