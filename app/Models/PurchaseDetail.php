@@ -26,6 +26,16 @@ class PurchaseDetail extends Model
         return $this->belongsTo(Product::class);
     }
 
+    public function purchasesReturnDetail()
+    {
+        return $this->hasOne(PurchasesReturnDetail::class);
+    }
+
+    public function purchasesReturnDetails()
+    {
+        return $this->hasMany(PurchasesReturnDetail::class);
+    }
+
     public function purchase()
     {
         return $this->belongsTo(Purchase::class);

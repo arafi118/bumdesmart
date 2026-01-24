@@ -6,7 +6,6 @@ use Livewire\Component;
 
 class TambahReturPembelian extends Component
 {
-
     public $title;
 
     public $businessId;
@@ -20,14 +19,15 @@ class TambahReturPembelian extends Component
 
         $this->purchase = \App\Models\Purchase::with([
             'supplier',
-            'purchaseDetails.product'
+            'purchaseDetails.product',
+            'purchaseDetails.purchasesReturnDetail',
         ])->find($id);
     }
 
     public function render()
     {
-        return view('livewire.tambah-retur-pembelian',[
-            'purchase' => $this->purchase
+        return view('livewire.tambah-retur-pembelian', [
+            'purchase' => $this->purchase,
         ])->layout('layouts.app', ['title' => $this->title]);
     }
 }

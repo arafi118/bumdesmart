@@ -82,12 +82,13 @@
                                     <span x-show="purchaseDetail.jenis_cashback === 'persen'">%</span>
                                 </td>
                                 <td>
-                                    <input type="number" class="form-control" x-model="purchaseDetail.jumlah_retur"
+                                    <input type="number" class="form-control"
+                                        x-model="purchaseDetail.purchases_return_detail.jumlah"
                                         x-on:focus="$el.select()" :max="purchaseDetail.jumlah">
                                 </td>
                                 <td>
                                     <span
-                                        x-text="formatRupiah(purchaseDetail.harga_satuan * purchaseDetail.jumlah_retur)"></span>
+                                        x-text="formatRupiah(purchaseDetail.harga_satuan * purchaseDetail.purchases_return_detail.jumlah)"></span>
                                 </td>
                             </tr>
                         </template>
@@ -99,6 +100,13 @@
                     </tbody>
                 </table>
             </div>
+
+            <div class="d-flex justify-content-end">
+                <button class="btn btn-primary btn-lg mt-3" x-on:click="saveAll" :disabled="isLoading">
+                    <span x-show="!isLoading">Simpan</span>
+                    <span x-show="isLoading" class="spinner-border spinner-border-sm" role="status"></span>
+                </button>
+            </div>
         </div>
     </div>
 </div>
@@ -108,8 +116,22 @@
         document.addEventListener('alpine:init', () => {
             Alpine.data('returPembelianHandler', () => ({
                 purchase: {},
+                isLoading: false,
                 initData(data) {
                     this.purchase = data;
+
+                    this.purchase.purchase_details = this.purchase.purchase_details.map((
+                        purchaseDetail) => {
+                        if (!purchaseDetail.purchases_return_detail) {
+                            purchaseDetail.purchases_return_detail = {
+                                jumlah: 0,
+                            };
+                        }
+
+                        return {
+                            ...purchaseDetail,
+                        };
+                    });
                 },
 
                 // --- Helpers ---
