@@ -8,4 +8,13 @@ use Illuminate\Database\Eloquent\Model;
 class PurchasesReturnDetail extends Model
 {
     use HasFactory;
+
+    protected $fillable = [
+        'purchases_return_id',
+        'purchase_detail_id',
+        'product_id',
+        'jumlah',
+        'harga_satuan',
+        'sub_total',
+    ];
 }

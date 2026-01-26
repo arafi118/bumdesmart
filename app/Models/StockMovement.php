@@ -9,5 +9,14 @@ class StockMovement extends Model
 {
     use HasFactory;
 
-    protected $guarded = ['id'];
+    protected $fillable = [
+        'business_id',
+        'product_id',
+        'tanggal_perubahan_stok',
+        'jenis_perubahan',
+        'jumlah_perubahan',
+        'reference_id',
+        'reference_type',
+        'catatan',
+    ];
 }

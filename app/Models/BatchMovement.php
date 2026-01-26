@@ -9,5 +9,14 @@ class BatchMovement extends Model
 {
     use HasFactory;
 
-    protected $guarded = [];
+    protected $fillable = [
+        'business_id',
+        'batch_id',
+        'stock_movement_id',
+        'tanggal_perubahan',
+        'jenis_transaksi',
+        'transaction_detail_id',
+        'jumlah',
+        'harga_satuan',
+    ];
 }

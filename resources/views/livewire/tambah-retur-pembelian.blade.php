@@ -1,4 +1,4 @@
-<div wire:ignore x-data="returPembelianHandler()" x-init="initData(@js($purchase))">
+<div wire:ignore x-data="returPembelianHandler()" x-init="initData(@js($purchase))" @reset-form.window="resetForm">
     <div class="card mb-3">
         <div class="card-body">
             <ul class="list-group ">
@@ -44,7 +44,7 @@
 
     <div class="card mb-3">
         <div class="card-body">
-            <div class="table-responsive">
+            <div class="table-responsive mb-3">
                 <table class="table table-vcenter table-striped">
                     <thead>
                         <tr>
@@ -71,7 +71,7 @@
                                     <div x-text="formatRupiah(purchaseDetail.harga_satuan)"></div>
                                 </td>
                                 <td>
-                                    <div x-text="purchaseDetail.jumlah"></div>
+                                    <div x-text="purchaseDetail.product_batch.jumlah_saat_ini"></div>
                                 </td>
                                 <td>
                                     <span x-text="formatRupiah(purchaseDetail.jumlah_diskon)"></span>
@@ -84,7 +84,7 @@
                                 <td>
                                     <input type="number" class="form-control"
                                         x-model="purchaseDetail.purchases_return_detail.jumlah"
-                                        x-on:focus="$el.select()" :max="purchaseDetail.jumlah">
+                                        x-on:focus="$el.select()" :max="purchaseDetail.product_batch.jumlah_saat_ini">
                                 </td>
                                 <td>
                                     <span
@@ -99,6 +99,11 @@
                         </tr>
                     </tbody>
                 </table>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Alasan Retur</label>
+                <textarea class="form-control" rows="3" x-model="alasanRetur" placeholder="Alasan retur..."></textarea>
             </div>
 
             <div class="d-flex justify-content-end">
@@ -116,6 +121,7 @@
         document.addEventListener('alpine:init', () => {
             Alpine.data('returPembelianHandler', () => ({
                 purchase: {},
+                alasanRetur: '',
                 isLoading: false,
                 initData(data) {
                     this.purchase = data;
@@ -134,20 +140,73 @@
                     });
                 },
 
-                // --- Helpers ---
+                saveAll() {
+                    this.isLoading = true;
+
+                    let totalRetur = 0;
+                    const returPembelian = [];
+                    this.purchase.purchase_details.filter((purchaseDetail) => {
+                        if (purchaseDetail.purchases_return_detail.jumlah > 0) {
+                            returPembelian.push({
+                                purchase_detail_id: purchaseDetail.id,
+                                product_id: purchaseDetail.product_id,
+                                product_batch_id: purchaseDetail.product_batch.id,
+                                harga_satuan: purchaseDetail.harga_satuan,
+                                jumlah: purchaseDetail.purchases_return_detail.jumlah,
+                                subtotal_retur: purchaseDetail.purchases_return_detail
+                                    .jumlah *
+                                    purchaseDetail.harga_satuan,
+                            });
+
+                            totalRetur += purchaseDetail.purchases_return_detail
+                                .jumlah * purchaseDetail.harga_satuan;
+                        }
+                    });
+
+                    if (returPembelian.length === 0) {
+                        Toast.fire({
+                            icon: 'error',
+                            title: 'Tidak ada produk yang dipilih',
+                        });
+
+                        this.isLoading = false;
+                        return;
+                    }
+
+                    const data = {
+                        purchase_id: this.purchase.id,
+                        total_retur: totalRetur,
+                        alasan_retur: this.alasanRetur,
+                        retur_pembelian: returPembelian,
+                    };
+
+                    @this.call('saveAll', data)
+                        .then(() => {
+                            this.isLoading = false;
+                        })
+                        .catch(err => {
+                            this.isLoading = false;
+                            console.error(err);
+                            alert('Gagal menyimpan transaksi');
+                        });
+                },
+                resetForm() {
+                    this.alasanRetur = '';
+                    this.purchase = {};
+                    this.isLoading = false;
+                    this.purchaseDetails = [];
+                    this.totalRetur = 0;
+
+                },
                 formatRupiah(num) {
                     return new Intl.NumberFormat('en-US').format(num || 0);
                 },
-
                 parseMoney(str) {
                     if (!str) return 0;
-                    // Remove commas, keep dots and numbers
                     return parseFloat(String(str).replace(/,/g, '')) || 0;
                 },
-
                 parseFormatted(val) {
                     if (typeof val === 'number') return val;
-                    // Remove commas for standard float parsing
                     return parseFloat(String(val).replace(/,/g, '')) || 0;
                 },
             }))

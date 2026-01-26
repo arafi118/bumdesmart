@@ -239,6 +239,8 @@ class TambahPembelian extends Component
                 $keterangan .= ' [Transfer: '.$data['noRekening'].']';
             }
 
+            $no_pembelian = $data['nomorPembelian'] ?? 'PO-'.time();
+
             // Handle Update vs Create
             if ($this->purchaseId) {
                 // UPDATE: Update existing records and handle stock changes
@@ -270,7 +272,7 @@ class TambahPembelian extends Component
 
                 // 3. Update Purchase Header
                 $purchase->update([
-                    'no_pembelian' => $data['nomorPembelian'] ?? 'PO-'.time(),
+                    'no_pembelian' => $no_pembelian,
                     'tanggal_pembelian' => $data['tanggalPembelian'],
                     'supplier_id' => $data['supplier'],
                     'jenis_pembayaran' => $jenisPembayaran,
@@ -408,7 +410,7 @@ class TambahPembelian extends Component
             } else {
                 // CREATE
                 $purchase = Purchase::create([
-                    'no_pembelian' => $data['nomorPembelian'] ?? 'PO-'.time(),
+                    'no_pembelian' => $no_pembelian,
                     'tanggal_pembelian' => $data['tanggalPembelian'],
                     'business_id' => $this->businessId,
                     'supplier_id' => $data['supplier'],
@@ -527,7 +529,7 @@ class TambahPembelian extends Component
                 'total_harga' => ($bayar >= $total) ? $total : $bayar,
                 'metode_pembayaran' => $data['metodeBayar'],
                 'no_referensi' => $data['noRekening'],
-                'catatan' => 'Pembayaran Pembelian',
+                'catatan' => 'Pembayaran Pembelian '.$no_pembelian,
                 'rekening_debit' => $kodeRekening['purchase']['rekening_debit'],
                 'rekening_kredit' => $kodeRekening['purchase']['rekening_kredit'],
                 'created_at' => $timestamp,
