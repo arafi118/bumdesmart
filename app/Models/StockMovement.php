@@ -19,4 +19,9 @@ class StockMovement extends Model
         'reference_type',
         'catatan',
     ];
+
+    public function product()
+    {
+        return $this->belongsTo(Product::class, 'product_id');
+    }
 }

@@ -3,239 +3,149 @@
 namespace App\Livewire;
 
 use App\Models\Product;
-use App\Models\Purchase;
-use App\Models\Supplier;
-use App\Traits\WithTable;
-use App\Utils\PaymentUtil;
+use App\Models\StockOpname;
+use App\Models\StockOpnameDetail;
+use App\Models\StockMovement;
 use Illuminate\Support\Facades\DB;
-use Livewire\Attributes\On;
 use Livewire\Component;
 
 class TambahStockOpname extends Component
 {
-    use WithTable;
-
     public $title;
 
     public $businessId;
 
-    // Form Fields (Livewire still tracks these for initial binding/validation if needed,
-    // but primary interaction is client-side)
-    public $nomorPembelian;
+    public $nomorOpname;
 
-    public $tanggalPembelian;
+    public $status = 'draft';
 
-    public $supplier;
+    public $tanggalOpname;
+
+    public $tanggalApproved;
+
+    public $approvedBy;
 
     public $catatan;
 
-    // Payment Fields
-    public $jenisPembayaran = 'cash';
-
-    public $noRekening;
-
-    // Search Fields (Livewire handles the search queries)
-    public $searchTerm = '';
-
-    public $searchProduct = '';
+    public $products = [];
 
     public function mount()
     {
         $this->title = 'Tambah Stock Opname';
         $this->businessId = auth()->user()->business_id;
-        $this->tanggalPembelian = date('Y-m-d');
     }
 
-    public function loadSuppliers($query, $offset = 0)
+    /**
+     * Load products untuk tampilan tabel
+     */
+    public function loadProducts($page = 1, $search = '')
     {
-        $perPage = 50;
+        $query = Product::where('business_id', $this->businessId);
 
-        $suppliers = Supplier::select('id', 'nama_supplier')
-            ->where('business_id', $this->businessId) // Ensure business scope
-            ->where('nama_supplier', 'LIKE', "%{$query}%")
-            ->offset($offset)
-            ->limit($perPage)
-            ->get();
-
-        $total = Supplier::where('business_id', $this->businessId)
-            ->where('nama_supplier', 'LIKE', "%{$query}%")
-            ->count();
-
-        $hasMore = ($offset + $perPage) < $total;
-
-        return [
-            'data' => $suppliers,
-            'after' => $hasMore ? ($offset + $perPage) : null,
-        ];
-    }
-
-    public function loadSearchProducts($query, $offset = 0)
-    {
-        $perPage = 20;
-
-        $productsQuery = Product::where('business_id', $this->businessId)
-            ->where(function ($q) use ($query) {
-                $q->where('nama_produk', 'LIKE', "%{$query}%")
-                    ->orWhere('sku', 'LIKE', "%{$query}%");
-            })
-            ->offset($offset)
-            ->limit($perPage)
-            ->get();
-
-        $total = Product::where('business_id', $this->businessId)
-            ->where(function ($q) use ($query) {
-                $q->where('nama_produk', 'LIKE', "%{$query}%")
-                    ->orWhere('sku', 'LIKE', "%{$query}%");
-            })
-            ->count();
-
-        $hasMore = ($offset + $perPage) < $total;
-
-        $products = [];
-        foreach ($productsQuery as $product) {
-            $products[] = [
-                'id' => $product->id,
-                'nama_produk' => $product->nama_produk,
-                'sku' => $product->sku,
-                'harga_beli' => $product->harga_beli,
-                'gambar' => $product->gambar,
-                // Pass full object if needed, but array is usually enough
-            ];
+        if ($search) {
+            $query->where('nama_produk', 'like', "%{$search}%");
         }
 
+        $data = $query
+            ->orderBy('nama_produk')
+            ->skip(($page - 1) * 10)
+            ->take(11)
+            ->get();
+
         return [
-            'data' => $products,
-            'after' => $hasMore ? ($offset + $perPage) : null,
+            'data' => $data->take(10)->values(),
+            'has_more' => $data->count() > 10,
         ];
     }
 
-    #[On('save-all')]
-    public function saveAll($data)
+    /**
+     * Menyimpan Stock Opname
+     * 
+     * @param array $data -> dikirim dari Alpine.js via @this.call()
+     */
+    public function saveOpname($data)
     {
-        if (empty($data['products'])) {
-            $this->dispatch('error', 'Belum ada produk yang dipilih');
-
+        if (!$data || !is_array($data)) {
+            $this->dispatch('alert', type: 'error', message: 'Data tidak valid');
             return;
         }
 
-        $bayar = $this->parseNumber($data['bayar']);
-        $total = $this->parseNumber($data['grandTotal']);
-
-        $jenisPembayaran = $data['jenisPembayaran'];
-        $status = $data['status'] ?? 'pending';
-
-        // Enforce Server-Side Logic
-        if ($bayar < $total) {
-            // If underpaid, force credit unless it's a preorder
-            if ($jenisPembayaran !== 'preorder') {
-                $jenisPembayaran = 'credit';
-            }
-            $status = 'partial';
-        } else {
-            // If fully paid, force cash if it was credit
-            if ($jenisPembayaran === 'credit') {
-                $jenisPembayaran = 'cash';
-            }
-
-            if ($jenisPembayaran === 'preorder') {
-                $status = 'paid';
-            } else {
-                $status = 'completed';
-            }
-        }
-
         DB::beginTransaction();
+
         try {
-            $subtotal = $this->parseNumber($data['subtotal']);
+            $tanggalOpname = $data['tanggal'] ?? null;
+            if (!$tanggalOpname) throw new \Exception('Tanggal opname wajib diisi');
 
-            $globalDiskonVal = $this->parseNumber($data['globalDiskon']['jumlah']);
-            $globalDiskonAmt = ($data['globalDiskon']['jenis'] === 'nominal')
-                ? $globalDiskonVal
-                : ($subtotal * $globalDiskonVal / 100);
-
-            $taxable = max(0, $subtotal - $globalDiskonAmt);
-            $taxAmount = ($data['jenisPajak'] === 'PPN') ? $taxable * 0.11 : 0;
-
-            $keterangan = $data['catatan'] ?? '';
-            if (! empty($data['noRekening'])) {
-                $keterangan .= ' [Transfer: ' . $data['noRekening'] . ']';
+            $status = $data['status'] ?? 'draft';
+            if (!in_array($status, ['draft', 'completed', 'approved', 'rejected', 'canceled', 'closed'])) {
+                throw new \Exception('Status opname tidak valid');
             }
 
-            $purchase = Purchase::create([
-                'no_pembelian' => $data['nomorPembelian'] ?? 'PO-' . time(),
-                'tanggal_pembelian' => $data['tanggalPembelian'],
-                'business_id' => $this->businessId,
-                'supplier_id' => $data['supplier'],
-                'user_id' => auth()->id(),
-                'jenis_pembayaran' => $jenisPembayaran,
-                'subtotal' => $subtotal,
-                'jenis_diskon' => $data['globalDiskon']['jenis'],
-                'jumlah_diskon' => $globalDiskonVal,
-                'jenis_cashback' => $data['globalCashback']['jenis'],
-                'jumlah_cashback' => $this->parseNumber($data['globalCashback']['jumlah']),
-                'jumlah_pajak' => $taxAmount,
-                'total' => $total,
-                'dibayar' => $bayar,
-                'kembalian' => $this->parseNumber($data['kembalian']),
-                'jumlah_utang' => max(0, $total - $bayar),
-                'status' => $status,
-                'keterangan' => $keterangan,
-            ]);
-
-            $details = [];
-            foreach ($data['products'] as $item) {
-                $details[] = [
-                    'product_id' => $item['id'],
-                    'jumlah' => $item['jumlah_beli'],
-                    'harga_satuan' => $this->parseNumber($item['harga_beli']),
-                    'jenis_diskon' => $item['diskon']['jenis'] ?? 'nominal',
-                    'jumlah_diskon' => $this->parseNumber($item['diskon']['jumlah'] ?? 0),
-                    'jenis_cashback' => $item['cashback']['jenis'] ?? 'nominal',
-                    'jumlah_cashback' => $this->parseNumber($item['cashback']['jumlah'] ?? 0),
-                    'subtotal' => $this->parseNumber($item['subtotal']),
-                ];
-
-                Product::where('id', $item['id'])->increment('stok_aktual', $item['jumlah_beli']);
+            if (empty($data['items']) || !is_array($data['items'])) {
+                throw new \Exception('Item stock opname tidak boleh kosong');
             }
 
-            $purchase->purchaseDetails()->createMany($details);
+            $tanggalApproved = $status === 'approved' ? ($data['tanggal_approved'] ?? now()->format('Y-m-d')) : null;
+            $approvedBy      = $status === 'approved' ? ($data['approved_by'] ?? auth()->user()->name) : null;
 
-            $kodeRekening = PaymentUtil::ambilRekening($data['metodeBayar']);
-            $paymment = \App\Models\Payment::create([
-                'business_id' => $this->businessId,
-                'user_id' => auth()->user()->id,
-                'no_pembayaran' => $data['nomorPembelian'],
-                'tanggal_pembayaran' => $data['tanggalPembelian'],
-                'jenis_transaksi' => 'purchase',
-                'transaction_id' => $purchase->id,
-                'total_harga' => $bayar,
-                'metode_pembayaran' => $data['metodeBayar'],
-                'no_referensi' => $data['noRekening'],
-                'catatan' => $keterangan,
-                'rekening_debit' => $kodeRekening['rekening_debit'],
-                'rekening_kredit' => $kodeRekening['rekening_kredit'],
+            $opname = StockOpname::create([
+                'business_id'      => $this->businessId,
+                'user_id'          => auth()->id(),
+                'no_opname'        => $data['no_opname'] ?: 'SO-' . now()->format('YmdHis'),
+                'tanggal_opname'   => $tanggalOpname,
+                'status'           => $status,
+                'catatan'          => $data['catatan'] ?? null,
+                'approved_by'      => $approvedBy,
+                'tanggal_approved' => $tanggalApproved,
             ]);
+
+            foreach ($data['items'] as $item) {
+                if (!isset($item['product_id'])) continue;
+
+                // Simpan detail opname
+                StockOpnameDetail::create([
+                    'stock_opname_id' => $opname->id,
+                    'product_id'      => $item['product_id'],
+                    'stok_sistem'     => $item['stok_sistem'],
+                    'stok_fisik'      => $item['stok_fisik'],
+                    'selisih'         => $item['selisih'],
+                    'jenis_selisih'   => $item['jenis_selisih'],
+                    'alasan'          => $item['alasan'] ?? null,
+                    'harga_satuan'    => $item['harga_satuan'] ?? 0,
+                    'total_harga'     => ($item['stok_fisik']) * ($item['harga_satuan'] ?? 0),
+                    'catatan'         => $data['catatan'] ?? null,
+                ]);
+
+                // Update stok aktual produk
+                Product::where('id', $item['product_id'])
+                    ->update(['stok_aktual' => $item['stok_fisik']]);
+
+                // Buat stock movement per produk
+                StockMovement::create([
+                    'business_id'            => $this->businessId,
+                    'product_id'             => $item['product_id'],
+                    'tanggal_perubahan_stok' => $tanggalOpname,
+                    'jenis_perubahan'        => 'stock_opname',
+                    'jumlah_perubahan'       => $item['selisih'],
+                    'reference_id'           => $opname->id,
+                    'reference_type'         => 'stock_opname',
+                    'catatan'                => $item['alasan'] ?? $data['catatan'] ?? null,
+                ]);
+            }
 
             DB::commit();
-            $this->dispatch('alert', type: 'success', message: 'Transaksi berhasil disimpan');
-            $this->dispatch('reset-form');
-        } catch (\Exception $e) {
+
+            $this->dispatch('alert', type: 'success', message: 'Stock opname berhasil disimpan');
+            $this->dispatch('redirect', url: '/stock-opname/daftar', timeout: 1000);
+        } catch (\Throwable $e) {
             DB::rollBack();
             $this->dispatch('alert', type: 'error', message: $e->getMessage());
         }
     }
 
-    private function parseNumber($value)
-    {
-        if (is_numeric($value)) {
-            return $value;
-        }
-
-        return (float) str_replace(',', '', $value);
-    }
-
     public function render()
     {
-        return view('livewire.tambah-stock-opname')->layout('layouts.app', ['title' => $this->title]);
+        return view('livewire.tambah-stock-opname')
+            ->layout('layouts.app', ['title' => $this->title]);
     }
 }

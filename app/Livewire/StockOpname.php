@@ -5,6 +5,8 @@ namespace App\Livewire;
 use Livewire\Component;
 use App\Utils\TableUtil;
 
+use function Laravel\Prompts\table;
+
 class StockOpname extends Component
 {
     public $title;
@@ -15,30 +17,26 @@ class StockOpname extends Component
         $this->title = 'Stock Opname';
         $this->businessId = auth()->user()->business_id;
 
-        $query = \App\Models\Product::where('business_id', $this->businessId)->with([
-            'category',
-            'brand',
-            'unit',
-            'shelf',
-            'productPrices',
+        $query = \App\Models\StockMovement::where('business_id', $this->businessId)->with([
+            'product',
         ]);
 
         $headers = [
             TableUtil::setTableHeader('id', '#', false, false),
-            TableUtil::setTableHeader('gambar', 'Gambar', false, false),
-            TableUtil::setTableHeader('sku', 'SKU', true, true),
-            TableUtil::setTableHeader('nama_produk', 'Nama Produk', true, true),
-            TableUtil::setTableHeader('product.category.nama_kategori', 'Kategori', true, true),
-            TableUtil::setTableHeader('product.brand.nama_brand', 'Merek', true, true),
-            TableUtil::setTableHeader('product.shelf.nama_rak', 'Rak', true, true),
-            TableUtil::setTableHeader('stok_aktual', 'Stok', true, true),
+            TableUtil::setTableHeader('product.nama_produk', 'Product', true, true),
+            TableUtil::setTableHeader('tanggal_perubahan_stok', 'Tanggal Perubahan Stok', true, true),
+            TableUtil::setTableHeader('jenis_perubahan', 'Jenis Perubahan', true, true),
+            TableUtil::setTableHeader('jumlah_perubahan', 'Jumlah Perubahan', true, true),
+            TableUtil::setTableHeader('reference_id', 'Reference ID', true, true),
+            TableUtil::setTableHeader('reference_type', 'Reference Type', true, true),
+            TableUtil::setTableHeader('catatan', 'Catatan', true, true),
             TableUtil::setTableHeader('aksi', 'Aksi', false, false),
         ];
 
-        $products = TableUtil::paginate($this, $query, $headers, 10);
+        $stock = TableUtil::paginate($this, $query, $headers, 10);
 
         return view('livewire.stock-opname', [
-            'products' => $products,
+            'stock' => $stock,
             'headers' => $headers,
         ])->layout('layouts.app', ['title' => $this->title]);
     }
