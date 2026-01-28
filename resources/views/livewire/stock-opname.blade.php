@@ -21,8 +21,6 @@
                                 <td>{{ $stk->tanggal_perubahan_stok }}</td>
                                 <td>{{ $stk->jenis_perubahan }}</td>
                                 <td>{{ $stk->jumlah_perubahan }}</td>
-                                <td>{{ $stk->reference_id }}</td>
-                                <td>{{ $stk->reference_type }}</td>
                                 <td>{{ $stk->catatan }}</td>
                                 <td>
                                     <div class="dropdown">
@@ -63,4 +61,15 @@
             </div>
         </div>
     </div>
+    @include('livewire.stock-opname-component.modal-detail-stok')
+    @include('livewire.stock-opname-component.modal-edit-stock')
+
 </div>
+@section('script')
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const _enforceFocus = bootstrap.Modal.prototype._enforceFocus
+    bootstrap.Modal.prototype._enforceFocus = function () {}
+})
+</script>
+@endsection

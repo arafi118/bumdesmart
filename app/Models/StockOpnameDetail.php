@@ -21,4 +21,10 @@ class StockOpnameDetail extends Model
         'alasan',
         'catatan',
     ];
+
+
+    public function stockOpname()
+    {
+        return $this->belongsTo(StockOpname::class, 'stock_opname_id');
+    }
 }

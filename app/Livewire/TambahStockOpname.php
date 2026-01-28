@@ -125,7 +125,7 @@ class TambahStockOpname extends Component
                     'business_id'            => $this->businessId,
                     'product_id'             => $item['product_id'],
                     'tanggal_perubahan_stok' => $tanggalOpname,
-                    'jenis_perubahan'        => 'stock_opname',
+                    'jenis_perubahan'        => 'stock opname',
                     'jumlah_perubahan'       => $item['selisih'],
                     'reference_id'           => $opname->id,
                     'reference_type'         => 'stock_opname',
