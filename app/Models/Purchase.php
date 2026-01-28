@@ -54,4 +54,9 @@ class Purchase extends Model
     {
         return $this->hasMany(Payment::class, 'transaction_id', 'id')->where('jenis_transaksi', 'purchase');
     }
+
+    public function stockMovement()
+    {
+        return $this->hasMany(StockMovement::class, 'reference_id', 'id')->where('reference_type', 'purchase');
+    }
 }

@@ -51,35 +51,53 @@ class DaftarReturPembelian extends Component
     {
         $purchaseReturn = \App\Models\PurchasesReturn::with([
             'payments',
-            'purchasesReturnDetails.stockMovement.batchMovements.productBatch.product',
+            'purchasesReturnDetails',
+            'stockMovement.batchMovements.productBatch',
         ])->where('id', $id)->first();
 
         DB::beginTransaction();
         try {
-            foreach ($purchaseReturn->purchasesReturnDetails as $purchaseReturnDetails) {
-                if ($purchaseReturnDetails->stockMovement) {
-                    foreach ($purchaseReturnDetails->stockMovement->batchMovements as $batchMovement) {
-                        if ($batchMovement->productBatch) {
-                            if ($batchMovement->productBatch->product) {
-                                $batchMovement->productBatch->product->increment('stok_aktual', $batchMovement->jumlah);
-                            }
+            $productUpdates = [];
+            $batchUpdates = [];
+            $batchMovementIds = [];
+            $stockMovementIds = [];
 
-                            $batchMovement->productBatch->increment('jumlah_saat_ini', $batchMovement->jumlah);
-                        }
+            foreach ($purchaseReturn->stockMovement as $stockMovement) {
+                foreach ($stockMovement->batchMovements as $batchMovement) {
+                    if ($batchMovement->productBatch) {
+                        $batchId = $batchMovement->batch_id;
+                        $batchUpdates[$batchId] = ($batchUpdates[$batchId] ?? 0) + $batchMovement->jumlah;
 
-                        $batchMovement->delete();
+                        $productId = $batchMovement->productBatch->product_id;
+                        $productUpdates[$productId] = ($productUpdates[$productId] ?? 0) + $batchMovement->jumlah;
+
+                        $batchMovementIds[] = $batchMovement->id;
                     }
 
-                    $purchaseReturnDetails->stockMovement->delete();
+                    $stockMovementIds[] = $stockMovement->id;
                 }
-
-                $purchaseReturnDetails->delete();
             }
 
-            foreach ($purchaseReturn->payments as $payment) {
-                $payment->delete();
+            foreach ($productUpdates as $productId => $jumlah) {
+                \App\Models\Product::where('id', $productId)
+                    ->increment('stok_aktual', $jumlah);
             }
 
+            foreach ($batchUpdates as $batchId => $jumlah) {
+                \App\Models\ProductBatch::where('id', $batchId)
+                    ->increment('jumlah_saat_ini', $jumlah);
+            }
+
+            if (! empty($batchMovementIds)) {
+                \App\Models\BatchMovement::whereIn('id', $batchMovementIds)->delete();
+            }
+
+            if (! empty($stockMovementIds)) {
+                \App\Models\StockMovement::whereIn('id', $stockMovementIds)->delete();
+            }
+
+            $purchaseReturn->purchasesReturnDetails()->delete();
+            $purchaseReturn->payments()->delete();
             $purchaseReturn->delete();
 
             DB::commit();
