@@ -22,4 +22,9 @@ class PurchasesReturnDetail extends Model
     {
         return $this->belongsTo(Product::class);
     }
+
+    public function stockMovement()
+    {
+        return $this->hasOne(StockMovement::class, 'reference_id', 'id')->where('reference_type', 'purchases_return');
+    }
 }

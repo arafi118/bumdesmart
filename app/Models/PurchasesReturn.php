@@ -34,4 +34,9 @@ class PurchasesReturn extends Model
     {
         return $this->hasMany(PurchasesReturnDetail::class);
     }
+
+    public function payments()
+    {
+        return $this->hasMany(Payment::class, 'transaction_id', 'id')->where('jenis_transaksi', 'purchase_return');
+    }
 }

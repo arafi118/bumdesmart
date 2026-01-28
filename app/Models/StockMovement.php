@@ -24,4 +24,9 @@ class StockMovement extends Model
     {
         return $this->belongsTo(Product::class, 'product_id');
     }
+
+    public function batchMovements()
+    {
+        return $this->hasMany(BatchMovement::class);
+    }
 }

@@ -19,4 +19,9 @@ class BatchMovement extends Model
         'jumlah',
         'harga_satuan',
     ];
+
+    public function productBatch()
+    {
+        return $this->belongsTo(ProductBatch::class, 'batch_id');
+    }
 }

@@ -4,6 +4,8 @@ namespace App\Livewire;
 
 use App\Traits\WithTable;
 use App\Utils\TableUtil;
+use DB;
+use Livewire\Attributes\On;
 use Livewire\Component;
 
 class DaftarReturPembelian extends Component
@@ -42,6 +44,50 @@ class DaftarReturPembelian extends Component
         $this->detailRetur = $retur;
 
         $this->dispatch('show-modal', modalId: 'detailReturModal');
+    }
+
+    #[On('delete-confirmed')]
+    public function destroy($id)
+    {
+        $purchaseReturn = \App\Models\PurchasesReturn::with([
+            'payments',
+            'purchasesReturnDetails.stockMovement.batchMovements.productBatch.product',
+        ])->where('id', $id)->first();
+
+        DB::beginTransaction();
+        try {
+            foreach ($purchaseReturn->purchasesReturnDetails as $purchaseReturnDetails) {
+                if ($purchaseReturnDetails->stockMovement) {
+                    foreach ($purchaseReturnDetails->stockMovement->batchMovements as $batchMovement) {
+                        if ($batchMovement->productBatch) {
+                            if ($batchMovement->productBatch->product) {
+                                $batchMovement->productBatch->product->increment('stok_aktual', $batchMovement->jumlah);
+                            }
+
+                            $batchMovement->productBatch->increment('jumlah_saat_ini', $batchMovement->jumlah);
+                        }
+
+                        $batchMovement->delete();
+                    }
+
+                    $purchaseReturnDetails->stockMovement->delete();
+                }
+
+                $purchaseReturnDetails->delete();
+            }
+
+            foreach ($purchaseReturn->payments as $payment) {
+                $payment->delete();
+            }
+
+            $purchaseReturn->delete();
+
+            DB::commit();
+            $this->dispatch('alert', type: 'success', message: 'Retur berhasil dihapus');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            $this->dispatch('alert', type: 'error', message: $e->getMessage());
+        }
     }
 
     public function render()
