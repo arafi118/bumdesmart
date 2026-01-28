@@ -589,7 +589,7 @@
                     });
 
                     let payload = {
-                        // nomorPenjualan handled by backend if empty
+                        nomorPenjualan: this.nomorPenjualan,
                         tanggalPenjualan: this.tanggalPenjualan,
                         customer: this.customer,
                         catatan: this.catatan,

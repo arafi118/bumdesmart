@@ -11,8 +11,28 @@ class Sale extends Model
 
     protected $guarded = ['id'];
 
-    public function details()
+    public function customer()
+    {
+        return $this->belongsTo(Customer::class);
+    }
+
+    public function saleDetails()
     {
         return $this->hasMany(SaleDetail::class);
+    }
+
+    public function payments()
+    {
+        return $this->hasMany(Payment::class, 'transaction_id', 'id')->where('jenis_transaksi', 'sale');
+    }
+
+    public function stockMovement()
+    {
+        return $this->hasMany(StockMovement::class, 'reference_id', 'id')->where('reference_type', 'sale');
+    }
+
+    public function saleReturn()
+    {
+        return $this->hasOne(SalesReturn::class);
     }
 }
