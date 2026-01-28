@@ -195,8 +195,8 @@ class DaftarPembelian extends Component
 
             $purchase->purchaseDetails()->delete();
             $purchase->stockMovement()->delete();
-            $purchase->delete();
             $purchase->payments()->delete();
+            $purchase->delete();
 
             DB::commit();
             $this->dispatch('alert', type: 'success', message: 'Pembelian berhasil dihapus');
