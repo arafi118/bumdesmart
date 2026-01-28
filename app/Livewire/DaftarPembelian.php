@@ -5,6 +5,7 @@ namespace App\Livewire;
 use App\Traits\WithTable;
 use App\Utils\PaymentUtil;
 use App\Utils\TableUtil;
+use DB;
 use Livewire\Attributes\On;
 use Livewire\Component;
 
@@ -154,6 +155,55 @@ class DaftarPembelian extends Component
 
         $this->dispatch('hide-modal', modalId: 'tambahPembayaranModal');
         $this->dispatch('alert', type: 'success', message: 'Pembayaran berhasil disimpan');
+    }
+
+    #[On('delete-confirmed')]
+    public function destroy($id)
+    {
+        $purchase = \App\Models\Purchase::with([
+            'payments',
+            'purchaseDetails.productBatch',
+            'stockMovement.batchMovements',
+        ])->where('id', $id)->first();
+
+        DB::beginTransaction();
+        try {
+            $updateProducts = [];
+            $deleteProductBatchs = [];
+
+            foreach ($purchase->purchaseDetails as $purchaseDetail) {
+                if ($purchaseDetail->productBatch) {
+                    $updateProducts[$purchaseDetail->productBatch->product_id] = $purchaseDetail->productBatch->jumlah_saat_ini;
+                    $deleteProductBatchs[] = $purchaseDetail->productBatch->id;
+                }
+            }
+
+            $deleteBatchMovements = [];
+            foreach ($purchase->stockMovement as $stockMovement) {
+                foreach ($stockMovement->batchMovements as $batchMovements) {
+                    $deleteBatchMovements[] = $batchMovements->id;
+                }
+            }
+
+            foreach ($updateProducts as $productId => $jumlah) {
+                \App\Models\Product::where('id', $productId)
+                    ->decrement('stok_aktual', $jumlah);
+            }
+
+            \App\Models\BatchMovement::whereIn('id', $deleteBatchMovements)->delete();
+            \App\Models\ProductBatch::whereIn('id', $deleteProductBatchs)->delete();
+
+            $purchase->purchaseDetails()->delete();
+            $purchase->stockMovement()->delete();
+            $purchase->payments()->delete();
+            $purchase->delete();
+
+            DB::commit();
+            $this->dispatch('alert', type: 'success', message: 'Pembelian berhasil dihapus');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            $this->dispatch('alert', type: 'error', message: $e->getMessage());
+        }
     }
 
     public function render()
