@@ -39,6 +39,10 @@
             font-size: 20px;
         }
 
+        .badge .material-symbols-outlined {
+            font-size: unset;
+        }
+
         .nav-icon {
             margin-inline-end: 0.5rem;
             color: inherit;

@@ -17,4 +17,9 @@ class PurchasesReturnDetail extends Model
         'harga_satuan',
         'sub_total',
     ];
+
+    public function product()
+    {
+        return $this->belongsTo(Product::class);
+    }
 }

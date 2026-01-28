@@ -19,4 +19,19 @@ class PurchasesReturn extends Model
         'alasan_return',
         'status',
     ];
+
+    public function business()
+    {
+        return $this->belongsTo(Business::class);
+    }
+
+    public function purchase()
+    {
+        return $this->belongsTo(Purchase::class);
+    }
+
+    public function purchasesReturnDetails()
+    {
+        return $this->hasMany(PurchasesReturnDetail::class);
+    }
 }

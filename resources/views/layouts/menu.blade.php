@@ -73,8 +73,8 @@
                     'url' => '/pembelian/daftar',
                 ],
                 [
-                    'title' => 'Daftar Return',
-                    'url' => '/pembelian/daftar-return',
+                    'title' => 'Daftar Retur',
+                    'url' => '/pembelian/daftar-retur',
                 ],
             ],
         ],

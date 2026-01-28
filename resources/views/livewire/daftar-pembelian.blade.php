@@ -24,7 +24,17 @@
 
                     <tr>
                         <td>{{ $loop->iteration + ($purchases->currentPage() - 1) * $purchases->perPage() }}</td>
-                        <td>{{ $purchase->no_pembelian }}</td>
+                        <td>
+                            <span>{{ $purchase->no_pembelian }}</span>
+                            @if ($purchase->purchaseReturn->count() > 0)
+                                <a href="/pembelian/daftar-retur?purchase_id={{ $purchase->id }}"
+                                    class="badge text-light bg-danger">
+                                    <span class="material-symbols-outlined">
+                                        reset_tv
+                                    </span>
+                                </a>
+                            @endif
+                        </td>
                         <td>{{ $purchase->tanggal_pembelian }}</td>
                         <td>{{ $purchase->supplier->nama_supplier }}</td>
                         <td>

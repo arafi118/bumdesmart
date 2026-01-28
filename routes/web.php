@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AuthController;
 use App\Livewire\DaftarPembelian;
+use App\Livewire\DaftarReturPembelian;
 use App\Livewire\Dashboard;
 use App\Livewire\Kategori;
 use App\Livewire\Member;
@@ -58,6 +59,7 @@ Route::group([
     Route::get('/pembelian/daftar', DaftarPembelian::class);
     Route::get('/pembelian/edit/{id}', TambahPembelian::class);
 
+    Route::get('/pembelian/daftar-retur', DaftarReturPembelian::class);
     Route::get('/pembelian/retur/{id}', TambahReturPembelian::class);
 
     Route::get('/stock-opname/tambah', TambahStockOpname::class);

@@ -163,6 +163,7 @@ class DaftarPembelian extends Component
 
         $query = \App\Models\Purchase::where('business_id', $this->businessId)->with([
             'supplier',
+            'purchaseReturn',
             'payments' => function ($query) {
                 $query->where(function ($query) {
                     $query->where('rekening_debit', '1.1.03.01')->where('rekening_kredit', 'like', '1.1.01%');
