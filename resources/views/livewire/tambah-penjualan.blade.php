@@ -1,4 +1,4 @@
-<div wire:ignore x-data="penjualanHandler()" @reset-form.window="resetForm">
+<div wire:ignore x-data="penjualanHandler()" x-init="initData(@js($existingData))" @reset-form.window="resetForm">
     <div class="card">
         <div class="card-body">
             <!-- Header Form -->
@@ -350,6 +350,7 @@
                 },
 
                 init() {
+                    // Watchers
                     this.$watch('products', () => this.calculateTotal(), {
                         deep: true
                     });
@@ -361,6 +362,62 @@
                     });
                     this.$watch('jenisPajak', () => this.calculateTotal());
                     this.$watch('bayar', () => this.calculateKembalian());
+                },
+
+                initData(data) {
+                    if (!data) return;
+                    this.nomorPenjualan = data.nomorPenjualan;
+                    this.tanggalPenjualan = data.tanggalPenjualan;
+                    this.customer = data.customer;
+                    this.catatan = data.catatan || '';
+
+                    // Pre-populate Customer TomSelect
+                    let customerSelect = document.getElementById('customer');
+                    if (customerSelect && data.customer && data.customer_name) {
+                        if (customerSelect.tomselect) {
+                            customerSelect.tomselect.addOption({
+                                id: data.customer,
+                                nama_pelanggan: data.customer_name
+                            });
+                            customerSelect.tomselect.setValue(data.customer);
+                        } else {
+                            let opt = document.createElement('option');
+                            opt.value = data.customer;
+                            opt.text = data.customer_name;
+                            customerSelect.add(opt);
+                        }
+                    }
+
+                    if (data.products && Object.keys(data.products).length > 0) {
+                        this.products = JSON.parse(JSON.stringify(data.products));
+                    }
+
+                    this.jenisPajak = data.jenisPajak;
+                    this.globalDiskon = data.globalDiskon;
+                    this.globalCashback = data.globalCashback;
+
+                    this.jenisPembayaran = data.jenisPembayaran;
+                    this.metodeBayar = data.metodeBayar || 'tunai';
+                    this.noRekening = data.noRekening || '';
+                    this.bayar = this.formatRupiah(data.bayar);
+                    this.status = data.status;
+
+                    // Sync Payment Select
+                    setTimeout(() => {
+                        let paySelect = document.getElementById('jenisPembayaran');
+                        if (paySelect && paySelect.tomselect) {
+                            paySelect.tomselect.setValue(this.jenisPembayaran, true);
+                        }
+                        let taxSelect = document.getElementById('jenisPajak');
+                        if (taxSelect && taxSelect.tomselect) {
+                            taxSelect.tomselect.setValue(this.jenisPajak, true);
+                        }
+                    }, 500);
+
+                    this.$nextTick(() => {
+                        this.calculateTotal();
+                        this.calculateKembalian();
+                    });
                 },
 
                 // --- Helpers ---

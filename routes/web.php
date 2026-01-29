@@ -70,6 +70,7 @@ Route::group([
 
     Route::get('/penjualan/tambah', TambahPenjualan::class);
     Route::get('/penjualan/daftar', DaftarPenjualan::class);
+    Route::get('/penjualan/edit/{id}', TambahPenjualan::class);
 
     Route::get('/master-pengaturan', Pengaturan::class);
 });
