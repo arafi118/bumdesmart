@@ -11,6 +11,11 @@ class Sale extends Model
 
     protected $guarded = ['id'];
 
+    public function business()
+    {
+        return $this->belongsTo(Business::class);
+    }
+
     public function customer()
     {
         return $this->belongsTo(Customer::class);

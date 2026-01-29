@@ -92,4 +92,6 @@
             </x-table>
         </div>
     </div>
+
+    @include('livewire.daftar-penjualan-component.modal-penjualan')
 </div>

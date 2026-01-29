@@ -14,6 +14,21 @@ class DaftarPenjualan extends Component
 
     public $businessId;
 
+    public $detailSale;
+
+    public function detailPenjualan($id)
+    {
+        $sale = \App\Models\Sale::with([
+            'customer',
+            'business',
+            'saleDetails.product',
+        ])->where('id', $id)->first();
+
+        $this->detailSale = $sale;
+
+        $this->dispatch('show-modal', modalId: 'detailPenjualanModal');
+    }
+
     public function render()
     {
         $this->title = 'Daftar Penjualan';

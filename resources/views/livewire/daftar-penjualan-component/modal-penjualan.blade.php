@@ -1,31 +1,31 @@
-<div class="modal fade" id="detailPembelianModal" tabindex="-1" role="dialog" aria-hidden="true">
+<div class="modal fade" id="detailPenjualanModal" tabindex="-1" role="dialog" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-centered" role="document">
         <div class="modal-content">
             <div class="modal-header">
-                <h4 class="modal-title">Detail Pembelian</h4>
+                <h4 class="modal-title">Detail Penjualan</h4>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                @if (!empty($detailPurchase))
+                @if (!empty($detailSale))
                     <ul class="list-group ">
                         <li class="list-group-item border-0 p-2 ps-0 pt-0">
                             <strong>Tanggal :</strong>
                             <span>
-                                {{ date('Y-m-d', strtotime($detailPurchase->tanggal_pembelian)) }}
+                                {{ date('Y-m-d', strtotime($detailSale->tanggal_transaksi)) }}
                             </span>
                         </li>
                         <li class="list-group-item border-0 p-2 ps-0 pt-0">
-                            <strong>No. Pembelian :</strong>
-                            <span>{{ $detailPurchase->no_pembelian }}</span>
+                            <strong>No. Invoice :</strong>
+                            <span>{{ $detailSale->no_invoice }}</span>
                         </li>
                         <li class="list-group-item border-0 p-2 ps-0 pt-0">
                             <strong>Status :</strong>
                             <span>
-                                @if ($detailPurchase->status == 'completed')
+                                @if ($detailSale->status == 'completed')
                                     <span class="badge text-light bg-success">Selesai</span>
-                                @elseif ($detailPurchase->status == 'partial')
+                                @elseif ($detailSale->status == 'partial')
                                     <span class="badge text-light bg-warning">Sebagian</span>
-                                @elseif ($detailPurchase->status == 'pending')
+                                @elseif ($detailSale->status == 'pending')
                                     <span class="badge text-light bg-danger">Pending</span>
                                 @endif
                             </span>
@@ -34,15 +34,15 @@
 
                     <div class="row justify-content-between mt-3">
                         <div class="col-md-3">
-                            <div class="fw-bold">Supplier :</div>
-                            <div>{{ $detailPurchase->supplier->nama_supplier }}</div>
-                            <div>{{ $detailPurchase->supplier->no_hp }}</div>
-                            <div>{{ $detailPurchase->supplier->alamat }}</div>
+                            <div class="fw-bold">Customer :</div>
+                            <div>{{ $detailSale->customer->nama_pelanggan }}</div>
+                            <div>{{ $detailSale->customer->no_hp }}</div>
+                            <div>{{ $detailSale->customer->alamat }}</div>
                         </div>
                         <div class="col-md-3">
                             <div class="fw-bold">Usaha :</div>
-                            <div>{{ $detailPurchase->business->nama_usaha }}</div>
-                            <div>{{ $detailPurchase->business->alamat }}</div>
+                            <div>{{ $detailSale->business->nama_usaha }}</div>
+                            <div>{{ $detailSale->business->alamat }}</div>
                         </div>
                     </div>
                     <table class="table table-bordered mt-2">
@@ -58,68 +58,68 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach ($detailPurchase->purchaseDetails as $purchaseDetail)
+                            @foreach ($detailSale->saleDetails as $saleDetail)
                                 <tr>
                                     <td class="text-center">{{ $loop->iteration }}</td>
-                                    <td>{{ $purchaseDetail->product->nama_produk }}</td>
-                                    <td class="text-end">{{ number_format($purchaseDetail->harga_satuan) }}</td>
-                                    <td class="text-center">{{ $purchaseDetail->jumlah }}</td>
+                                    <td>{{ $saleDetail->product->nama_produk }}</td>
+                                    <td class="text-end">{{ number_format($saleDetail->harga_satuan) }}</td>
+                                    <td class="text-center">{{ $saleDetail->jumlah }}</td>
                                     <td class="text-end">
-                                        @if ($purchaseDetail->jenis_diskon == 'persen')
-                                            {{ $purchaseDetail->jumlah_diskon }}%
+                                        @if ($saleDetail->jenis_diskon == 'persen')
+                                            {{ $saleDetail->jumlah_diskon }}%
                                         @else
-                                            {{ number_format($purchaseDetail->jumlah_diskon) }}
+                                            {{ number_format($saleDetail->jumlah_diskon) }}
                                         @endif
                                     </td>
                                     <td class="text-end">
-                                        @if ($purchaseDetail->jenis_cashback == 'persen')
-                                            {{ $purchaseDetail->jumlah_cashback }}%
+                                        @if ($saleDetail->jenis_cashback == 'persen')
+                                            {{ $saleDetail->jumlah_cashback }}%
                                         @else
-                                            {{ number_format($purchaseDetail->jumlah_cashback) }}
+                                            {{ number_format($saleDetail->jumlah_cashback) }}
                                         @endif
                                     </td>
-                                    <td class="text-end">{{ number_format($purchaseDetail->subtotal) }}</td>
+                                    <td class="text-end">{{ number_format($saleDetail->subtotal) }}</td>
                                 </tr>
                             @endforeach
                         </tbody>
                         <tfoot>
                             <tr>
                                 <td colspan="6" class="text-end fw-bold">Total</td>
-                                <td class="text-end fw-bold">{{ number_format($detailPurchase->total) }}</td>
+                                <td class="text-end fw-bold">{{ number_format($detailSale->total) }}</td>
                             </tr>
                             <tr>
                                 <td colspan="6" class="text-end fw-bold">Diskon</td>
                                 <td class="text-end fw-bold">
-                                    @if ($detailPurchase->jenis_diskon == 'persen')
-                                        {{ $detailPurchase->jumlah_diskon }}%
+                                    @if ($detailSale->jenis_diskon == 'persen')
+                                        {{ $detailSale->jumlah_diskon }}%
                                     @else
-                                        {{ number_format($detailPurchase->jumlah_diskon) }}
+                                        {{ number_format($detailSale->jumlah_diskon) }}
                                     @endif
                                 </td>
                             </tr>
                             <tr>
                                 <td colspan="6" class="text-end fw-bold">Cashback</td>
                                 <td class="text-end fw-bold">
-                                    @if ($detailPurchase->jenis_cashback == 'persen')
-                                        {{ $detailPurchase->jumlah_cashback }}%
+                                    @if ($detailSale->jenis_cashback == 'persen')
+                                        {{ $detailSale->jumlah_cashback }}%
                                     @else
-                                        {{ number_format($detailPurchase->jumlah_cashback) }}
+                                        {{ number_format($detailSale->jumlah_cashback) }}
                                     @endif
                                 </td>
                             </tr>
                             <tr>
                                 <td colspan="6" class="text-end fw-bold">Total Keseluruhan</td>
-                                <td class="text-end fw-bold">{{ number_format($detailPurchase->total) }}</td>
+                                <td class="text-end fw-bold">{{ number_format($detailSale->total) }}</td>
                             </tr>
                             <tr>
                                 <td colspan="6" class="text-end fw-bold">Total Dibayar</td>
-                                <td class="text-end fw-bold">{{ number_format($detailPurchase->dibayar) }}
+                                <td class="text-end fw-bold">{{ number_format($detailSale->dibayar) }}
                                 </td>
                             </tr>
                             <tr>
                                 <td colspan="6" class="text-end fw-bold">Kembalian</td>
                                 <td class="text-end fw-bold">
-                                    {{ number_format($detailPurchase->kembalian) }}
+                                    {{ number_format($detailSale->kembalian) }}
                                 </td>
                             </tr>
                         </tfoot>
@@ -127,7 +127,7 @@
 
                     <div class="mt-3 fw-bold">Catatan :</div>
                     <div class="px-3 py-2 border rounded">
-                        {{ $detailPurchase->keterangan != '' ? $detailPurchase->keterangan : '-' }}</div>
+                        {{ $detailSale->keterangan != '' ? $detailSale->keterangan : '-' }}</div>
 
                 @endif
             </div>
