@@ -212,7 +212,7 @@ class TambahPenjualan extends Component
         DB::beginTransaction();
         try {
             $user = auth()->user();
-            $nomorPenjualan = $data['nomorPenjualan'] ?? 'INV-'.time();
+            $nomorPenjualan = ($data['nomorPenjualan'] != '') ? $data['nomorPenjualan'] : 'INV-'.time();
             $tgl = $data['tanggalPenjualan'] ?? date('Y-m-d');
 
             if ($this->saleId) {
@@ -267,9 +267,21 @@ class TambahPenjualan extends Component
                 $jenisPembayaran = $data['jenisPembayaran'];
                 $status = 'completed';
 
+                // Enforce Logic (Match Purchase)
                 if ($pay < $grandTotal) {
                     $status = 'partial';
                     $jenisPembayaran = 'credit';
+                } else {
+                    // If fully paid, force cash if it was credit
+                    if ($jenisPembayaran === 'credit') {
+                        $jenisPembayaran = 'cash';
+                    }
+                    $status = 'completed';
+                }
+
+                $keterangan = $data['catatan'] ?? '';
+                if (! empty($data['noRekening'])) {
+                    $keterangan .= ' [Transfer: '.$data['noRekening'].']';
                 }
 
                 $sale->update([
@@ -287,7 +299,7 @@ class TambahPenjualan extends Component
                     'kembalian' => $this->parseNumber($data['kembalian']),
                     'jumlah_utang' => max(0, $grandTotal - $pay),
                     'status' => $status,
-                    'keterangan' => $data['catatan'] ?? '',
+                    'keterangan' => $keterangan,
                 ]);
 
                 // 4. RE-PROCESS ITEMS (New Logic)
@@ -360,6 +372,16 @@ class TambahPenjualan extends Component
         if ($pay < $grandTotal) {
             $status = 'partial';
             $jenisPembayaran = 'credit'; // Force credit if underpaid
+        } else {
+            if ($jenisPembayaran === 'credit') {
+                $jenisPembayaran = 'cash';
+            }
+            $status = 'completed';
+        }
+
+        $keterangan = $data['catatan'] ?? '';
+        if (! empty($data['noRekening'])) {
+            $keterangan .= ' [Transfer: '.$data['noRekening'].']';
         }
 
         return Sale::create([
@@ -380,7 +402,7 @@ class TambahPenjualan extends Component
             'kembalian' => $this->parseNumber($data['kembalian']),
             'jumlah_utang' => max(0, $grandTotal - $pay),
             'status' => $status, // COMPLETED/PARTIAL
-            'keterangan' => $data['catatan'] ?? '',
+            'keterangan' => $keterangan,
         ]);
     }
 

@@ -4,24 +4,17 @@
             <div class="row justify-content-between mb-3">
                 <div class="col-md-3">
                     <input type="search" wire:model.live.debounce.300ms="search" class="form-control"
-                        placeholder="🔍 Cari no. pembelian, tanggal, supplier, atau status...">
+                        placeholder="🔍 Cari no. penjualan, tanggal, pelanggan, atau status...">
                 </div>
                 <div class="col-md-3">
-                    <a href="/pembelian/tambah" class="btn btn-primary w-100">
-                        <i class="fas fa-plus"></i> Tambah Pembelian
+                    <a href="/penjualan/tambah" class="btn btn-primary w-100">
+                        <i class="fas fa-plus"></i> Tambah Penjualan
                     </a>
                 </div>
             </div>
 
             <x-table :headers="$headers" :results="$sales" :sortColumn="$sortBy" :sortDirection="$sortDirection">
                 @forelse ($sales as $sale)
-                    @php
-                        $totalDibayar = 0;
-                        foreach ($sale->payments as $payment) {
-                            $totalDibayar += $payment->total_harga;
-                        }
-                    @endphp
-
                     <tr>
                         <td>{{ $loop->iteration + ($sales->currentPage() - 1) * $sales->perPage() }}</td>
                         <td>{{ $sale->no_invoice }}</td>
@@ -39,8 +32,8 @@
                             @endif
                         </td>
                         <td>{{ number_format($sale->total) }}</td>
-                        <td>{{ number_format($totalDibayar) }}</td>
-                        <td>{{ number_format($sale->total - $totalDibayar) }}</td>
+                        <td>{{ number_format($sale->dibayar) }}</td>
+                        <td>{{ number_format(max(0, $sale->total - $sale->dibayar)) }}</td>
                         <td>
                             <div class="dropdown">
                                 <button class="btn btn-sm btn-info dropdown-toggle" type="button"
@@ -94,4 +87,29 @@
     </div>
 
     @include('livewire.daftar-penjualan-component.modal-penjualan')
+    @include('livewire.daftar-penjualan-component.modal-pembayaran')
+    @include('livewire.daftar-penjualan-component.modal-tambah-pembayaran')
 </div>
+
+@section('script')
+    <script>
+        function deletePayment(id) {
+            Swal.fire({
+                title: 'Apakah Anda yakin?',
+                text: "Data yang dihapus tidak dapat dikembalikan!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Ya, hapus!',
+                cancelButtonText: 'Batal'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    Livewire.dispatch('deletePayment', {
+                        id
+                    });
+                }
+            });
+        }
+    </script>
+@endsection

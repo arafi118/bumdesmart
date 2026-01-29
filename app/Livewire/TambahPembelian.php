@@ -239,7 +239,7 @@ class TambahPembelian extends Component
                 $keterangan .= ' [Transfer: '.$data['noRekening'].']';
             }
 
-            $no_pembelian = $data['nomorPembelian'] ?? 'PO-'.time();
+            $no_pembelian = ($data['nomorPembelian'] != '') ? $data['nomorPembelian'] : 'PO-'.time();
 
             // Handle Update vs Create
             if ($this->purchaseId) {
