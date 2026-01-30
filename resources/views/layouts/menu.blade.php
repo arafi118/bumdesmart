@@ -93,7 +93,7 @@
                 ],
                 [
                     'title' => 'Daftar Return',
-                    'url' => '/penjualan/daftar-return',
+                    'url' => '/penjualan/daftar-retur',
                 ],
                 [
                     'title' => 'POS',

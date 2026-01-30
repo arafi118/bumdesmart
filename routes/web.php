@@ -4,6 +4,7 @@ use App\Http\Controllers\AuthController;
 use App\Livewire\DaftarPembelian;
 use App\Livewire\DaftarPenjualan;
 use App\Livewire\DaftarReturPembelian;
+use App\Livewire\DaftarReturPenjualan;
 use App\Livewire\Dashboard;
 use App\Livewire\Kategori;
 use App\Livewire\Member;
@@ -74,6 +75,7 @@ Route::group([
     Route::get('/penjualan/edit/{id}', TambahPenjualan::class);
 
     Route::get('/penjualan/retur/{id}', TambahReturPenjualan::class);
+    Route::get('/penjualan/daftar-retur', DaftarReturPenjualan::class);
 
     Route::get('/master-pengaturan', Pengaturan::class);
 });
