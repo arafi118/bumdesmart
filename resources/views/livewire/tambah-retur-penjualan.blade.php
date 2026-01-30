@@ -1,25 +1,25 @@
-<div wire:ignore x-data="returPembelianHandler()" x-init="initData(@js($purchase))" @reset-form.window="resetForm">
+<div wire:ignore x-data="returPenjualanHandler()" x-init="initData(@js($sale))" @reset-form.window="resetForm">
     <div class="card mb-3">
         <div class="card-body">
             <ul class="list-group ">
                 <li class="list-group-item border-0 p-2 ps-0 pt-0">
                     <strong>Tanggal :</strong>
                     <span>
-                        {{ $purchase->tanggal_pembelian }}
+                        {{ date('Y-m-d', strtotime($sale->tanggal_transaksi)) }}
                     </span>
                 </li>
                 <li class="list-group-item border-0 p-2 ps-0 pt-0">
-                    <strong>No. Pembelian :</strong>
-                    <span>{{ $purchase->no_pembelian }}</span>
+                    <strong>No. Penjualan :</strong>
+                    <span>{{ $sale->no_invoice }}</span>
                 </li>
                 <li class="list-group-item border-0 p-2 ps-0 pt-0">
                     <strong>Status :</strong>
                     <span>
-                        @if ($purchase->status == 'completed')
+                        @if ($sale->status == 'completed')
                             <span class="badge text-light bg-success">Selesai</span>
-                        @elseif ($purchase->status == 'partial')
+                        @elseif ($sale->status == 'partial')
                             <span class="badge text-light bg-warning">Sebagian</span>
-                        @elseif ($purchase->status == 'pending')
+                        @elseif ($sale->status == 'pending')
                             <span class="badge text-light bg-danger">Pending</span>
                         @endif
                     </span>
@@ -28,15 +28,15 @@
 
             <div class="row justify-content-between mt-3">
                 <div class="col-md-3">
-                    <div class="fw-bold">Supplier :</div>
-                    <div>{{ $purchase->supplier->nama_supplier }}</div>
-                    <div>{{ $purchase->supplier->no_hp }}</div>
-                    <div>{{ $purchase->supplier->alamat }}</div>
+                    <div class="fw-bold">Pelanggan :</div>
+                    <div>{{ $sale->customer->nama_pelanggan }}</div>
+                    <div>{{ $sale->customer->no_hp }}</div>
+                    <div>{{ $sale->customer->alamat }}</div>
                 </div>
                 <div class="col-md-3">
                     <div class="fw-bold">Usaha :</div>
-                    <div>{{ $purchase->business->nama_usaha }}</div>
-                    <div>{{ $purchase->business->alamat }}</div>
+                    <div>{{ $sale->business->nama_usaha }}</div>
+                    <div>{{ $sale->business->alamat }}</div>
                 </div>
             </div>
         </div>
@@ -59,41 +59,41 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <template x-for="(purchaseDetail, index) in Object.values(purchase.purchase_details)"
+                        <template x-for="(saleDetail, index) in Object.values(sale.sale_details)"
                             :key="index">
                             <tr>
                                 <td x-text="index + 1"></td>
                                 <td>
-                                    <div x-text="purchaseDetail.product.nama_produk"></div>
-                                    <div x-text="purchaseDetail.product.sku"></div>
+                                    <div x-text="saleDetail.product.nama_produk"></div>
+                                    <div x-text="saleDetail.product.sku"></div>
                                 </td>
                                 <td>
-                                    <div x-text="formatRupiah(purchaseDetail.harga_satuan)"></div>
+                                    <div x-text="formatRupiah(saleDetail.harga_satuan)"></div>
                                 </td>
                                 <td>
-                                    <div x-text="purchaseDetail.jumlah"></div>
+                                    <div x-text="saleDetail.jumlah"></div>
                                 </td>
                                 <td>
-                                    <span x-text="formatRupiah(purchaseDetail.jumlah_diskon)"></span>
-                                    <span x-show="purchaseDetail.jenis_diskon === 'persen'">%</span>
+                                    <span x-text="formatRupiah(saleDetail.jumlah_diskon)"></span>
+                                    <span x-show="saleDetail.jenis_diskon === 'persen'">%</span>
                                 </td>
                                 <td>
-                                    <span x-text="formatRupiah(purchaseDetail.jumlah_cashback)"></span>
-                                    <span x-show="purchaseDetail.jenis_cashback === 'persen'">%</span>
+                                    <span x-text="formatRupiah(saleDetail.jumlah_cashback)"></span>
+                                    <span x-show="saleDetail.jenis_cashback === 'persen'">%</span>
                                 </td>
                                 <td>
                                     <input type="number" class="form-control"
-                                        x-model="purchaseDetail.purchases_return_detail.jumlah"
-                                        x-on:change="updateSubtotal(purchaseDetail)" x-on:focus="$el.select()"
-                                        :max="purchaseDetail.product_batch.jumlah_saat_ini">
+                                        x-model="saleDetail.sales_return_detail.jumlah"
+                                        x-on:change="updateSubtotal(saleDetail)" x-on:focus="$el.select()"
+                                        :max="saleDetail.jumlah">
                                 </td>
                                 <td>
                                     <span
-                                        x-text="formatRupiah(purchaseDetail.harga_satuan * purchaseDetail.purchases_return_detail.jumlah)"></span>
+                                        x-text="formatRupiah(saleDetail.harga_satuan * saleDetail.sales_return_detail.jumlah)"></span>
                                 </td>
                             </tr>
                         </template>
-                        <tr x-show="Object.keys(purchase.purchase_details).length === 0">
+                        <tr x-show="Object.keys(sale.sale_details).length === 0">
                             <td colspan="8" class="text-center text-muted py-4">
                                 <i>Belum ada produk yang dipilih</i>
                             </td>
@@ -120,23 +120,23 @@
 @section('script')
     <script>
         document.addEventListener('alpine:init', () => {
-            Alpine.data('returPembelianHandler', () => ({
-                purchase: {},
+            Alpine.data('returPenjualanHandler', () => ({
+                sale: {},
                 alasanRetur: '',
                 isLoading: false,
                 initData(data) {
-                    this.purchase = data;
+                    this.sale = data;
 
-                    this.purchase.purchase_details = this.purchase.purchase_details.map((
-                        purchaseDetail) => {
-                        if (!purchaseDetail.purchases_return_detail) {
-                            purchaseDetail.purchases_return_detail = {
+                    this.sale.sale_details = this.sale.sale_details.map((
+                        saleDetail) => {
+                        if (!saleDetail.sales_return_detail) {
+                            saleDetail.sales_return_detail = {
                                 jumlah: 0,
                             };
                         }
 
                         return {
-                            ...purchaseDetail,
+                            ...saleDetail,
                         };
                     });
                 },
@@ -145,26 +145,25 @@
                     this.isLoading = true;
 
                     let totalRetur = 0;
-                    const returPembelian = [];
-                    this.purchase.purchase_details.filter((purchaseDetail) => {
-                        if (purchaseDetail.purchases_return_detail.jumlah > 0) {
-                            returPembelian.push({
-                                purchase_detail_id: purchaseDetail.id,
-                                product_id: purchaseDetail.product_id,
-                                product_batch_id: purchaseDetail.product_batch.id,
-                                harga_satuan: purchaseDetail.harga_satuan,
-                                jumlah: purchaseDetail.purchases_return_detail.jumlah,
-                                subtotal_retur: purchaseDetail.purchases_return_detail
+                    const returnPenjualan = [];
+                    this.sale.sale_details.filter((saleDetail) => {
+                        if (saleDetail.sales_return_detail.jumlah > 0) {
+                            returnPenjualan.push({
+                                sale_detail_id: saleDetail.id,
+                                product_id: saleDetail.product_id,
+                                harga_satuan: saleDetail.harga_satuan,
+                                jumlah: saleDetail.sales_return_detail.jumlah,
+                                subtotal_retur: saleDetail.sales_return_detail
                                     .jumlah *
-                                    purchaseDetail.harga_satuan,
+                                    saleDetail.harga_satuan,
                             });
 
-                            totalRetur += purchaseDetail.purchases_return_detail
-                                .jumlah * purchaseDetail.harga_satuan;
+                            totalRetur += saleDetail.sales_return_detail
+                                .jumlah * saleDetail.harga_satuan;
                         }
                     });
 
-                    if (returPembelian.length === 0) {
+                    if (returnPenjualan.length === 0) {
                         Toast.fire({
                             icon: 'error',
                             title: 'Tidak ada produk yang dipilih',
@@ -175,10 +174,10 @@
                     }
 
                     const data = {
-                        purchase_id: this.purchase.id,
+                        sale_id: this.sale.id,
                         total_retur: totalRetur,
                         alasan_retur: this.alasanRetur,
-                        retur_pembelian: returPembelian,
+                        retur_penjualan: returnPenjualan,
                     };
 
                     @this.call('saveAll', data)
@@ -193,21 +192,20 @@
                 },
                 resetForm() {
                     this.alasanRetur = '';
-                    this.purchase = {};
+                    this.sale = {};
                     this.isLoading = false;
-                    this.purchaseDetails = [];
+                    this.saleDetails = [];
                     this.totalRetur = 0;
-
                 },
-                updateSubtotal(purchaseDetail) {
-                    const max = purchaseDetail.product_batch.jumlah_saat_ini;
-                    if (purchaseDetail.purchases_return_detail.jumlah > max) {
-                        purchaseDetail.purchases_return_detail.jumlah = max;
+                updateSubtotal(saleDetail) {
+                    const max = saleDetail.jumlah;
+                    if (saleDetail.sales_return_detail.jumlah > max) {
+                        saleDetail.sales_return_detail.jumlah = max;
 
                         Swal.fire({
                             icon: 'warning',
                             title: 'Peringatan',
-                            text: "Jumlah retur melebihi stok saat ini (" + max + ")"
+                            text: "Jumlah retur melebihi jumlah pembelian (" + max + ")"
                         })
                     }
                 },

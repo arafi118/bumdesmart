@@ -20,4 +20,9 @@ class SaleDetail extends Model
     {
         return $this->belongsTo(Product::class);
     }
+
+    public function salesReturnDetail()
+    {
+        return $this->hasOne(SalesReturnDetail::class);
+    }
 }

@@ -20,6 +20,7 @@ use App\Livewire\Supplier;
 use App\Livewire\TambahPembelian;
 use App\Livewire\TambahPenjualan;
 use App\Livewire\TambahReturPembelian;
+use App\Livewire\TambahReturPenjualan;
 use App\Livewire\TambahStockAdjustment;
 use App\Livewire\TambahStockOpname;
 use App\Livewire\User;
@@ -71,6 +72,8 @@ Route::group([
     Route::get('/penjualan/tambah', TambahPenjualan::class);
     Route::get('/penjualan/daftar', DaftarPenjualan::class);
     Route::get('/penjualan/edit/{id}', TambahPenjualan::class);
+
+    Route::get('/penjualan/retur/{id}', TambahReturPenjualan::class);
 
     Route::get('/master-pengaturan', Pengaturan::class);
 });
