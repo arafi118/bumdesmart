@@ -2,12 +2,13 @@
 
 namespace App\Livewire;
 
-
 use App\Traits\WithTable;
 use App\Utils\TableUtil;
-use Livewire\Attributes\On;
-use Livewire\Component;
 use Illuminate\Support\Facades\DB;
+use Livewire\Attributes\Layout;
+use Livewire\Attributes\On;
+use Livewire\Attributes\Title;
+use Livewire\Component;
 
 class DaftarReturPenjualan extends Component
 {
@@ -110,9 +111,10 @@ class DaftarReturPenjualan extends Component
         }
     }
 
+    #[Layout('layouts.app')]
+    #[Title('Daftar Retur Penjualan')]
     public function render()
     {
-        $this->title = 'Daftar Retur Penjualan';
         $this->businessId = auth()->user()->business_id;
 
         $query = \App\Models\SalesReturn::where('business_id', $this->businessId);
@@ -139,6 +141,6 @@ class DaftarReturPenjualan extends Component
         return view('livewire.daftar-retur-penjualan', [
             'salesReturn' => $salesReturn,
             'headers' => $headers,
-        ])->layout('layouts.app', ['title' => $this->title]);
+        ]);
     }
 }
