@@ -8,4 +8,21 @@ use Illuminate\Database\Eloquent\Model;
 class StockAdjustment extends Model
 {
     use HasFactory;
+
+    protected $guarded = ['id'];
+
+    protected $fillable = [
+        'business_id',
+        'user_id',
+        'no_penyesuaian',
+        'tanggal_penyesuaian',
+        'jenis_penyesuaian',
+        'status',
+        'catatan',
+    ];
+
+    public function details()
+    {
+        return $this->hasMany(StockAdjustmentDetail::class);
+    }
 }

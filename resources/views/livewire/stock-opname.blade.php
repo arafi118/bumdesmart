@@ -62,7 +62,7 @@
         </div>
     </div>
     @include('livewire.stock-opname-component.modal-detail-stok')
-    @include('livewire.stock-opname-component.modal-edit-stock')
+    @include('livewire.stock-opname-component.modal-edit-stok')
 
 </div>
 @section('script')

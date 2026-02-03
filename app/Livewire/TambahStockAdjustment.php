@@ -2,240 +2,126 @@
 
 namespace App\Livewire;
 
-use App\Models\Product;
-use App\Models\Purchase;
-use App\Models\Supplier;
-use App\Traits\WithTable;
-use App\Utils\PaymentUtil;
-use Illuminate\Support\Facades\DB;
-use Livewire\Attributes\On;
 use Livewire\Component;
+use Illuminate\Support\Facades\DB;
+use App\Models\Product;
+use App\Models\StockAdjustment;
+use App\Models\StockAdjustmentDetail;
+use App\Models\StockMovement;
 
 class TambahStockAdjustment extends Component
 {
-    use WithTable;
-
     public $title;
-
     public $businessId;
-
-    // Form Fields (Livewire still tracks these for initial binding/validation if needed,
-    // but primary interaction is client-side)
-    public $nomorPembelian;
-
-    public $tanggalPembelian;
-
-    public $supplier;
-
-    public $catatan;
-
-    // Payment Fields
-    public $jenisPembayaran = 'cash';
-
-    public $noRekening;
-
-    // Search Fields (Livewire handles the search queries)
-    public $searchTerm = '';
-
-    public $searchProduct = '';
 
     public function mount()
     {
         $this->title = 'Tambah Stock Adjustment';
         $this->businessId = auth()->user()->business_id;
-        $this->tanggalPembelian = date('Y-m-d');
     }
 
-    public function loadSuppliers($query, $offset = 0)
+    public function loadProducts($page = 1, $search = '')
     {
-        $perPage = 50;
+        $query = Product::where('business_id', $this->businessId);
 
-        $suppliers = Supplier::select('id', 'nama_supplier')
-            ->where('business_id', $this->businessId) // Ensure business scope
-            ->where('nama_supplier', 'LIKE', "%{$query}%")
-            ->offset($offset)
-            ->limit($perPage)
-            ->get();
-
-        $total = Supplier::where('business_id', $this->businessId)
-            ->where('nama_supplier', 'LIKE', "%{$query}%")
-            ->count();
-
-        $hasMore = ($offset + $perPage) < $total;
-
-        return [
-            'data' => $suppliers,
-            'after' => $hasMore ? ($offset + $perPage) : null,
-        ];
-    }
-
-    public function loadSearchProducts($query, $offset = 0)
-    {
-        $perPage = 20;
-
-        $productsQuery = Product::where('business_id', $this->businessId)
-            ->where(function ($q) use ($query) {
-                $q->where('nama_produk', 'LIKE', "%{$query}%")
-                    ->orWhere('sku', 'LIKE', "%{$query}%");
-            })
-            ->offset($offset)
-            ->limit($perPage)
-            ->get();
-
-        $total = Product::where('business_id', $this->businessId)
-            ->where(function ($q) use ($query) {
-                $q->where('nama_produk', 'LIKE', "%{$query}%")
-                    ->orWhere('sku', 'LIKE', "%{$query}%");
-            })
-            ->count();
-
-        $hasMore = ($offset + $perPage) < $total;
-
-        $products = [];
-        foreach ($productsQuery as $product) {
-            $products[] = [
-                'id' => $product->id,
-                'nama_produk' => $product->nama_produk,
-                'sku' => $product->sku,
-                'harga_beli' => $product->harga_beli,
-                'gambar' => $product->gambar,
-                // Pass full object if needed, but array is usually enough
-            ];
+        if ($search) {
+            $query->where('nama_produk', 'like', "%{$search}%");
         }
 
+        $data = $query
+            ->orderBy('nama_produk')
+            ->skip(($page - 1) * 10)
+            ->take(11)
+            ->get();
+
         return [
-            'data' => $products,
-            'after' => $hasMore ? ($offset + $perPage) : null,
+            'data' => $data->take(10)->values(),
+            'has_more' => $data->count() > 10,
         ];
     }
-
-    #[On('save-all')]
-    public function saveAll($data)
+    public function saveAdjustment($data)
     {
-        if (empty($data['products'])) {
-            $this->dispatch('error', 'Belum ada produk yang dipilih');
-
+        if (!is_array($data) || empty($data['items'])) {
+            $this->dispatch('alert', type: 'error', message: 'Data tidak valid');
             return;
         }
 
-        $bayar = $this->parseNumber($data['bayar']);
-        $total = $this->parseNumber($data['grandTotal']);
-
-        $jenisPembayaran = $data['jenisPembayaran'];
-        $status = $data['status'] ?? 'pending';
-
-        // Enforce Server-Side Logic
-        if ($bayar < $total) {
-            // If underpaid, force credit unless it's a preorder
-            if ($jenisPembayaran !== 'preorder') {
-                $jenisPembayaran = 'credit';
-            }
-            $status = 'partial';
-        } else {
-            // If fully paid, force cash if it was credit
-            if ($jenisPembayaran === 'credit') {
-                $jenisPembayaran = 'cash';
-            }
-
-            if ($jenisPembayaran === 'preorder') {
-                $status = 'paid';
-            } else {
-                $status = 'completed';
-            }
-        }
-
         DB::beginTransaction();
+
         try {
-            $subtotal = $this->parseNumber($data['subtotal']);
-
-            $globalDiskonVal = $this->parseNumber($data['globalDiskon']['jumlah']);
-            $globalDiskonAmt = ($data['globalDiskon']['jenis'] === 'nominal')
-                ? $globalDiskonVal
-                : ($subtotal * $globalDiskonVal / 100);
-
-            $taxable = max(0, $subtotal - $globalDiskonAmt);
-            $taxAmount = ($data['jenisPajak'] === 'PPN') ? $taxable * 0.11 : 0;
-
-            $keterangan = $data['catatan'] ?? '';
-            if (! empty($data['noRekening'])) {
-                $keterangan .= ' [Transfer: ' . $data['noRekening'] . ']';
+            if (empty($data['tanggal_penyesuaian'])) {
+                throw new \Exception('Tanggal penyesuaian wajib diisi');
             }
 
-            $purchase = Purchase::create([
-                'no_pembelian' => $data['nomorPembelian'] ?? 'PO-' . time(),
-                'tanggal_pembelian' => $data['tanggalPembelian'],
-                'business_id' => $this->businessId,
-                'supplier_id' => $data['supplier'],
-                'user_id' => auth()->id(),
-                'jenis_pembayaran' => $jenisPembayaran,
-                'subtotal' => $subtotal,
-                'jenis_diskon' => $data['globalDiskon']['jenis'],
-                'jumlah_diskon' => $globalDiskonVal,
-                'jenis_cashback' => $data['globalCashback']['jenis'],
-                'jumlah_cashback' => $this->parseNumber($data['globalCashback']['jumlah']),
-                'jumlah_pajak' => $taxAmount,
-                'total' => $total,
-                'dibayar' => $bayar,
-                'kembalian' => $this->parseNumber($data['kembalian']),
-                'jumlah_utang' => max(0, $total - $bayar),
-                'status' => $status,
-                'keterangan' => $keterangan,
+            $adjustment = StockAdjustment::create([
+                'business_id'         => $this->businessId,
+                'user_id'             => auth()->id(),
+                'no_penyesuaian'      => $data['no_penyesuaian'] ?: 'ADJ-' . now()->format('YmdHis'),
+                'tanggal_penyesuaian' => $data['tanggal_penyesuaian'],
+                'jenis_penyesuaian'   => $data['jenis_penyesuaian'] ?? 'correction',
+                'status'              => $data['status'] ?? 'draft',
+                'catatan'             => $data['catatan'] ?? null,
             ]);
 
-            $details = [];
-            foreach ($data['products'] as $item) {
-                $details[] = [
-                    'product_id' => $item['id'],
-                    'jumlah' => $item['jumlah_beli'],
-                    'harga_satuan' => $this->parseNumber($item['harga_beli']),
-                    'jenis_diskon' => $item['diskon']['jenis'] ?? 'nominal',
-                    'jumlah_diskon' => $this->parseNumber($item['diskon']['jumlah'] ?? 0),
-                    'jenis_cashback' => $item['cashback']['jenis'] ?? 'nominal',
-                    'jumlah_cashback' => $this->parseNumber($item['cashback']['jumlah'] ?? 0),
-                    'subtotal' => $this->parseNumber($item['subtotal']),
-                ];
+            foreach ($data['items'] as $item) {
+                if (
+                    !isset(
+                        $item['product_id'],
+                        $item['stok_sistem'],
+                        $item['stok_fisik'],
+                        $item['selisih']
+                    )
+                ) {
+                    continue;
+                }
 
-                Product::where('id', $item['id'])->increment('stok_aktual', $item['jumlah_beli']);
+                $selisih = (int) $item['selisih'];
+                if ($selisih === 0) continue;
+
+                $jumlah = abs($selisih);
+                $jenis  = $selisih > 0 ? 'in' : 'out';
+
+                StockAdjustmentDetail::create([
+                    'stock_adjustment_id' => $adjustment->id,
+                    'product_id'          => $item['product_id'],
+                    'jumlah'              => abs($selisih),
+                    'jenis'               => $selisih > 0 ? 'in' : 'out',
+                    'harga_satuan'        => $item['harga_satuan'],
+                    'total_harga'         => abs($selisih) * $item['harga_satuan'],
+                    'alasan'              => $item['alasan'] ?? null,
+                    'catatan'             => $data['catatan'] ?? null,
+                ]);
+
+                $product = Product::lockForUpdate()->findOrFail($item['product_id']);
+                $product->stok_aktual += $selisih;
+                $product->save();
+
+                StockMovement::create([
+                    'business_id'            => $this->businessId,
+                    'product_id'             => $item['product_id'],
+                    'tanggal_perubahan_stok' => $data['tanggal_penyesuaian'],
+                    'jenis_perubahan'        => 'stock_adjustment',
+                    'jumlah_perubahan'       => $selisih,
+                    'reference_id'           => $adjustment->id,
+                    'reference_type'         => 'stok_adjustment',
+                    'catatan'                => $item['alasan'] ?? $data['catatan'] ?? null,
+                ]);
             }
-
-            $purchase->purchaseDetails()->createMany($details);
-
-            $kodeRekening = PaymentUtil::ambilRekening($data['metodeBayar']);
-            $paymment = \App\Models\Payment::create([
-                'business_id' => $this->businessId,
-                'user_id' => auth()->user()->id,
-                'no_pembayaran' => $data['nomorPembelian'],
-                'tanggal_pembayaran' => $data['tanggalPembelian'],
-                'jenis_transaksi' => 'purchase',
-                'transaction_id' => $purchase->id,
-                'total_harga' => $bayar,
-                'metode_pembayaran' => $data['metodeBayar'],
-                'no_referensi' => $data['noRekening'],
-                'catatan' => $keterangan,
-                'rekening_debit' => $kodeRekening['rekening_debit'],
-                'rekening_kredit' => $kodeRekening['rekening_kredit'],
-            ]);
 
             DB::commit();
-            $this->dispatch('alert', type: 'success', message: 'Transaksi berhasil disimpan');
-            $this->dispatch('reset-form');
-        } catch (\Exception $e) {
+
+            $this->dispatch('alert', type: 'success', message: 'Stock adjustment berhasil disimpan');
+            $this->dispatch('redirect', url: '/stock-adjustment/daftar', timeout: 1000);
+        } catch (\Throwable $e) {
             DB::rollBack();
             $this->dispatch('alert', type: 'error', message: $e->getMessage());
         }
     }
 
-    private function parseNumber($value)
-    {
-        if (is_numeric($value)) {
-            return $value;
-        }
-
-        return (float) str_replace(',', '', $value);
-    }
 
     public function render()
     {
-        return view('livewire.tambah-stock-adjustment')->layout('layouts.app', ['title' => $this->title]);
+        return view('livewire.tambah-stock-adjustment')
+            ->layout('layouts.app', ['title' => $this->title]);
     }
 }
