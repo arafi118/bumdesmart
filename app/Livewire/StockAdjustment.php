@@ -17,19 +17,22 @@ class StockAdjustment extends Component
     public $titleModal;
     public $product;
     public $stockdetail;
-
+    public $search = '';
     public $stok_sistem;
     public $stok_fisik;
     public $selisih;
     public $alasan;
-
     public $editId;
     public $tanggal_perubahan_stok;
     public $jumlah_perubahan;
     public $catatan;
-
     public $stockMovements = [];
     public $businessId;
+
+    public function updatedSearch()
+    {
+        $this->resetPage();
+    }
 
     public function render()
     {
@@ -38,6 +41,13 @@ class StockAdjustment extends Component
 
         $query = StockMovement::where('business_id', $this->businessId)
             ->where('reference_type', 'stok_adjustment')
+            ->where(function ($q) {
+                $q->where('catatan', 'like', '%' . $this->search . '%')
+                    ->orWhere('jenis_perubahan', 'like', '%' . $this->search . '%')
+                    ->orWhereHas('product', function ($p) {
+                        $p->where('nama_produk', 'like', '%' . $this->search . '%');
+                    });
+            })
             ->with('product');
 
         $headers = [
