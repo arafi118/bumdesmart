@@ -34,7 +34,7 @@
                                                 class="badge text-light bg-secondary">{{ $payment['metode_pembayaran'] }}</span>
                                         @endif
                                     </td>
-                                    <td>{{ $payment['no_referensi'] }}</td>
+                                    <td>{{ $payment['no_referensi'] ?? '-' }}</td>
                                     <td>{{ number_format($payment['total_harga']) }}</td>
                                     <td>
                                         <button class="btn btn-danger btn-sm"

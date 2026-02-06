@@ -48,7 +48,7 @@ class Produk extends Component
 
     public $aktif = 1;
 
-    public $product;
+    public $detailProduk;
 
     public $hargaJualMember = [];
 
@@ -192,9 +192,9 @@ class Produk extends Component
         $this->dispatch('alert', type: 'success', message: 'Produk berhasil dihapus');
     }
 
-    public function detailProduk($id)
+    public function modalDetailProduk($id)
     {
-        $this->product = \App\Models\Product::find($id)->with([
+        $this->detailProduk = \App\Models\Product::where('id', $id)->with([
             'category',
             'brand',
             'unit',
@@ -202,15 +202,16 @@ class Produk extends Component
             'productPrices',
         ])->first();
 
-        $this->titleModal = $this->product->nama_produk;
+        $this->titleModal = $this->detailProduk->nama_produk;
+        $this->id = $id;
 
         $this->dispatch('show-modal', modalId: 'detailProdukModal');
     }
 
-    public function hargaMember($id)
+    public function modalHargaMember($id)
     {
         $this->reset('hargaJualMember', 'tanggalMulai', 'tanggalAkhir');
-        $this->product = \App\Models\Product::find($id)->with([
+        $this->detailProduk = \App\Models\Product::where('id', $id)->with([
             'category',
             'brand',
             'unit',
@@ -218,13 +219,13 @@ class Produk extends Component
             'productPrices',
         ])->first();
 
-        foreach ($this->product->productPrices as $productPrice) {
+        foreach ($this->detailProduk->productPrices as $productPrice) {
             $this->hargaJualMember[$productPrice->customer_group_id] = number_format($productPrice->harga_spesial);
             $this->tanggalMulai[$productPrice->customer_group_id] = $productPrice->tanggal_mulai;
             $this->tanggalAkhir[$productPrice->customer_group_id] = $productPrice->tanggal_akhir;
         }
 
-        $this->titleModal = $this->product->nama_produk;
+        $this->titleModal = $this->detailProduk->nama_produk;
         $this->id = $id;
 
         $this->dispatch('show-modal', modalId: 'hargaMemberModal');

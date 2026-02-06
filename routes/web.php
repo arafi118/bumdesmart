@@ -14,6 +14,7 @@ use App\Livewire\pengaturan;
 use App\Livewire\Produk;
 use App\Livewire\Rak;
 use App\Livewire\Role;
+use App\Livewire\SalePos;
 use App\Livewire\Satuan;
 use App\Livewire\StockAdjustment;
 use App\Livewire\StockOpname;
@@ -76,6 +77,7 @@ Route::group([
 
     Route::get('/penjualan/retur/{id}', TambahReturPenjualan::class);
     Route::get('/penjualan/daftar-retur', DaftarReturPenjualan::class);
+    Route::get('/penjualan/pos', SalePos::class);
 
     Route::get('/master-pengaturan', Pengaturan::class);
 });

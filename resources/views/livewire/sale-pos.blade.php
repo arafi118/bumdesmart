@@ -1,0 +1,834 @@
+<div class="row main-row" x-data="posSystem()" @sale-stored.window="cart = []">
+    <div class="col-md-8 d-flex flex-column h-100">
+        <div class="mb-3">
+            <div class="card">
+                <div class="card-body">
+                    <div class="input-icon mb-3">
+                        <input type="text" value="" class="form-control" placeholder="Cari Produk..."
+                            wire:model.live.debounce.500ms="searchProduct" />
+                        <span class="input-icon-addon">
+                            <span class="material-symbols-outlined">
+                                search
+                            </span>
+                        </span>
+                    </div>
+
+                    <div class="w-100 overflow-x-auto category-scroll p-1">
+                        <div class="form-selectgroup d-flex flex-nowrap">
+                            <label class="form-selectgroup-item flex-shrink-0">
+                                <input type="radio" name="category" class="form-selectgroup-input" checked
+                                    value="" wire:model.live="selectedCategory" />
+                                <span class="form-selectgroup-label whitespace-nowrap">
+                                    <span class="material-symbols-outlined">
+                                        apps
+                                    </span>
+                                    Semua Kategori
+                                </span>
+                            </label>
+
+                            @foreach ($categories as $category)
+                                <label class="form-selectgroup-item flex-shrink-0">
+                                    <input type="radio" name="category" value="{{ $category->id }}"
+                                        class="form-selectgroup-input" wire:model.live="selectedCategory" />
+                                    <span class="form-selectgroup-label whitespace-nowrap">
+                                        <span class="material-symbols-outlined">
+                                            {{ $category->icon }}
+                                        </span>
+                                        {{ $category->nama_kategori }}
+                                    </span>
+                                </label>
+                            @endforeach
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
+            <div class="row">
+                @foreach ($products as $product)
+                    <div class="col-md-3 mb-3">
+                        <div class="card text-bg-dark border-0 shadow-sm product-card"
+                            @click="addToCart({
+                                id: {{ $product->id }},
+                                name: '{{ addslashes($product->nama_produk) }}',
+                                price: {{ $product->harga_jual }},
+                                stock: {{ $product->stok_aktual }},
+                                image: '{{ asset('storage/' . $product->gambar) }}'
+                             })">
+                            <img src="{{ asset('storage/' . $product->gambar) }}" class="card-img"
+                                alt="{{ $product->nama_produk }}">
+                            <div class="card-img-overlay d-flex flex-column justify-content-end">
+                                <h5 class="card-title mb-1">{{ $product->nama_produk }}</h5>
+                                <div class="card-text">Rp {{ number_format($product->harga_jual, 0, ',', '.') }}</div>
+                                <span class="badge">{{ $product->stok_aktual }}</span>
+                            </div>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        </div>
+
+        {{ $products->links('components.pos-pagination') }}
+    </div>
+
+    <div class="col-md-4 overflow-hidden" wire:ignore>
+        <div class="card h-100">
+            <div class="card-header">
+                <div class="w-100 position-relative">
+                    <label class="form-label">Customer</label>
+                    <select class="form-select" id="customerSearch" x-model="customerSearch" wire:ignore>
+                        <option value=""></option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="card-body p-0 px-3 overflow-x-hidden overflow-y-auto">
+                <div class="list-group list-group-flush">
+
+                    <template x-if="cart.length === 0">
+                        <div class="text-center p-5 text-secondary">
+                            <span class="material-symbols-outlined fs-1 mb-2">shopping_cart_off</span>
+                            <p>Keranjang kosong</p>
+                        </div>
+                    </template>
+
+                    <template x-for="(item, index) in cart" :key="item.id">
+                        <div class="list-group-item py-3 px-0">
+                            <div class="row align-items-center">
+                                <div class="col-auto">
+                                    <a href="#">
+                                        <span class="avatar avatar-1"
+                                            :style="`background-image: url(${item.image})`"></span>
+                                    </a>
+                                </div>
+                                <div class="col">
+                                    <div role="button" @click="openModal(item)"
+                                        class="fw-bold text-primary d-block text-truncate" x-text="item.name"></div>
+                                    <div class="d-block text-truncate">
+                                        <!-- Price Display Logic -->
+                                        <template x-if="calculateItemDiscount(item) > 0">
+                                            <div class="lh-1">
+                                                <small
+                                                    class="text-secondary opacity-75 text-decoration-line-through me-1"
+                                                    style="font-size: 0.7em;" x-text="formatRupiah(item.price)"></small>
+                                                <span style="font-size: 0.8em;"
+                                                    x-text="formatRupiah(item.price - (calculateItemDiscount(item) / item.qty))"></span>
+                                            </div>
+                                        </template>
+                                        <template x-if="calculateItemDiscount(item) <= 0">
+                                            <span class="text-secondary" x-text="formatRupiah(item.price)"></span>
+                                        </template>
+                                    </div>
+                                </div>
+                                <div class="col-4 align-self-sm-start text-end">
+                                    <span class="fw-bold"
+                                        x-text="formatRupiah((item.price * item.qty) - calculateItemDiscount(item))"></span>
+                                </div>
+                            </div>
+
+                            <div class="d-flex justify-content-between">
+                                <div class="d-flex justify-content-between align-items-center mt-1">
+                                    <div class="d-flex align-items-center gap-2 bg-primary rounded p-1">
+                                        <button class="qty-btn" @click="updateQty(item.id, -1)">
+                                            <span class="material-symbols-outlined">remove</span>
+                                        </button>
+                                        <span class="qty-display" x-text="item.qty"></span>
+                                        <button class="qty-btn" @click="updateQty(item.id, 1)">
+                                            <span class="material-symbols-outlined">add</span>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="d-flex align-items-center">
+                                    <a href="#" class="link-danger link-offset-2 link-underline-opacity-0"
+                                        @click.prevent="removeFromCart(item.id)">
+                                        <span class="material-symbols-outlined">delete</span>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+            <div class="card-footer mt-0">
+                <div class="d-flex gap-2">
+                    <a class="btn btn-outline-info d-flex flex-column align-items-center flex-fill"
+                        @click="openGlobalDiscountModal()">
+                        <span class="material-symbols-outlined fs-1">
+                            percent_discount
+                        </span>
+                    </a>
+                    <a class="btn btn-outline-info d-flex flex-column align-items-center flex-fill"
+                        @click="openGlobalCashbackModal()">
+                        <span class="material-symbols-outlined fs-1">
+                            currency_exchange
+                        </span>
+                    </a>
+                    <a class="btn btn-outline-warning d-flex flex-column align-items-center flex-fill"
+                        @click="resetGlobalDiscounts()"> <!-- Added reset functionality too -->
+                        <span class="material-symbols-outlined fs-1">
+                            inactive_order
+                        </span>
+                    </a>
+                    <a class="btn btn-outline-danger d-flex flex-column align-items-center flex-fill"
+                        @click="clearCart()">
+                        <span class="material-symbols-outlined fs-1">
+                            delete_sweep
+                        </span>
+                    </a>
+                </div>
+
+                <div class="w-100 border-top border-bottom mt-2 py-2">
+                    <div class="d-flex justify-content-between pb-1 text-secondary">
+                        <span>Subtotal</span>
+                        <span x-text="formatRupiah(cartTotal)"></span>
+                    </div>
+
+                    <div class="d-flex justify-content-between pb-1 text-secondary">
+                        <span>Diskon (Global)</span>
+                        <span x-text="formatRupiah(calculateGlobalDiscountValue())"></span>
+                    </div>
+                    <div class="d-flex justify-content-between pb-1 text-secondary">
+                        <span>Cashback (Global)</span>
+                        <span x-text="formatRupiah(calculateGlobalCashbackValue())"></span>
+                    </div>
+                    <div class="d-flex justify-content-between fw-bold fs-3">
+                        <span>Total</span>
+                        <span x-text="formatRupiah(subtotal)"></span>
+                    </div>
+                </div>
+
+                <div class="d-grid mt-2">
+                    <button type="button" class="btn btn-primary" @click="processPayment"
+                        :disabled="cart.length === 0">Bayar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @include('livewire.sale-pos-component.modal-produk')
+    @include('livewire.sale-pos-component.modal-diskon')
+    @include('livewire.sale-pos-component.modal-cashback')
+    @include('livewire.sale-pos-component.modal-pembayaran')
+</div>
+
+@section('link')
+    <style>
+        html,
+        body {
+            height: 100%;
+        }
+
+        .form-selectgroup-label.whitespace-nowrap {
+            display: flex !important;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .page {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .page-wrapper {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .page-body {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .page-body>.container-xl {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .main-row {
+            flex: 1;
+            overflow: hidden;
+            margin: 0 !important;
+            display: flex;
+            flex-wrap: nowrap;
+        }
+
+        .overflow-y-auto::-webkit-scrollbar {
+            display: none;
+        }
+
+        .overflow-y-auto {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        .category-scroll::-webkit-scrollbar {
+            display: none;
+        }
+
+        .category-scroll {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        .product-card {
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .product-card .card-img {
+            transition: transform 0.3s ease;
+        }
+
+        .product-card:hover .card-img {
+            transform: scale(1.05);
+        }
+
+        .card-img-overlay {
+            position: absolute;
+            background: linear-gradient(to bottom, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.8));
+        }
+
+        .card-img-overlay::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to bottom, rgba(0, 0, 0, 0), rgba(0, 0, 0, 1));
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+            pointer-events: none;
+        }
+
+        .product-card:hover .card-img-overlay::before {
+            opacity: 1;
+        }
+
+        .card-img-overlay h5 {
+            color: white !important;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            overflow: hidden;
+            z-index: 1;
+            transition: transform 0.3s ease;
+        }
+
+        .card-img-overlay .card-text {
+            z-index: 1;
+            color: var(--tblr-primary) !important;
+            font-weight: bold;
+            transition: transform 0.3s ease;
+        }
+
+        .product-card:hover .card-img-overlay h5,
+        .product-card:hover .card-img-overlay .card-text {
+            transform: translateY(-5px);
+        }
+
+        .card-img-overlay .badge {
+            position: absolute !important;
+            top: 12px;
+            right: 12px;
+            background-color: rgba(0, 0, 0, 0.4);
+            color: white;
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+        }
+
+        .qty-btn {
+            width: 18px;
+            height: 18px;
+            padding: 0;
+            border: none;
+            border-radius: 0.25rem;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.15s;
+        }
+
+        .qty-btn:hover {
+            background: var(--bs-primary);
+        }
+
+        .qty-btn .material-symbols-outlined {
+            font-size: 12px;
+        }
+
+        .qty-display {
+            color: white;
+            font-weight: bold;
+            font-size: 0.875rem;
+            min-width: 14px;
+            text-align: center;
+        }
+    </style>
+@endsection
+
+@section('script')
+    <script>
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('posSystem', () => ({
+                cart: [],
+                selectedItem: null,
+                selectedCustomer: null,
+                customerSearch: '',
+                customerResults: [],
+                showCustomerResults: false,
+                checkOut: {
+                    bayar: '',
+                    kembalian: 0,
+                    payment_method: 'tunai',
+                    note: ''
+                },
+                globalDiskon: {
+                    jenis: 'nominal',
+                    jumlah: 0
+                },
+                globalCashback: {
+                    jenis: 'nominal',
+                    jumlah: 0
+                },
+                init() {
+                    let loadedCart = JSON.parse(localStorage.getItem('pos_cart')) || [];
+                    this.cart = loadedCart.map(item => ({
+                        ...item,
+                        original_price: item.original_price || item
+                            .price, // Ensure original_price exists
+                        diskon: item.diskon || {
+                            jenis: 'nominal',
+                            jumlah: 0,
+                            nominal: 0
+                        },
+                        cashback: item.cashback || {
+                            jenis: 'nominal',
+                            jumlah: 0,
+                            nominal: 0
+                        }
+                    }));
+                    this.$watch('cart', (val) => localStorage.setItem('pos_cart', JSON.stringify(val)));
+                    this.$watch('selectedCustomer', () => {
+                        this.updateCartPrices();
+                    });
+
+                    // Simple logic to clear checkout state on load
+                    this.resetCheckout();
+                },
+
+                getSpecialPrice(productId) {
+                    if (!this.selectedCustomer || !this.selectedCustomer.customer_group || !this
+                        .selectedCustomer
+                        .customer_group.product_prices) return null;
+
+                    let today = new Date().toISOString().split('T')[0];
+
+                    // Note: Ensure your API returns 'product_prices' (snake_case)
+                    let special = this.selectedCustomer.customer_group.product_prices.find(p => {
+                        if (p.product_id !== productId) return false;
+                        if (p.tanggal_mulai && p.tanggal_mulai > today) return false;
+                        if (p.tanggal_akhir && p.tanggal_akhir < today) return false;
+                        return true;
+                    });
+
+                    return special ? parseFloat(special.harga_spesial) : null;
+                },
+
+                updateCartPrices() {
+                    this.cart = this.cart.map(item => {
+                        // If original_price is missing, assume current price is original (fallback)
+                        let original = item.original_price !== undefined ? parseFloat(item
+                                .original_price) :
+                            parseFloat(item.price);
+                        let special = this.getSpecialPrice(item.id);
+
+                        return {
+                            ...item,
+                            original_price: original,
+                            price: special !== null ? special : original
+                        };
+                    });
+                },
+
+                addToCart(product) {
+                    const existingItem = this.cart.find(item => item.id === product.id);
+                    if (existingItem) {
+                        if (existingItem.qty < product.stock) {
+                            existingItem.qty++;
+                        } else {
+                            Toast.fire({
+                                icon: 'error',
+                                title: 'Stok tidak mencukupi'
+                            });
+                        }
+                    } else {
+                        if (product.stock > 0) {
+                            let originalPrice = parseFloat(product.price);
+                            let specialPrice = this.getSpecialPrice(product.id);
+                            let finalPrice = specialPrice !== null ? specialPrice : originalPrice;
+
+                            this.cart.push({
+                                ...product,
+                                qty: 1,
+                                original_price: originalPrice,
+                                price: finalPrice,
+                                diskon: {
+                                    jenis: 'nominal',
+                                    jumlah: 0,
+                                    nominal: 0
+                                },
+                                cashback: {
+                                    jenis: 'nominal',
+                                    jumlah: 0,
+                                    nominal: 0
+                                }
+                            });
+                        }
+                    }
+                },
+
+                updateQty(id, delta) {
+                    const item = this.cart.find(i => i.id === id);
+                    if (!item) return;
+
+                    const newQty = item.qty + delta;
+                    if (newQty <= 0) {
+                        this.removeFromCart(id);
+                    } else if (newQty <= item.stock) {
+                        item.qty = newQty;
+                    } else {
+                        Toast.fire({
+                            icon: 'error',
+                            title: 'Stok tidak mencukupi'
+                        });
+                    }
+                },
+
+                removeFromCart(id) {
+                    Swal.fire({
+                        title: 'Hapus dari keranjang?',
+                        text: 'Anda yakin ingin menghapus produk ini dari keranjang?',
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#3085d6',
+                        cancelButtonColor: '#d33',
+                        confirmButtonText: 'Ya, hapus!',
+                        cancelButtonText: 'Batal'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            this.cart = this.cart.filter(item => item.id !== id);
+                            if (this.selectedItem && this.selectedItem.id === id) {
+                                this.selectedItem = null;
+                                $('#productModal').modal('hide');
+                            }
+                        }
+                    });
+                },
+
+                clearCart() {
+                    Swal.fire({
+                        title: 'Kosongkan keranjang?',
+                        text: 'Anda yakin ingin menghapus semua produk dari keranjang?',
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#3085d6',
+                        cancelButtonColor: '#d33',
+                        confirmButtonText: 'Ya, hapus!',
+                        cancelButtonText: 'Batal'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            this.cart = [];
+                            this.selectedItem = null;
+                            this.resetGlobalDiscounts();
+                        }
+                    });
+                },
+
+                openModal(item) {
+                    this.selectedItem = this.cart.find(i => i.id === item.id);
+                    $('#productModal').modal('show');
+                },
+
+                openGlobalDiscountModal() {
+                    $('#globalDiscountModal').modal('show');
+                },
+
+                openGlobalCashbackModal() {
+                    $('#globalCashbackModal').modal('show');
+                },
+
+                resetGlobalDiscounts() {
+                    this.globalDiskon = {
+                        jenis: 'nominal',
+                        jumlah: 0
+                    };
+                    this.globalCashback = {
+                        jenis: 'nominal',
+                        jumlah: 0
+                    };
+                },
+
+                calculateItemDiscount(item) {
+                    if (!item || !item.diskon) return 0;
+                    let price = parseFloat(item.price);
+                    let qty = parseInt(item.qty);
+                    let discountVal = parseFloat(item.diskon.jumlah) || 0;
+
+                    if (item.diskon.jenis === 'nominal') {
+                        return discountVal;
+                    } else {
+                        return (price * qty * discountVal) / 100;
+                    }
+                },
+
+                calculateItemCashback(item) {
+                    if (!item || !item.cashback) return 0;
+                    let price = parseFloat(item.price);
+                    let qty = parseInt(item.qty);
+                    let cashbackVal = parseFloat(item.cashback.jumlah) || 0;
+
+                    if (item.cashback.jenis === 'nominal') {
+                        return cashbackVal;
+                    } else {
+                        return (price * qty * cashbackVal) / 100;
+                    }
+                },
+
+                calculateGlobalDiscountValue() {
+                    let base = this.grossTotal - this.totalDiscount;
+
+                    if (this.globalDiskon.jenis === 'nominal') {
+                        return parseFloat(this.globalDiskon.jumlah) || 0;
+                    } else {
+                        return (base * (parseFloat(this.globalDiskon.jumlah) || 0)) / 100;
+                    }
+                },
+
+                calculateGlobalCashbackValue() {
+                    let base = this.grossTotal - this.totalDiscount;
+
+                    if (this.globalCashback.jenis === 'nominal') {
+                        return parseFloat(this.globalCashback.jumlah) || 0;
+                    } else {
+                        return (base * (parseFloat(this.globalCashback.jumlah) || 0)) / 100;
+                    }
+                },
+
+                get grossTotal() {
+                    return this.cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+                },
+
+                get cartTotal() {
+                    return this.grossTotal - this.totalDiscount;
+                },
+
+                get totalDiscount() {
+                    return this.cart.reduce((sum, item) => {
+                        return sum + this.calculateItemDiscount(item);
+                    }, 0);
+                },
+
+                get totalCashback() {
+                    return this.cart.reduce((sum, item) => {
+                        return sum + this.calculateItemCashback(item);
+                    }, 0);
+                },
+
+                get subtotal() {
+                    let val = this.grossTotal - this.totalDiscount - this
+                        .calculateGlobalDiscountValue();
+                    return val > 0 ? val : 0;
+                },
+
+                formatRupiah(num) {
+                    return new Intl.NumberFormat('en-US').format(num || 0);
+                },
+
+                parseFormatted(val) {
+                    if (typeof val === 'number') return val;
+                    return parseFloat(String(val).replace(/,/g, '')) || 0;
+                },
+
+                processPayment() {
+                    if (this.cart.length === 0) return;
+
+                    if (!this.checkOut.bayar) {
+                        this.checkOut.bayar = this.subtotal;
+                    }
+                    $('#checkoutModal').modal('show');
+                    setTimeout(() => {
+                        const input = document.getElementById('paymentInput');
+                        if (input) input.select();
+                    }, 500);
+                },
+
+                getSuggestedAmounts() {
+                    let total = this.subtotal;
+                    let suggestions = new Set();
+
+                    [50000, 100000, 200000, 500000, 1000000].forEach(base => {
+                        let sugg = Math.ceil(total / base) * base;
+                        if (sugg === total) sugg += base;
+                        suggestions.add(sugg);
+                    });
+
+                    return Array.from(suggestions).sort((a, b) => a - b).filter(a => a > total);
+                },
+
+                calculateChange() {
+                    let pay = parseFloat(this.checkOut.bayar) || 0;
+                    return pay - this.subtotal;
+                },
+
+                submitSale() {
+                    if ((this.checkOut.bayar === '' || parseFloat(this.checkOut.bayar) < 0) && this
+                        .checkOut.payment_method !== 'credit') {
+                        Toast.fire({
+                            icon: 'error',
+                            title: 'Jumlah bayar tidak valid'
+                        });
+                        return;
+                    }
+
+                    if (!this.selectedCustomer) {
+                        Toast.fire({
+                            icon: 'error',
+                            title: 'Pelanggan tidak valid'
+                        });
+                        return;
+                    }
+
+                    const payload = {
+                        products: this.cart,
+                        customer_id: this.selectedCustomer ? this.selectedCustomer.id : null,
+                        grandTotal: this.subtotal,
+                        bayar: this.checkOut.bayar,
+                        kembalian: this.calculateChange(),
+                        payment_method: this.checkOut.payment_method,
+                        note: this.checkOut.note,
+                        globalDiskon: this.globalDiskon,
+                        globalCashback: this.globalCashback
+                    };
+
+                    this.$wire.saveSale(payload);
+                    $('#checkoutModal').modal('hide');
+                },
+
+                resetCheckout() {
+                    this.checkOut = {
+                        bayar: '',
+                        kembalian: 0,
+                        payment_method: 'tunai',
+                        note: ''
+                    };
+                }
+            }));
+        });
+
+        document.addEventListener('livewire:initialized', () => {
+            Livewire.on('sale-stored', () => {
+                window.dispatchEvent(new CustomEvent('sale-stored'));
+            });
+
+            Livewire.on('add-to-cart', (event) => {
+                let el = document.querySelector('[x-data]');
+                if (el) {
+                    let raw = event.product;
+
+                    console.log(raw);
+                    let productData = {
+                        id: raw.id,
+                        name: raw.nama_produk,
+                        price: raw.harga_jual,
+                        stock: raw.stok_aktual,
+                        image: '/storage/' + raw.gambar,
+                    };
+
+                    Alpine.$data(el).addToCart(productData);
+
+                    const Toast = Swal.mixin({
+                        toast: true,
+                        position: 'top-end',
+                        showConfirmButton: false,
+                        timer: 3000,
+                        timerProgressBar: true,
+                    });
+                    Toast.fire({
+                        icon: 'success',
+                        title: 'Produk ditambahkan: ' + raw.nama_produk
+                    });
+                }
+            });
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            if (document.getElementById('customerSearch')) {
+                new TomSelect('#customerSearch', {
+                    valueField: 'id',
+                    labelField: 'nama_pelanggan',
+                    searchField: 'nama_pelanggan',
+                    load: function(query, callback) {
+                        if (query.length < 2) return callback();
+                        @this.call('loadCustomers', query, 0).then(res => callback(res.data)).catch(
+                            () => callback());
+                    },
+                    onChange: function(value) {
+                        let el = document.querySelector('[x-data]');
+                        if (el) {
+                            let data = this.options[value];
+                            Alpine.$data(el).selectedCustomer = data || null;
+                        }
+                    }
+                });
+            }
+
+            const scrollContainer = document.querySelector('.overflow-y-auto');
+            if (scrollContainer) {
+                let isDown = false;
+                let startY;
+                let scrollTop;
+
+                scrollContainer.addEventListener('mousedown', (e) => {
+                    isDown = true;
+                    scrollContainer.style.userSelect = 'none';
+                    startY = e.pageY - scrollContainer.offsetTop;
+                    scrollTop = scrollContainer.scrollTop;
+                });
+
+                scrollContainer.addEventListener('mouseleave', () => {
+                    isDown = false;
+                });
+
+                scrollContainer.addEventListener('mouseup', () => {
+                    isDown = false;
+                });
+
+                scrollContainer.addEventListener('mousemove', (e) => {
+                    if (!isDown) return;
+                    e.preventDefault();
+                    const y = e.pageY - scrollContainer.offsetTop;
+                    const walk = (y - startY) * 2;
+                });
+            }
+
+            const categoryScroll = document.querySelector('.category-scroll');
+            if (categoryScroll) {
+                categoryScroll.addEventListener('wheel', (e) => {
+                    if (e.deltaY !== 0) {
+                        e.preventDefault();
+                        categoryScroll.scrollLeft += e.deltaY;
+                    }
+                });
+            }
+        });
+    </script>
+@endsection

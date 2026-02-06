@@ -6,7 +6,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                @if ($product)
+                @if ($detailProduk)
                     <table class="table">
                         <thead>
                             <tr>
@@ -21,7 +21,7 @@
                                 <td>Harga Default</td>
                                 <td>
                                     <input type="text" class="form-control" readonly
-                                        value="{{ number_format($product->harga_jual) }}">
+                                        value="{{ number_format($detailProduk->harga_jual) }}">
                                 </td>
                                 <td></td>
                                 <td></td>
@@ -29,7 +29,7 @@
                             @foreach ($this->customerGroups as $customerGroup)
                                 @php
                                     $hargaJualPerMember = '';
-                                    foreach ($product->productPrices as $productPrice) {
+                                    foreach ($detailProduk->productPrices as $productPrice) {
                                         if ($productPrice->customer_group_id == $customerGroup->id) {
                                             $hargaJualPerMember = number_format($productPrice->harga_spesial);
                                         }

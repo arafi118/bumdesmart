@@ -59,11 +59,11 @@
                                                 Edit
                                             </a>
                                             <a class="dropdown-item" href="#"
-                                                wire:click="detailProduk({{ $product->id }})">
+                                                wire:click="modalDetailProduk({{ $product->id }})">
                                                 Detail Produk
                                             </a>
                                             <a class="dropdown-item" href="#"
-                                                wire:click="hargaMember({{ $product->id }})">
+                                                wire:click="modalHargaMember({{ $product->id }})">
                                                 Harga Member
                                             </a>
                                             <div class="dropdown-divider"></div>

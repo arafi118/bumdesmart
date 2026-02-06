@@ -80,61 +80,14 @@
 
 <body>
     <div class="page">
-        {{-- NAVBAR --}}
-        @include('layouts.navbar')
-
-        {{-- MENU --}}
-        @include('layouts.menu')
-
         <div class="page-wrapper">
-
-            @php
-                $url = request()->url();
-            @endphp
-
-            <!-- BEGIN PAGE HEADER -->
-            <div class="page-header d-print-none {{ str_contains($url, 'pos') ? 'd-none' : '' }}">
-                <div class="container-xl">
-                    <div class="row g-2 align-items-center">
-                        <div class="col">
-                            <!-- Page pre-title -->
-                            <h1 class="page-title">{{ $title ?? '' }}</h1>
-                        </div>
-                        <!-- Page title actions -->
-                        <div class="col-auto ms-auto d-print-none">
-                            @yield('button-header')
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <!-- END PAGE HEADER -->
-
             <!-- BEGIN PAGE BODY -->
-            <main id="content" class="page-body flex-1 full-height-content">
+            <main id="content" class="page-body">
                 <div class="container-xl">
                     {{ $slot }}
                 </div>
             </main>
             <!-- END PAGE BODY -->
-            <!-- BEGIN FOOTER -->
-            <!--  BEGIN FOOTER  -->
-            <footer class="footer footer-transparent d-print-none me-0">
-                <div class="container-xl">
-                    <div class="row text-center align-items-center flex-row-reverse">
-                        <div class="col-12 col-lg-auto mt-3 mt-lg-0">
-                            <ul class="list-inline list-inline-dots mb-0">
-                                <li class="list-inline-item">
-                                    Copyright &copy; {{ date('Y') }}
-                                    <a href="." class="link-secondary">{{ env('APP_NAME') }}</a>.
-                                    All rights reserved.
-                                </li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-            </footer>
-            <!--  END FOOTER  -->
-            <!-- END FOOTER -->
         </div>
     </div>
 

@@ -41,6 +41,7 @@
                             <th width="15%">Harga</th>
                             <th width="10%">Qty</th>
                             <th width="15%">Diskon</th>
+                            <th width="15%">Cashback</th>
                             <th width="20%">Subtotal</th>
                             <th width="5%"></th>
                         </tr>
@@ -59,14 +60,20 @@
                                 </td>
                                 <td>
                                     <input type="number" class="form-control" x-model="product.jumlah_jual"
-                                        x-on:input="updateRow(product.id)" x-on:focus="$el.select()"
-                                        :max="product.stok_tersedia" min="1">
+                                        x-on:input="updateRow(product.id)" x-on:focus="$el.select()">
                                 </td>
                                 <td>
                                     <!-- Trigger Modal Diskon -->
                                     <div class="input-group cursor-pointer" x-on:click="openDiscountModal(product.id)">
                                         <input type="text" class="form-control bg-white cursor-pointer" readonly
                                             x-bind:value="product.diskon.nominal">
+                                    </div>
+                                </td>
+                                <td>
+                                    <!-- Trigger Modal Cashback -->
+                                    <div class="input-group cursor-pointer" x-on:click="openCashbackModal(product.id)">
+                                        <input type="text" class="form-control bg-white cursor-pointer" readonly
+                                            x-bind:value="product.cashback.nominal">
                                     </div>
                                 </td>
                                 <td>
@@ -82,7 +89,7 @@
                             </tr>
                         </template>
                         <tr x-show="Object.keys(products).length === 0">
-                            <td colspan="7" class="text-center text-muted py-4">
+                            <td colspan="8" class="text-center text-muted py-4">
                                 <i>Belum ada produk yang dipilih</i>
                             </td>
                         </tr>
@@ -92,6 +99,7 @@
                             <td colspan="3" class="text-end">TOTAL</td>
                             <td x-text="summary.itemCount"></td>
                             <td x-text="formatRupiah(totalProducts.diskon)"></td>
+                            <td x-text="formatRupiah(totalProducts.cashback)"></td>
                             <td x-text="totalProducts.subtotal"></td>
                             <td></td>
                         </tr>
@@ -285,7 +293,8 @@
         </div>
     </div>
     <!-- Includes for Modals -->
-    @include('livewire.tambah-pembelian-component.modal-diskon')
+    @include('livewire.tambah-penjualan-component.modal-diskon')
+    @include('livewire.tambah-penjualan-component.modal-cashback')
 </div>
 </div>
 
@@ -341,6 +350,11 @@
                 activeModalId: null,
                 modalProduct: {
                     diskon: {
+                        jenis: 'nominal',
+                        jumlah: 0,
+                        nominal: 0
+                    },
+                    cashback: {
                         jenis: 'nominal',
                         jumlah: 0,
                         nominal: 0
@@ -463,6 +477,11 @@
                                 jumlah: 0,
                                 nominal: 0
                             },
+                            cashback: {
+                                jenis: 'nominal',
+                                jumlah: 0,
+                                nominal: 0
+                            },
                             subtotal: this.formatRupiah(product.harga_jual),
                             batch_info: product.batch_info || '' // Optional info
                         };
@@ -507,15 +526,18 @@
                     let totalSub = 0;
                     let totalQty = 0;
                     let sumDiskon = 0;
+                    let sumProductCashback = 0;
 
                     Object.values(this.products).forEach(p => {
                         let sub = this.parseFormatted(p.subtotal);
                         let qty = parseInt(p.jumlah_jual) || 0;
                         let d = this.parseFormatted(p.diskon.nominal);
+                        let c = this.parseFormatted(p.cashback ? p.cashback.nominal : 0);
 
                         totalSub += sub;
                         totalQty += qty;
                         sumDiskon += d;
+                        sumProductCashback += c;
                     });
 
                     // Global Discount
@@ -550,7 +572,8 @@
                         orderDiscount: this.formatRupiah(gDiskonAmt),
                         orderTax: this.formatRupiah(taxAmt),
                         grandTotal: this.formatRupiah(grand),
-                        orderCashback: this.formatRupiah(this.calculateGlobalCashback(totalSub))
+                        orderCashback: this.formatRupiah(this.calculateGlobalCashback(totalSub) +
+                            sumProductCashback)
                     };
 
                     this.calculateKembalian();
@@ -581,8 +604,24 @@
                 // --- Modals ---
                 openDiscountModal(id) {
                     this.activeModalId = id;
-                    this.modalProduct = JSON.parse(JSON.stringify(this.products[id]));
+                    let p = JSON.parse(JSON.stringify(this.products[id]));
+                    this.modalProduct = p;
                     $('#discountModal').modal('show');
+                },
+
+                openCashbackModal(id) {
+                    this.activeModalId = id;
+                    let p = JSON.parse(JSON.stringify(this.products[id]));
+                    // Ensure cashback object exists
+                    if (!p.cashback) {
+                        p.cashback = {
+                            jenis: 'nominal',
+                            jumlah: 0,
+                            nominal: 0
+                        };
+                    }
+                    this.modalProduct = p;
+                    $('#cashbackModal').modal('show');
                 },
 
                 saveDiscount() {
@@ -593,23 +632,52 @@
 
                     let harga = this.parseFormatted(p.harga_jual);
                     let qty = parseInt(p.jumlah_jual) || 0;
-                    let val = this.parseFormatted(m.diskon.jumlah);
 
-                    let nominal = 0;
+                    let valDiskon = this.parseFormatted(m.diskon.jumlah);
+                    let nominalDiskon = 0;
                     if (m.diskon.jenis === 'nominal') {
-                        nominal = val;
+                        nominalDiskon = valDiskon;
                     } else {
-                        nominal = (harga * qty * val) / 100;
+                        nominalDiskon = (harga * qty * valDiskon) / 100;
                     }
 
                     this.products[id].diskon = {
                         jenis: m.diskon.jenis,
                         jumlah: m.diskon.jumlah,
-                        nominal: this.formatRupiah(nominal)
+                        nominal: this.formatRupiah(nominalDiskon)
                     };
 
                     this.updateRow(id);
                     $('#discountModal').modal('hide');
+                },
+
+                saveCashback() {
+                    if (!this.activeModalId) return;
+                    let id = this.activeModalId;
+                    let m = this.modalProduct;
+                    let p = this.products[id];
+
+                    let harga = this.parseFormatted(p.harga_jual);
+                    let qty = parseInt(p.jumlah_jual) || 0;
+
+                    let valCashback = this.parseFormatted(m.cashback.jumlah);
+                    let nominalCashback = 0;
+                    if (m.cashback.jenis === 'nominal') {
+                        nominalCashback = valCashback;
+                    } else {
+                        // Percent cashback per item price
+                        nominalCashback = (harga * qty * valCashback) / 100;
+                    }
+
+                    this.products[id].cashback = {
+                        jenis: m.cashback.jenis,
+                        jumlah: m.cashback.jumlah,
+                        nominal: this.formatRupiah(nominalCashback)
+                    };
+
+                    // Cashback doesn't affect row subtotal, but triggers total recalc
+                    this.calculateTotal();
+                    $('#cashbackModal').modal('hide');
                 },
 
                 resetForm() {
@@ -640,6 +708,11 @@
                                 jenis: p.diskon.jenis,
                                 jumlah: this.parseFormatted(p.diskon.jumlah),
                                 nominal: this.parseFormatted(p.diskon.nominal)
+                            },
+                            cashback: {
+                                jenis: p.cashback.jenis,
+                                jumlah: this.parseFormatted(p.cashback.jumlah),
+                                nominal: this.parseFormatted(p.cashback.nominal)
                             },
                             subtotal: this.parseFormatted(p.subtotal)
                         });
