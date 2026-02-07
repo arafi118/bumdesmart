@@ -165,10 +165,19 @@
                         </span>
                     </a>
                     <a class="btn btn-outline-warning d-flex flex-column align-items-center flex-fill"
-                        @click="resetGlobalDiscounts()"> <!-- Added reset functionality too -->
+                        @click="pauseSale()">
                         <span class="material-symbols-outlined fs-1">
                             inactive_order
                         </span>
+                    </a>
+                    <a class="btn btn-outline-secondary d-flex flex-column align-items-center flex-fill position-relative"
+                        x-show="heldSales.length > 0" @click="openHeldSalesModal()">
+                        <span class="material-symbols-outlined fs-1">
+                            restore_page
+                        </span>
+                        <span class="badge bg-info text-light badge-notification"
+                            style="position: absolute; top: 0; right: 0; width: 1.5rem; height: 1.5rem; display: flex; align-items: center; justify-content: center;"
+                            x-text="heldSales.length"></span>
                     </a>
                     <a class="btn btn-outline-danger d-flex flex-column align-items-center flex-fill"
                         @click="clearCart()">
@@ -210,6 +219,58 @@
     @include('livewire.sale-pos-component.modal-diskon')
     @include('livewire.sale-pos-component.modal-cashback')
     @include('livewire.sale-pos-component.modal-pembayaran')
+
+    <!-- Held Sales Modal -->
+    <div class="modal modal-blur fade" id="heldSalesModal" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Transaksi Tertunda</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="list-group list-group-flush">
+                        <template x-if="heldSales.length === 0">
+                            <div class="text-center p-3 text-secondary">
+                                Tidak ada transaksi yang tertunda
+                            </div>
+                        </template>
+                        <template x-for="(sale, index) in heldSales" :key="index">
+                            <div class="list-group-item">
+                                <div class="row align-items-center">
+                                    <div class="col-auto">
+                                        <span class="avatar bg-yellow-lt" x-text="index + 1"></span>
+                                    </div>
+                                    <div class="col text-truncate">
+                                        <div class="text-reset d-block"
+                                            x-text="sale.customer ? sale.customer.nama_pelanggan : 'Umum/Walk-in'">
+                                        </div>
+                                        <div class="d-block text-secondary text-truncate mt-n1">
+                                            <span x-text="sale.date"></span> &bull;
+                                            <span x-text="sale.cart.length + ' Item'"></span> &bull;
+                                            <span x-text="formatRupiah(sale.total)"></span>
+                                        </div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <button class="btn btn-primary btn-sm" @click="restoreHeldSale(index)">
+                                            <span class="material-symbols-outlined fs-5">restore</span>
+                                            Ambil
+                                        </button>
+                                        <button class="btn btn-danger btn-sm ms-2" @click="removeHeldSale(index)">
+                                            <span class="material-symbols-outlined fs-5">delete</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-link link-secondary" data-bs-dismiss="modal">Tutup</button>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 @section('link')
@@ -377,6 +438,8 @@
 
 @section('script')
     <script>
+        let customerTomSelect;
+
         document.addEventListener('alpine:init', () => {
             Alpine.data('posSystem', () => ({
                 cart: [],
@@ -399,12 +462,13 @@
                     jenis: 'nominal',
                     jumlah: 0
                 },
+                heldSales: [],
                 init() {
                     let loadedCart = JSON.parse(localStorage.getItem('pos_cart')) || [];
                     this.cart = loadedCart.map(item => ({
                         ...item,
                         original_price: item.original_price || item
-                            .price, // Ensure original_price exists
+                            .price,
                         diskon: item.diskon || {
                             jenis: 'nominal',
                             jumlah: 0,
@@ -417,11 +481,30 @@
                         }
                     }));
                     this.$watch('cart', (val) => localStorage.setItem('pos_cart', JSON.stringify(val)));
-                    this.$watch('selectedCustomer', () => {
+                    this.$watch('selectedCustomer', (customer) => {
                         this.updateCartPrices();
+
+                        if (customer && customer.customer_group && customer.customer_group
+                            .diskon_persen) {
+                            this.globalDiskon = {
+                                jenis: 'persen',
+                                jumlah: parseFloat(customer.customer_group.diskon_persen)
+                            };
+                        } else {
+                            this.globalDiskon = {
+                                jenis: 'nominal',
+                                jumlah: 0
+                            };
+                        }
                     });
 
-                    // Simple logic to clear checkout state on load
+                    let storedHeldSales = localStorage.getItem('pos_held_sales');
+                    if (storedHeldSales) {
+                        this.heldSales = JSON.parse(storedHeldSales);
+                    }
+                    this.$watch('heldSales', (val) => localStorage.setItem('pos_held_sales', JSON
+                        .stringify(val)));
+
                     this.resetCheckout();
                 },
 
@@ -432,7 +515,6 @@
 
                     let today = new Date().toISOString().split('T')[0];
 
-                    // Note: Ensure your API returns 'product_prices' (snake_case)
                     let special = this.selectedCustomer.customer_group.product_prices.find(p => {
                         if (p.product_id !== productId) return false;
                         if (p.tanggal_mulai && p.tanggal_mulai > today) return false;
@@ -445,7 +527,6 @@
 
                 updateCartPrices() {
                     this.cart = this.cart.map(item => {
-                        // If original_price is missing, assume current price is original (fallback)
                         let original = item.original_price !== undefined ? parseFloat(item
                                 .original_price) :
                             parseFloat(item.price);
@@ -564,6 +645,154 @@
 
                 openGlobalCashbackModal() {
                     $('#globalCashbackModal').modal('show');
+                },
+
+                openHeldSalesModal() {
+                    $('#heldSalesModal').modal('show');
+                },
+
+                pauseSale() {
+                    if (this.cart.length === 0) {
+                        Toast.fire({
+                            icon: 'warning',
+                            title: 'Keranjang kosong'
+                        });
+                        return;
+                    }
+
+                    Swal.fire({
+                        title: 'Tunda Transaksi?',
+                        text: 'Transaksi akan disimpan sementara dan keranjang akan dikosongkan.',
+                        icon: 'question',
+                        showCancelButton: true,
+                        confirmButtonText: 'Ya, Tunda',
+                        cancelButtonText: 'Batal'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            const saleData = {
+                                cart: this.cart,
+                                customer: this.selectedCustomer,
+                                globalDiskon: this.globalDiskon,
+                                globalCashback: this.globalCashback,
+                                date: new Date().toLocaleString('id-ID'),
+                                total: this.subtotal
+                            };
+
+                            this.heldSales.push(saleData);
+
+                            this.cart = [];
+                            this.selectedItem = null;
+                            this.selectedCustomer = null;
+                            this.resetGlobalDiscounts();
+
+                            // Clear TomSelect if exists
+                            let tom = document.getElementById('customerSearch').tomselect;
+                            if (tom) tom.clear();
+
+                            Toast.fire({
+                                icon: 'success',
+                                title: 'Transaksi ditunda'
+                            });
+                        }
+                    });
+                },
+
+                restoreHeldSale(index) {
+                    if (this.cart.length > 0) {
+                        Swal.fire({
+                            title: 'Keranjang tidak kosong',
+                            text: 'Pulihkan transaksi akan menimpa keranjang saat ini. Lanjutkan?',
+                            icon: 'warning',
+                            showCancelButton: true,
+                            confirmButtonText: 'Ya, Timpa',
+                            cancelButtonText: 'Batal'
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                this.doRestore(index);
+                            }
+                        });
+                    } else {
+                        this.doRestore(index);
+                    }
+                },
+
+                doRestore(index) {
+                    const sale = this.heldSales[index];
+
+                    this.cart = sale.cart;
+                    this.selectedCustomer = sale.customer;
+                    this.globalDiskon = sale.globalDiskon || {
+                        jenis: 'nominal',
+                        jumlah: 0
+                    };
+                    this.globalCashback = sale.globalCashback || {
+                        jenis: 'nominal',
+                        jumlah: 0
+                    };
+
+                    if (this.selectedCustomer) {
+                        if (customerTomSelect) {
+                            try {
+                                customerTomSelect.clear(true);
+                                const customerId = String(this.selectedCustomer.id);
+
+                                if (!customerTomSelect.options[customerId]) {
+                                    const customerData = {
+                                        id: customerId,
+                                        nama_pelanggan: this.selectedCustomer.nama_pelanggan,
+                                        alamat: this.selectedCustomer.alamat,
+                                        business_id: this.selectedCustomer.business_id,
+                                        created_at: this.selectedCustomer.created_at,
+                                        customer_group: this.selectedCustomer.customer_group,
+                                        customer_group_id: this.selectedCustomer.customer_group_id,
+                                        kode_pelanggan: this.selectedCustomer.kode_pelanggan,
+                                        limit_hutang: this.selectedCustomer.limit_hutang,
+                                        no_hp: this.selectedCustomer.no_hp,
+                                        password: this.selectedCustomer.password,
+                                        updated_at: this.selectedCustomer.updated_at,
+                                        username: this.selectedCustomer.username,
+                                        kode_pelanggan: this.selectedCustomer.kode_pelanggan,
+                                        limit_hutang: this.selectedCustomer.limit_hutang,
+                                        no_hp: this.selectedCustomer.no_hp,
+                                        password: this.selectedCustomer.password,
+                                        updated_at: this.selectedCustomer.updated_at,
+                                        username: this.selectedCustomer.username
+                                    };
+                                    customerTomSelect.addOption(customerData);
+                                }
+
+                                customerTomSelect.setValue(customerId, true);
+                            } catch (e) {
+                                console.error('TomSelect update failed:', e);
+                                console.error('Error message:', e.message);
+                                console.error('Customer data:', this.selectedCustomer);
+                            }
+                        }
+                    }
+
+                    this.heldSales.splice(index, 1);
+                    $('#heldSalesModal').modal('hide');
+
+                    Toast.fire({
+                        icon: 'success',
+                        title: 'Transaksi dipulihkan'
+                    });
+                },
+
+                removeHeldSale(index) {
+                    Swal.fire({
+                        title: 'Hapus Transaksi Tertunda?',
+                        text: 'Data transaksi ini akan dihapus permanen.',
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#d33',
+                        confirmButtonText: 'Ya, Hapus',
+                        cancelButtonText: 'Batal'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            this.heldSales.splice(index, 1);
+                        }
+                    });
                 },
 
                 resetGlobalDiscounts() {
@@ -772,7 +1001,7 @@
 
         document.addEventListener('DOMContentLoaded', function() {
             if (document.getElementById('customerSearch')) {
-                new TomSelect('#customerSearch', {
+                customerTomSelect = new TomSelect('#customerSearch', {
                     valueField: 'id',
                     labelField: 'nama_pelanggan',
                     searchField: 'nama_pelanggan',

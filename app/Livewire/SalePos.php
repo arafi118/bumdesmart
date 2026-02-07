@@ -45,7 +45,7 @@ class SalePos extends Component
         if ($query->count() === 1) {
             $product = $query->first();
             $this->dispatch('add-to-cart', product: $product);
-            $this->searchProduct = ''; // Clear search after auto-select
+            $this->searchProduct = '';
         }
     }
 
@@ -145,8 +145,11 @@ class SalePos extends Component
     private function calculateGlobalValue($setting, $baseTotal)
     {
         $amt = $this->parseNumber($setting['jumlah'] ?? 0);
-        if (($setting['jenis'] ?? 'nominal') == 'persen') {
-            return 0;
+        $type = $setting['jenis'] ?? 'nominal';
+
+        if ($type == 'persen') {
+            if ($amt >= 100) return 0;
+            return $baseTotal * ($amt / (100 - $amt));
         }
 
         return $amt;
@@ -386,7 +389,9 @@ class SalePos extends Component
             return $amt;
         }
 
-        return ($type == 'persen') ? 0 : $amt;
+        // For percentage, calculate derived amount from baseInfo (Net)
+        if ($amt >= 100) return 0;
+        return $baseInfo * ($amt / (100 - $amt));
     }
 
     private function calculateItemDiscount($item)
