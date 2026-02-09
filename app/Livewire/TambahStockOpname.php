@@ -2,10 +2,12 @@
 
 namespace App\Livewire;
 
+use App\Models\Category;
 use App\Models\Product;
+use App\Models\Shelves;
+use App\Models\StockMovement;
 use App\Models\StockOpname;
 use App\Models\StockOpnameDetail;
-use App\Models\StockMovement;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 
@@ -27,46 +29,89 @@ class TambahStockOpname extends Component
 
     public $catatan;
 
+    // Properties for filtering and data
     public $products = [];
+
+    public $categoryId = '';
+
+    public $shelfId = '';
+
+    public $categories = [];
+
+    public $shelves = [];
 
     public function mount()
     {
         $this->title = 'Tambah Stock Opname';
         $this->businessId = auth()->user()->business_id;
+        $this->loadMasterData();
+    }
+
+    public function loadMasterData()
+    {
+        $this->categories = Category::where('business_id', $this->businessId)->get();
+        $this->shelves = Shelves::where('business_id', $this->businessId)->get();
+    }
+
+    public function updatedCategoryId()
+    {
+        $this->loadProducts();
+    }
+
+    public function updatedShelfId()
+    {
+        $this->loadProducts();
     }
 
     /**
-     * Load products untuk tampilan tabel
+     * Load products based on filters
+     * NO PAGINATION to prevent data loss during counting
      */
-    public function loadProducts($page = 1, $search = '')
+    public function loadProducts()
     {
-        $query = Product::where('business_id', $this->businessId);
+        // Only load if at least one filter is selected or user explicitly asks (to prevent loading thousands of items at once)
+        if (empty($this->categoryId) && empty($this->shelfId)) {
+            $this->products = [];
 
-        if ($search) {
-            $query->where('nama_produk', 'like', "%{$search}%");
+            return;
         }
 
-        $data = $query
-            ->orderBy('nama_produk')
-            ->skip(($page - 1) * 10)
-            ->take(11)
-            ->get();
+        $query = Product::where('business_id', $this->businessId)
+            ->where('is_active', 1);
 
-        return [
-            'data' => $data->take(10)->values(),
-            'has_more' => $data->count() > 10,
-        ];
+        if ($this->categoryId) {
+            $query->where('category_id', $this->categoryId);
+        }
+
+        if ($this->shelfId) {
+            $query->where('shelf_id', $this->shelfId);
+        }
+
+        $this->products = $query->orderBy('nama_produk')->get()
+            ->map(function ($product) {
+                return [
+                    'id' => $product->id,
+                    'nama_produk' => $product->nama_produk,
+                    'kode_produk' => $product->kode_produk,
+                    'harga_beli' => $product->harga_beli,
+                    'sistem' => $product->stok_aktual,
+                    'fisik' => $product->stok_aktual, // Default to system stock
+                    'selisih' => 0,
+                    'jenis' => null,
+                    'alasan' => '',
+                    'counted' => false, // UI helper
+                ];
+            })->toArray();
     }
 
     /**
      * Menyimpan Stock Opname
-     * 
-     * @param array $data -> dikirim dari Alpine.js via @this.call()
      */
     public function saveOpname($data)
     {
-        if (!$data || !is_array($data)) {
+        if (! $data || ! is_array($data)) {
             $this->dispatch('alert', type: 'error', message: 'Data tidak valid');
+
             return;
         }
 
@@ -74,69 +119,82 @@ class TambahStockOpname extends Component
 
         try {
             $tanggalOpname = $data['tanggal'] ?? null;
-            if (!$tanggalOpname) throw new \Exception('Tanggal opname wajib diisi');
-
-            $status = $data['status'] ?? 'draft';
-            if (!in_array($status, ['draft', 'completed', 'approved', 'rejected', 'canceled', 'closed'])) {
-                throw new \Exception('Status opname tidak valid');
+            if (! $tanggalOpname) {
+                throw new \Exception('Tanggal opname wajib diisi');
             }
 
-            if (empty($data['items']) || !is_array($data['items'])) {
-                throw new \Exception('Item stock opname tidak boleh kosong');
+            $status = $data['status'] ?? 'draft';
+
+            // Logic validation
+            if ($status === 'approved' && empty($data['approved_by'])) {
+                // If approving, ensure we have approver. If not sent, default to current user
+                $data['approved_by'] = auth()->id();
             }
 
             $tanggalApproved = $status === 'approved' ? ($data['tanggal_approved'] ?? now()->format('Y-m-d')) : null;
-            $approvedBy      = $status === 'approved' ? ($data['approved_by'] ?? auth()->user()->name) : null;
+            $approvedBy = $status === 'approved' ? ($data['approved_by'] ?? auth()->id()) : null;
 
             $opname = StockOpname::create([
-                'business_id'      => $this->businessId,
-                'user_id'          => auth()->id(),
-                'no_opname'        => $data['no_opname'] ?: 'SO-' . now()->format('YmdHis'),
-                'tanggal_opname'   => $tanggalOpname,
-                'status'           => $status,
-                'catatan'          => $data['catatan'] ?? null,
-                'approved_by'      => $approvedBy,
+                'business_id' => $this->businessId,
+                'user_id' => auth()->id(),
+                'no_opname' => $data['no_opname'] ?: 'SO-'.now()->format('YmdHis'),
+                'tanggal_opname' => $tanggalOpname,
+                'status' => $status,
+                'catatan' => $data['catatan'] ?? null,
+                'approved_by' => $approvedBy,
                 'tanggal_approved' => $tanggalApproved,
             ]);
 
+            // Filter items that have been modified/counted or just save all?
+            // Usually we save all loaded items to keep track of what was checked in this session
+            // But if user filters multiple times, we might receive a consolidated list from frontend
+            // OR we only save what is currently in $data['items'] which comes from frontend state
+
             foreach ($data['items'] as $item) {
-                if (!isset($item['product_id'])) continue;
+                if (! isset($item['product_id'])) {
+                    continue;
+                }
 
                 // Simpan detail opname
                 StockOpnameDetail::create([
                     'stock_opname_id' => $opname->id,
-                    'product_id'      => $item['product_id'],
-                    'stok_sistem'     => $item['stok_sistem'],
-                    'stok_fisik'      => $item['stok_fisik'],
-                    'selisih'         => $item['selisih'],
-                    'jenis_selisih'   => $item['jenis_selisih'],
-                    'alasan'          => $item['alasan'] ?? null,
-                    'harga_satuan'    => $item['harga_satuan'] ?? 0,
-                    'total_harga'     => ($item['stok_fisik']) * ($item['harga_satuan'] ?? 0),
-                    'catatan'         => $data['catatan'] ?? null,
+                    'product_id' => $item['product_id'],
+                    'stok_sistem' => $item['stok_sistem'],
+                    'stok_fisik' => $item['stok_fisik'],
+                    'selisih' => $item['selisih'],
+                    'jenis_selisih' => $item['jenis_selisih'],
+                    'alasan' => $item['alasan'] ?? null,
+                    'harga_satuan' => $item['harga_satuan'] ?? 0,
+                    'total_harga' => ($item['selisih']) * ($item['harga_satuan'] ?? 0), // Total value of variance
+                    'catatan' => $data['catatan'] ?? null,
                 ]);
 
-                // Update stok aktual produk
-                Product::where('id', $item['product_id'])
-                    ->update(['stok_aktual' => $item['stok_fisik']]);
+                // ONLY update stock and create movement IF status is APPROVED
+                if ($status === 'approved') {
+                    // Update stok aktual produk
+                    Product::where('id', $item['product_id'])
+                        ->update(['stok_aktual' => $item['stok_fisik']]);
 
-                // Buat stock movement per produk
-                StockMovement::create([
-                    'business_id'            => $this->businessId,
-                    'product_id'             => $item['product_id'],
-                    'tanggal_perubahan_stok' => $tanggalOpname,
-                    'jenis_perubahan'        => 'stock opname',
-                    'jumlah_perubahan'       => $item['selisih'],
-                    'reference_id'           => $opname->id,
-                    'reference_type'         => 'stock_opname',
-                    'catatan'                => $item['alasan'] ?? $data['catatan'] ?? null,
-                ]);
+                    // Buat stock movement per produk ONLY if there is a difference
+                    if ($item['selisih'] != 0) {
+                        StockMovement::create([
+                            'business_id' => $this->businessId,
+                            'product_id' => $item['product_id'],
+                            'tanggal_perubahan_stok' => $tanggalOpname,
+                            'jenis_perubahan' => 'stock opname', // Adjust based on enum/convention
+                            'jumlah_perubahan' => $item['selisih'],
+                            'reference_id' => $opname->id,
+                            'reference_type' => 'stock_opname',
+                            'catatan' => $item['alasan'] ?? $data['catatan'] ?? 'Stock Opname Adjustment',
+                        ]);
+                    }
+                }
             }
 
             DB::commit();
 
             $this->dispatch('alert', type: 'success', message: 'Stock opname berhasil disimpan');
-            $this->dispatch('redirect', url: '/stock-opname/daftar', timeout: 1000);
+            $this->dispatch('redirect', url: '/stock/opname/daftar', timeout: 1000);
         } catch (\Throwable $e) {
             DB::rollBack();
             $this->dispatch('alert', type: 'error', message: $e->getMessage());
@@ -145,6 +203,8 @@ class TambahStockOpname extends Component
 
     public function render()
     {
+        $this->tanggalOpname = date('Y-m-d');
+
         return view('livewire.tambah-stock-opname')
             ->layout('layouts.app', ['title' => $this->title]);
     }

@@ -1,274 +1,282 @@
-<div class="col-12">
-    <div class="card" wire:ignore x-data="stockOpname()" x-init="init()">
-        <div class="card-body">
-
-            <div class="row mb-3">
-                <div class="col-md-4">
-                    <label class="form-label">Nomor Opname</label>
-                    <input type="text" class="form-control" x-model="nomorOpname">
-                </div>
-
-                <div class="col-md-4">
-                    <label class="form-label">Tanggal Opname</label>
-                    <input type="text" id="tanggalOpname" class="form-control">
-                </div>
-
-                <div class="col-md-4">
-                    <label class="form-label">Status</label>
-                    <select id="statusOpname" class="form-select">
-                        <option value="draft">Draft</option>
-                        <option value="approved">Approved</option>
-                        <option value="rejected">Rejected</option>
-                        <option value="canceled">Canceled</option>
-                        <option value="closed">Closed</option>
-                    </select>
-                </div>
+<div>
+    <div class="col-12">
+        <div class="card" x-data="stockOpname()">
+            <div class="card-header">
+                <h3 class="card-title">Form Tambah Stock Opname</h3>
             </div>
-            <hr class="my-3">
-            <div class="row mb-3">
-                <div class="col-md-3">
-                    <input type="text" class="form-control" placeholder="Cari produk..." x-model.debounce.500ms="search" @input="cari()">
-                </div>
-            </div>
-
-            <div class="table-responsive">
-                <table class="table table-striped">
-                    <thead>
-                    <tr>
-                        <th width="2%">No</th>
-                        <th width="10%">Produk</th>
-                        <th width="15%">Harga Satuan</th>
-                        <th width="15%">Stok Sistem</th>
-                        <th width="15%">Stok Fisik</th>
-                        <th width="10%">Selisih</th>
-                        <th width="8%">Jenis</th>
-                        <th width="35%">Alasan</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    <template x-for="(item, index) in products" :key="item.id">
-                        <tr>
-                            <td x-text="index + 1 + ((page - 1) * 10)"></td>
-                            <td x-text="item.nama_produk"></td>
-                            <td>
-                                <input type="text" class="form-control" :value="formatRupiah(item.harga_beli)" @input="updateHarga(item, $event.target.value)">
-                            </td>
-                            <td>
-                                <input type="number" class="form-control" :value="item.sistem" readonly>
-                            </td>
-                            <td>
-                                <input type="number" class="form-control" x-model.number="item.fisik" @input="hitung(item)">
-                            </td>
-                            <td>
-                                <input type="number" class="form-control" :value="item.selisih" readonly>
-                            </td>
-                            <td>
-                                <span class="badge bg-danger text-white" x-show="item.jenis === 'shortage'">Shortage</span>
-                                <span class="badge bg-success text-white" x-show="item.jenis === 'excess'">Excess</span>
-                            </td>
-                            <td>
-                                <input type="text" class="form-control" x-model="item.alasan">
-                            </td>
-                        </tr>
-                    </template>
-                    </tbody>
-                </table>
-            </div>
-
-            <div class="d-flex justify-content-end gap-2 mt-3">
-                <button class="btn btn-outline-secondary" :disabled="page === 1" @click="prevPage()">Prev</button>
-                <button class="btn btn-outline-secondary" :disabled="!hasMore" @click="nextPage()">Next</button>
-            </div>
-            <hr>
-
-            <div class="row">
-                <div class="col-md-8 mb-3">
-                    <div class="row">
-                        <div class="col-md-6" x-show="status === 'approved'" x-transition>
-                            <label class="form-label">Tanggal Approved</label>
-                            <input type="text" id="tanggalApproved" class="form-control">
+            <div class="card-body">
+                <!-- Header Form -->
+                <div class="row mb-3">
+                    <div class="col-md-8">
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Nomor Opname</label>
+                                <input type="text" class="form-control" x-model="nomorOpname"
+                                    placeholder="Auto Generate">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Tanggal Opname</label>
+                                <input type="text" class="form-control litepicker" id="tanggal_opname"
+                                    x-model="tanggalOpname">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Status</label>
+                                <select class="form-select tom-select" id="statusOpname" x-model="status">
+                                    <option value="draft">Draft</option>
+                                    <option value="approved">Approved (Finalize)</option>
+                                </select>
+                                <small class="text-muted" x-show="status === 'approved'">
+                                    Stok akan langsung diupdate di sistem.
+                                </small>
+                                <small class="text-muted" x-show="status === 'draft'">
+                                    Stok disimpan sebagai draft.
+                                </small>
+                            </div>
+                            <div class="col-12 mb-3">
+                                <label class="form-label">Catatan</label>
+                                <textarea class="form-control" x-model="catatan" rows="3"></textarea>
+                            </div>
                         </div>
-                        <div class="col-md-6" x-show="status === 'approved'" x-transition>
-                            <label class="form-label">Approved By</label>
-                            <input type="text" class="form-control" x-model="approvedBy">
-                        </div>
-                        <div class="col-md-12 mt-3">
-                            <label class="form-label">Catatan</label>
-                            <textarea class="form-control" rows="3" x-model="catatan"></textarea>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="card bg-muted-lt h-100">
+                            <div class="card-body">
+                                <h4 class="card-title">Ringkasan</h4>
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span>Total Item:</span>
+                                    <span class="fw-bold" x-text="items.length">0</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span>Item Selisih:</span>
+                                    <span class="fw-bold text-warning"
+                                        x-text="items.filter(i => i.selisih !== 0).length">0</span>
+                                </div>
+                                <!-- Validasi untuk Tombol Simpan -->
+                                <button type="button" class="btn btn-primary w-100 mt-3" @click="save"
+                                    :disabled="isSaving || items.length === 0">
+                                    <span x-show="isSaving" class="spinner-border spinner-border-sm me-2"></span>
+                                    <span x-text="status === 'approved' ? 'Approve & Finalize' : 'Simpan Draft'"></span>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="col-md-4">
-                    <div class="card bg-light h-100">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between text-danger">
-                                <span class="text-danger">Shortage</span>
-                                <span x-text="summary.shortage"></span>
-                            </div>
-                            <div class="d-flex justify-content-between text-success">
-                                <span>Excess</span>
-                                <span x-text="summary.excess"></span>
-                            </div>
-                            <hr class="my-1">
-                            <div class="d-flex justify-content-between fw-bold">
-                                <span>Total Produk</span>
-                                <span x-text="summary.total"></span>
-                            </div>
-                            <button class="btn btn-primary w-100 mt-3" @click="simpan()">Simpan Opname</button>
+                <hr>
+
+                <!-- Filters & Load Data -->
+                <div class="row align-items-end mb-3">
+                    <div class="col-md-3" wire:ignore>
+                        <label class="form-label">Filter Kategori</label>
+                        <select class="form-select tom-select" id="kategori" wire:model.live="categoryId">
+                            <option value="">Semua Kategori</option>
+                            @foreach ($categories as $cat)
+                                <option value="{{ $cat->id }}">{{ $cat->nama_kategori }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-3" wire:ignore>
+                        <label class="form-label">Filter Rak</label>
+                        <select class="form-select tom-select" id="rak" wire:model.live="shelfId">
+                            <option value="">Semua Rak</option>
+                            @foreach ($shelves as $shelf)
+                                <option value="{{ $shelf->id }}">{{ $shelf->nama_rak }} -
+                                    {{ $shelf->lokasi }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="alert alert-info mb-0">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Pilih Kategori atau Rak untuk memuat produk.
+                            Data yang dimuat akan ditambahkan ke tabel di bawah untuk dihitung.
                         </div>
                     </div>
                 </div>
+
+                <!-- Table Input Logic -->
+                <div class="table-responsive">
+                    <table class="table table-vcenter card-table table-striped">
+                        <thead>
+                            <tr>
+                                <th width="5%">#</th>
+                                <th width="30%">Produk</th>
+                                <th width="15%" class="text-center">Stok Sistem</th>
+                                <th width="15%" class="text-center">Stok Fisik</th>
+                                <th width="15%" class="text-center">Selisih</th>
+                                <th width="20%">Alasan/Catatan</th>
+                                <th width="5%"></th>
+                            </tr>
+                        </thead>
+                        <tbody wire:ignore>
+                            <template x-for="(item, index) in items" :key="item.id">
+                                <tr
+                                    :class="{
+                                        'table-warning': item.selisih !== 0,
+                                        'table-success': item.counted &&
+                                            item.selisih === 0
+                                    }">
+                                    <td x-text="index + 1"></td>
+                                    <td>
+                                        <div class="font-weight-medium" x-text="item.nama_produk"></div>
+                                        <div class="text-muted text-xs" x-text="item.kode_produk"></div>
+                                    </td>
+                                    <td class="text-center" x-text="item.sistem"></td>
+                                    <td>
+                                        <input type="number" class="form-control text-center"
+                                            x-model.number="item.fisik"
+                                            @input="calculateDiff(index); item.counted = true"
+                                            @focus="$event.target.select()">
+                                    </td>
+                                    <td class="text-center">
+                                        <span x-text="item.selisih > 0 ? '+' + item.selisih : item.selisih"
+                                            :class="item.selisih < 0 ? 'text-danger fw-bold' : (item.selisih > 0 ?
+                                                'text-success fw-bold' : 'text-muted')">
+                                        </span>
+                                        <div x-show="item.selisih !== 0" class="text-xs mt-1">
+                                            <span x-text="item.selisih < 0 ? 'Shortage' : 'Excess'" class="badge"
+                                                :class="item.selisih < 0 ? 'bg-danger-lt' : 'bg-success-lt'">
+                                            </span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <input type="text" class="form-control" x-model="item.alasan"
+                                            placeholder="Ket. selisih...">
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-icon btn-ghost-danger btn-sm"
+                                            @click="removeItem(index)">
+                                            <svg xmlns="http://www.w3.org/2000/svg"
+                                                class="icon icon-tabler icon-tabler-x" width="24" height="24"
+                                                viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"
+                                                fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                                <path d="M18 6l-12 12" />
+                                                <path d="M6 6l12 12" />
+                                            </svg>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </template>
+                            <tr x-show="items.length === 0">
+                                <td colspan="7" class="text-center py-4 text-muted">
+                                    Belum ada produk yang dimuat. Silakan pilih filter Kategori atau Rak.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
             </div>
         </div>
     </div>
 </div>
+
 @section('script')
-<script>
-    document.addEventListener('alpine:init', () => {
-        Alpine.data('stockOpname', () => ({
-            nomorOpname: '',
-            status: 'draft',
-            tanggalOpname: '',
-            tanggalApproved: '',
-            approvedBy: '',
-            catatan: '',
-            search: '',
-            page: 1,
-            hasMore: false,
-            products: [],
-            summary: { shortage: 0, excess: 0, total: 0 },
+    <script>
+        (function() {
+            function registerStockOpname() {
+                // Avoid double registration
+                if (Alpine.data && !Alpine.data['stockOpname']) {
+                    Alpine.data('stockOpname', () => ({
+                        nomorOpname: @entangle('nomorOpname'),
+                        tanggalOpname: @entangle('tanggalOpname'),
+                        status: @entangle('status'),
+                        catatan: @entangle('catatan'),
+                        search: '',
+                        items: [],
+                        isSaving: false,
 
-            init() {
-                this.initTanggalOpname()
-                this.initStatus()
-                this.load()
-            },
+                        init() {
+                            if (!this.tanggalOpname) {
+                                this.tanggalOpname = new Date().toISOString().split('T')[0];
+                            }
 
-            initTanggalOpname() {
-                new Litepicker({
-                    element: document.getElementById('tanggalOpname'),
-                    format: 'YYYY-MM-DD',
-                    autoApply: true,
-                    singleMode: true,
-                    setup: p => p.on('selected', d => this.tanggalOpname = d.format('YYYY-MM-DD'))
-                })
-            },
+                            // Sync products from Livewire to Alpine
+                            this.$watch('$wire.products', (value) => {
+                                if (value && value.length > 0) {
+                                    this.mergeItems(value);
+                                }
+                            });
+                        },
 
-            initTanggalApproved() {
-                const el = document.getElementById('tanggalApproved')
-                if (!el || el._litepicker) return
-                el._litepicker = new Litepicker({
-                    element: el,
-                    format: 'YYYY-MM-DD',
-                    autoApply: true,
-                    singleMode: true,
-                    setup: p => p.on('selected', d => this.tanggalApproved = d.format('YYYY-MM-DD'))
-                })
-            },
+                        loadProducts() {
+                            if (this.search.length < 2) return;
+                            this.$wire.loadProducts(1, this.search);
+                        },
 
-            initStatus() {
-                new TomSelect('#statusOpname', {
-                    onChange: v => {
-                        this.status = v
-                        if (v === 'approved') {
-                            this.$nextTick(() => this.initTanggalApproved())
-                        } else {
-                            this.tanggalApproved = ''
-                            this.approvedBy = ''
+                        mergeItems(newItems) {
+                            // Use a Map for O(1) lookup
+                            const existingIds = new Set(this.items.map(i => i.id));
+                            newItems.forEach(item => {
+                                if (!existingIds.has(item.id)) {
+                                    this.items.push(item);
+                                }
+                            });
+                        },
+
+                        removeItem(index) {
+                            this.items.splice(index, 1);
+                        },
+
+                        calculateDiff(index) {
+                            const item = this.items[index];
+                            // Safety check
+                            const fisik = item.fisik === '' ? 0 : parseInt(item.fisik);
+                            const sistem = parseInt(item.sistem);
+
+                            item.selisih = fisik - sistem;
+
+                            if (item.selisih > 0) item.jenis_selisih = 'plus';
+                            else if (item.selisih < 0) item.jenis_selisih = 'minus';
+                            else item.jenis_selisih = 'match';
+                        },
+
+                        save() {
+                            if (this.status === 'approved') {
+                                if (!confirm(
+                                        'Apakah anda yakin ingin FINALISASI Stock Opname ini? Stok akan diupdate.'
+                                    )) {
+                                    return;
+                                }
+                            }
+
+                            this.isSaving = true;
+
+                            const payload = {
+                                no_opname: this.nomorOpname,
+                                tanggal: this.tanggalOpname,
+                                status: this.status,
+                                catatan: this.catatan,
+                                items: this.items.map(item => ({
+                                    product_id: item.id,
+                                    stok_sistem: item.sistem,
+                                    stok_fisik: item.fisik,
+                                    selisih: item.selisih,
+                                    jenis_selisih: item.jenis_selisih,
+                                    alasan: item.alasan,
+                                    harga_satuan: item.harga_beli
+                                }))
+                            };
+
+                            this.$wire.saveOpname(payload)
+                                .then(() => {
+                                    this.isSaving = false;
+                                })
+                                .catch((e) => {
+                                    this.isSaving = false;
+                                    console.error(e);
+                                });
                         }
-                    }
-                })
-            },
-
-            load() {
-                @this.call('loadProducts', this.page, this.search).then(res => {
-                    this.products = res.data.map(p => ({
-                        id: p.id,
-                        nama_produk: p.nama_produk,
-                        harga_beli: Number(p.harga_beli ?? 0),
-                        sistem: Number(p.stok_aktual),
-                        fisik: Number(p.stok_aktual),
-                        selisih: 0,
-                        jenis: null,
-                        alasan: ''
-                    }))
-                    this.hasMore = res.has_more
-                    this.hitungSummary()
-                })
-            },
-
-            hitung(item) {
-                item.selisih = item.fisik - item.sistem
-                if (item.selisih < 0) item.jenis = 'shortage'
-                else if (item.selisih > 0) item.jenis = 'excess'
-                else item.jenis = null
-                this.hitungSummary()
-            },
-
-            hitungSummary() {
-                let shortage = 0, excess = 0
-                this.products.forEach(p => {
-                    if (p.jenis === 'shortage') shortage++
-                    if (p.jenis === 'excess') excess++
-                })
-                this.summary.shortage = shortage
-                this.summary.excess = excess
-                this.summary.total = this.products.length
-            },
-
-            updateHarga(item, val) {
-                item.harga_beli = Number(val.replace(/[^\d]/g, '')) || 0
-            },
-
-            formatRupiah(val) {
-                return new Intl.NumberFormat('id-ID', {
-                    style: 'currency',
-                    currency: 'IDR',
-                    minimumFractionDigits: 0
-                }).format(val || 0)
-            },
-
-            cari() {
-                this.page = 1
-                this.load()
-            },
-
-            nextPage() {
-                if (!this.hasMore) return
-                this.page++
-                this.load()
-            },
-
-            prevPage() {
-                if (this.page === 1) return
-                this.page--
-                this.load()
-            },
-            
-            simpan() {
-                @this.call('saveOpname', {
-                    no_opname: this.nomorOpname,
-                    status: this.status,
-                    tanggal: this.tanggalOpname,
-                    tanggal_approved: this.status === 'approved' ? this.tanggalApproved : null,
-                    approved_by: this.status === 'approved' ? this.approvedBy : null,
-                    catatan: this.catatan,
-                    items: this.products
-                        .filter(p => p.id && p.selisih !== null)
-                        .map(p => ({
-                            product_id: p.id,
-                            stok_sistem: p.sistem,
-                            stok_fisik: p.fisik,
-                            selisih: p.selisih,
-                            jenis_selisih: p.jenis ?? 'none',
-                            harga_satuan: p.harga_beli,
-                            alasan: p.alasan
-                        }))
-                })
+                    }));
+                }
             }
 
-        }))
-    })
-</script>
+            if (typeof Alpine !== 'undefined') {
+                registerStockOpname();
+            } else {
+                document.addEventListener('alpine:init', registerStockOpname);
+            }
+        })();
+    </script>
 @endsection

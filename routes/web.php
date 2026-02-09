@@ -66,10 +66,10 @@ Route::group([
     Route::get('/pembelian/daftar-retur', DaftarReturPembelian::class);
     Route::get('/pembelian/retur/{id}', TambahReturPembelian::class);
 
-    Route::get('/stock-opname/tambah', TambahStockOpname::class);
-    Route::get('/stock-opname/daftar', StockOpname::class);
-    Route::get('/stock-adjustment/tambah', TambahStockAdjustment::class);
-    Route::get('/stock-adjustment/daftar', StockAdjustment::class);
+    Route::get('/stock/opname/tambah', TambahStockOpname::class);
+    Route::get('/stock/opname/daftar', StockOpname::class);
+    Route::get('/stock/adjustment/tambah', TambahStockAdjustment::class);
+    Route::get('/stock/adjustment/daftar', StockAdjustment::class);
 
     Route::get('/penjualan/tambah', TambahPenjualan::class);
     Route::get('/penjualan/daftar', DaftarPenjualan::class);

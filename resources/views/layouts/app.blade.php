@@ -43,6 +43,40 @@
             font-size: unset;
         }
 
+        /* CSS untuk nested dropdown */
+        .dropdown-submenu {
+            position: relative;
+        }
+
+        .dropdown-submenu>.dropdown-menu {
+            top: 0;
+            left: 100%;
+            margin-top: -1px;
+            margin-left: -1px;
+        }
+
+        .dropdown-submenu>.dropdown-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        /* Untuk mobile - submenu muncul di bawah */
+        @media (max-width: 768px) {
+            .dropdown-submenu>.dropdown-menu {
+                position: static;
+                left: 0;
+                margin-left: 1rem;
+                box-shadow: none;
+                border-left: 2px solid #e9ecef;
+            }
+        }
+
+        /* Hover effect untuk submenu */
+        .dropdown-submenu:hover>.dropdown-menu {
+            display: block;
+        }
+
         .nav-icon {
             margin-inline-end: 0.5rem;
             color: inherit;
@@ -264,6 +298,11 @@
                 return;
             }
 
+            // Prevent re-initialization on the same element (supports wire:ignore)
+            if (Select[selectId] && Select[selectId].input === el) {
+                return;
+            }
+
             let initialValue = el.value;
             if (Select[selectId]) {
                 try {
@@ -321,7 +360,7 @@
                 });
 
                 if (initialValue) {
-                    Select[selectId].setValue(initialValue);
+                    Select[selectId].setValue(initialValue, true);
                 }
             } catch (e) {}
         }
@@ -348,6 +387,52 @@
         function initTomSelect() {
             document.querySelectorAll('.tom-select').forEach(initSingleTomSelect);
         }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const dropdownSubmenus = document.querySelectorAll('.dropdown-submenu');
+
+            dropdownSubmenus.forEach(function(submenu) {
+                const toggle = submenu.querySelector('.dropdown-toggle');
+                const menu = submenu.querySelector('.dropdown-menu');
+
+                // Click handler untuk mobile dan desktop
+                toggle.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    // Toggle submenu
+                    menu.classList.toggle('show');
+
+                    // Close other open submenus
+                    dropdownSubmenus.forEach(function(otherSubmenu) {
+                        if (otherSubmenu !== submenu) {
+                            otherSubmenu.querySelector('.dropdown-menu').classList.remove(
+                                'show');
+                        }
+                    });
+                });
+
+                // Hover untuk desktop (optional, sudah di-handle via CSS)
+                if (window.innerWidth > 768) {
+                    submenu.addEventListener('mouseenter', function() {
+                        menu.classList.add('show');
+                    });
+
+                    submenu.addEventListener('mouseleave', function() {
+                        menu.classList.remove('show');
+                    });
+                }
+            });
+
+            // Close submenu when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.dropdown-submenu')) {
+                    dropdownSubmenus.forEach(function(submenu) {
+                        submenu.querySelector('.dropdown-menu').classList.remove('show');
+                    });
+                }
+            });
+        });
     </script>
 
     @yield('script')

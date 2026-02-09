@@ -1,5 +1,5 @@
 <div class="row main-row" x-data="posSystem()" @sale-stored.window="cart = []">
-    <div class="col-md-8 d-flex flex-column h-100">
+    <div class="col-6 col-md-7 col-lg-8 d-flex flex-column h-100">
         <div class="mb-3">
             <div class="card">
                 <div class="card-body">
@@ -46,7 +46,7 @@
         <div class="flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
             <div class="row">
                 @foreach ($products as $product)
-                    <div class="col-md-3 mb-3">
+                    <div class="col-6 col-md-4 col-lg-3 mb-3">
                         <div class="card text-bg-dark border-0 shadow-sm product-card"
                             @click="addToCart({
                                 id: {{ $product->id }},
@@ -54,7 +54,7 @@
                                 price: {{ $product->harga_jual }},
                                 stock: {{ $product->stok_aktual }},
                                 image: '{{ asset('storage/' . $product->gambar) }}'
-                             })">
+                            })">
                             <img src="{{ asset('storage/' . $product->gambar) }}" class="card-img"
                                 alt="{{ $product->nama_produk }}">
                             <div class="card-img-overlay d-flex flex-column justify-content-end">
@@ -71,7 +71,7 @@
         {{ $products->links('components.pos-pagination') }}
     </div>
 
-    <div class="col-md-4 overflow-hidden" wire:ignore>
+    <div class="col-6 col-md-5 col-lg-4 overflow-hidden" wire:ignore>
         <div class="card h-100">
             <div class="card-header">
                 <div class="w-100 position-relative">

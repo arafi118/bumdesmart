@@ -102,32 +102,37 @@
             ],
         ],
         [
-            'title' => 'Stok Opname',
-            'url' => '/stok-opname',
+            'title' => 'Inventory',
+            'url' => '/stock',
             'icon' => 'inventory',
             'child' => [
                 [
-                    'title' => 'Tambah Stok',
-                    'url' => '/stock-opname/tambah',
+                    'title' => 'Stok Opname',
+                    'url' => '/stock/opname',
+                    'child' => [
+                        [
+                            'title' => 'Tambah Opname',
+                            'url' => '/stock/opname/tambah',
+                        ],
+                        [
+                            'title' => 'Daftar Opname',
+                            'url' => '/stock/opname/daftar',
+                        ],
+                    ],
                 ],
                 [
-                    'title' => 'Daftar Stok',
-                    'url' => '/stock-opname/daftar',
-                ],
-            ],
-        ],
-        [
-            'title' => 'Stok Adjustment',
-            'url' => '/stok-adjustment',
-            'icon' => 'inventory',
-            'child' => [
-                [
-                    'title' => 'Tambah Stok',
-                    'url' => '/stock-adjustment/tambah',
-                ],
-                [
-                    'title' => 'Daftar Stok',
-                    'url' => '/stock-adjustment/daftar',
+                    'title' => 'Stok Adjustment',
+                    'url' => '/stock/adjustment',
+                    'child' => [
+                        [
+                            'title' => 'Tambah Adjustment',
+                            'url' => '/stock/adjustment/tambah',
+                        ],
+                        [
+                            'title' => 'Daftar Adjustment',
+                            'url' => '/stock/adjustment/daftar',
+                        ],
+                    ],
                 ],
             ],
         ],
@@ -173,10 +178,35 @@
                                             </a>
                                             <div class="dropdown-menu">
                                                 @foreach ($menu['child'] as $child)
-                                                    <a class="dropdown-item {{ $path == $child['url'] ? 'active' : '' }}"
-                                                        href="{{ $child['url'] }}">
-                                                        {{ $child['title'] }}
-                                                    </a>
+                                                    @if (isset($child['child']))
+                                                        @php
+                                                            $subMenuActive = false;
+                                                            if (str_contains($path, $child['url'])) {
+                                                                $subMenuActive = true;
+                                                            }
+                                                        @endphp
+                                                        {{-- Nested Dropdown --}}
+                                                        <div class="dropdown-submenu">
+                                                            <a class="dropdown-item {{ $subMenuActive ? 'active' : '' }} dropdown-toggle"
+                                                                href="#">
+                                                                {{ $child['title'] }}
+                                                            </a>
+                                                            <div class="dropdown-menu">
+                                                                @foreach ($child['child'] as $subChild)
+                                                                    <a class="dropdown-item {{ $path == $subChild['url'] ? 'active' : '' }}"
+                                                                        href="{{ $subChild['url'] }}">
+                                                                        {{ $subChild['title'] }}
+                                                                    </a>
+                                                                @endforeach
+                                                            </div>
+                                                        </div>
+                                                    @else
+                                                        {{-- Regular Dropdown Item --}}
+                                                        <a class="dropdown-item {{ $path == $child['url'] ? 'active' : '' }}"
+                                                            href="{{ $child['url'] }}">
+                                                            {{ $child['title'] }}
+                                                        </a>
+                                                    @endif
                                                 @endforeach
                                             </div>
                                         </li>
