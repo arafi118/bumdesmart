@@ -1,10 +1,5 @@
 @section('button-header')
     <div class="btn-list">
-        <span class="d-none d-sm-inline">
-            <a href="{{ url('/penjualan/daftar') }}" class="btn btn-white">
-                Laporan
-            </a>
-        </span>
         <a href="{{ url('/penjualan/pos') }}" class="btn btn-primary d-none d-sm-inline-block">
             <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24"
                 stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
@@ -18,285 +13,314 @@
 @endsection
 
 <div>
-    <div class="page-body">
-        <div class="row row-deck row-cards">
-            <!-- Sales Today -->
-            <div class="col-sm-6 col-lg-3">
-                <div class="card">
-                    <div class="card-body">
-                        <div class="d-flex align-items-center">
-                            <div class="subheader">Penjualan Hari Ini</div>
-                            <div class="ms-auto lh-1">
-                                <div class="dropdown">
-                                    <a class="dropdown-toggle text-muted" href="#" data-bs-toggle="dropdown"
-                                        aria-haspopup="true" aria-expanded="false">Hari Ini</a>
-                                    <div class="dropdown-menu dropdown-menu-end">
-                                        <a class="dropdown-item active" href="#">Hari Ini</a>
-                                        <a class="dropdown-item" href="#">Kemarin</a>
-                                        <a class="dropdown-item" href="#">Minggu Ini</a>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="h1 mb-3">Rp {{ number_format($todaySales, 0, ',', '.') }}</div>
-                        <div class="d-flex mb-2">
-                            <div>Conversion rate</div>
-                            <div class="ms-auto">
-                                <span class="text-green d-inline-flex align-items-center lh-1">
-                                    {{ $totalTransactions }} Trx
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon ms-1" width="24"
-                                        height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"
-                                        fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                        <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                                        <path d="M3 17l6 -6l4 4l8 -8" />
-                                        <path d="M14 7l7 0l0 7" />
-                                    </svg>
-                                </span>
-                            </div>
-                        </div>
-                        <div class="progress progress-sm">
-                            <div class="progress-bar bg-blue" style="width: 75%" role="progressbar" aria-valuenow="75"
-                                aria-valuemin="0" aria-valuemax="100" aria-label="75% Complete">
-                                <span class="visually-hidden">75% Complete</span>
-                            </div>
-                        </div>
+    {{-- Period Filter --}}
+    <div class="d-flex align-items-center mb-4">
+        <div class="btn-group" role="group">
+            <button type="button" wire:click="setPeriod('today')"
+                class="btn {{ $period === 'today' ? 'btn-primary' : 'btn-outline-primary' }}">
+                Hari ini
+            </button>
+            <button type="button" wire:click="setPeriod('week')"
+                class="btn {{ $period === 'week' ? 'btn-primary' : 'btn-outline-primary' }}">
+                Minggu ini
+            </button>
+            <button type="button" wire:click="setPeriod('month')"
+                class="btn {{ $period === 'month' ? 'btn-primary' : 'btn-outline-primary' }}">
+                Bulan ini
+            </button>
+            <button type="button" wire:click="setPeriod('year')"
+                class="btn {{ $period === 'year' ? 'btn-primary' : 'btn-outline-primary' }}">
+                Tahun ini
+            </button>
+        </div>
+        <div class="ms-auto text-muted">
+            <small>{{ now()->translatedFormat('l, d F Y') }}</small>
+        </div>
+    </div>
+
+    {{-- Main KPIs Row --}}
+    <div class="row row-deck row-cards mb-4">
+        <div class="col-sm-6 col-lg-3">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="subheader">Total Penjualan</div>
+                    </div>
+                    <div class="h1 mb-1">Rp {{ number_format($totalSales, 0, ',', '.') }}</div>
+                    <div class="d-flex align-items-center">
+                        @if ($salesGrowth >= 0)
+                            <span class="text-success d-inline-flex align-items-center lh-1">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-sm me-1" width="16"
+                                    height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"
+                                    fill="none">
+                                    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                    <path d="M3 17l6 -6l4 4l8 -8" />
+                                    <path d="M14 7l7 0l0 7" />
+                                </svg>
+                                {{ $salesGrowth }}%
+                            </span>
+                        @else
+                            <span class="text-danger d-inline-flex align-items-center lh-1">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-sm me-1" width="16"
+                                    height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"
+                                    fill="none">
+                                    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                    <path d="M3 7l6 6l4 -4l8 8" />
+                                    <path d="M21 10l0 7l-7 0" />
+                                </svg>
+                                {{ $salesGrowth }}%
+                            </span>
+                        @endif
+                        <span class="text-muted ms-2">dari periode sebelumnya</span>
                     </div>
                 </div>
             </div>
-
-            <!-- Sales Month -->
-            <div class="col-sm-6 col-lg-3">
-                <div class="card">
-                    <div class="card-body">
-                        <div class="d-flex align-items-center">
-                            <div class="subheader">Penjualan Bulan Ini</div>
-                            <div class="ms-auto lh-1">
-                                <div class="dropdown">
-                                    <a class="dropdown-toggle text-muted" href="#" data-bs-toggle="dropdown"
-                                        aria-haspopup="true" aria-expanded="false">Bulan Ini</a>
-                                    <div class="dropdown-menu dropdown-menu-end">
-                                        <a class="dropdown-item active" href="#">Bulan Ini</a>
-                                        <a class="dropdown-item" href="#">Bulan Lalu</a>
-                                    </div>
-                                </div>
-                            </div>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="subheader">Total Profit</div>
+                    </div>
+                    <div class="h1 mb-1 text-success">Rp {{ number_format($totalProfit, 0, ',', '.') }}</div>
+                    @if ($totalSales > 0)
+                        <div class="text-muted">
+                            Margin {{ round(($totalProfit / $totalSales) * 100, 1) }}%
                         </div>
-                        <div class="h1 mb-3">Rp {{ number_format($monthSales, 0, ',', '.') }}</div>
-                        <div class="d-flex mb-2">
-                            <div>Revenue</div>
-                            <div class="ms-auto">
-                                <span class="text-green d-inline-flex align-items-center lh-1">
-                                    7% <!-- Placeholder for dynamic growth if available -->
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon ms-1" width="24"
-                                        height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"
-                                        fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                        <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                                        <path d="M3 17l6 -6l4 4l8 -8" />
-                                        <path d="M14 7l7 0l0 7" />
-                                    </svg>
-                                </span>
-                            </div>
-                        </div>
-                        <div class="progress progress-sm">
-                            <div class="progress-bar bg-blue" style="width: 75%" role="progressbar" aria-valuenow="75"
-                                aria-valuemin="0" aria-valuemax="100" aria-label="75% Complete">
-                                <span class="visually-hidden">75% Complete</span>
-                            </div>
-                        </div>
+                    @endif
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="subheader">Transaksi</div>
+                    </div>
+                    <div class="h1 mb-1">{{ number_format($totalTransactions, 0) }}</div>
+                    <div class="text-muted">
+                        Rata-rata Rp {{ number_format($avgTransaction, 0, ',', '.') }}
                     </div>
                 </div>
             </div>
-
-            <!-- Profit Today -->
-            <div class="col-sm-6 col-lg-3">
-                <div class="card">
-                    <div class="card-body">
-                        <div class="d-flex align-items-center">
-                            <div class="subheader">Profit Hari Ini</div>
-                        </div>
-                        <div class="d-flex align-items-baseline">
-                            <div class="h1 mb-3 me-2">Rp {{ number_format($todayProfit, 0, ',', '.') }}</div>
-                        </div>
-                        <div class="d-flex mb-2">
-                            <div>Profit Margin</div>
-                            <div class="ms-auto">
-                                <span class="text-green d-inline-flex align-items-center lh-1">
-                                    <!-- Placeholder for margin -->
-                                </span>
-                            </div>
-                        </div>
-                        <div class="progress progress-sm">
-                            <div class="progress-bar bg-green" style="width: 100%" role="progressbar"
-                                aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"
-                                aria-label="100% Complete">
-                                <span class="visually-hidden">100% Complete</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Profit Month -->
-            <div class="col-sm-6 col-lg-3">
-                <div class="card">
-                    <div class="card-body">
-                        <div class="d-flex align-items-center">
-                            <div class="subheader">Profit Bulan Ini</div>
-                        </div>
-                        <div class="d-flex align-items-baseline">
-                            <div class="h1 mb-3 me-2">Rp {{ number_format($monthProfit, 0, ',', '.') }}</div>
-                        </div>
-                        <div class="d-flex mb-2">
-                            <div>Total Profit</div>
-                            <div class="ms-auto">
-                                <span class="text-green d-inline-flex align-items-center lh-1">
-                                    <!-- Placeholder for margin -->
-                                </span>
-                            </div>
-                        </div>
-                        <div class="progress progress-sm">
-                            <div class="progress-bar bg-green" style="width: 100%" role="progressbar"
-                                aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"
-                                aria-label="100% Complete">
-                                <span class="visually-hidden">100% Complete</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Recent Transactions -->
-            <div class="col-lg-8">
-                <div class="card">
-                    <div class="card-header border-0">
-                        <div class="card-title">Transaksi Terakhir</div>
-                    </div>
-                    <div class="card-table table-responsive">
-                        <table class="table table-vcenter card-table">
-                            <thead>
-                                <tr>
-                                    <th>No. Invoice</th>
-                                    <th>Pelanggan</th>
-                                    <th>Total</th>
-                                    <th>Status</th>
-                                    <th>Waktu</th>
-                                    <th class="w-1"></th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @forelse($recentTransactions as $sale)
-                                    <tr>
-                                        <td>
-                                            <a href="{{ url('/penjualan/edit/' . $sale->id) }}" class="text-reset"
-                                                tabindex="-1">{{ $sale->no_invoice }}</a>
-                                        </td>
-                                        <td>
-                                            {{ $sale->customer ? $sale->customer->nama_pelanggan : 'Umum' }}
-                                        </td>
-                                        <td class="text-muted">
-                                            Rp {{ number_format($sale->total, 0, ',', '.') }}
-                                        </td>
-                                        <td>
-                                            @if ($sale->status == 'completed' || $sale->status == 'paid')
-                                                <span class="badge bg-success me-1"></span> Lunas
-                                            @else
-                                                <span class="badge bg-warning me-1"></span>
-                                                {{ ucfirst($sale->status) }}
-                                            @endif
-                                        </td>
-                                        <td class="text-muted">
-                                            {{ $sale->created_at->format('H:i') }}
-                                        </td>
-                                        <td>
-                                            <a href="{{ url('/penjualan/edit/' . $sale->id) }}">
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24"
-                                                    height="24" viewBox="0 0 24 24" stroke-width="2"
-                                                    stroke="currentColor" fill="none" stroke-linecap="round"
-                                                    stroke-linejoin="round">
-                                                    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                                                    <path d="M9 6l6 6l-6 6" />
-                                                </svg>
-                                            </a>
-                                        </td>
-                                    </tr>
-                                @empty
-                                    <tr>
-                                        <td colspan="6" class="text-center">Belum ada transaksi</td>
-                                    </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Top Selling & Low Stock -->
-            <div class="col-lg-4">
-                <div class="row">
-                    <!-- Top Selling -->
-                    <div class="col-12">
-                        <div class="card">
-                            <div class="card-header">
-                                <h3 class="card-title">Produk Terlaris</h3>
-                            </div>
-                            <table class="table card-table table-vcenter">
-                                <thead>
-                                    <tr>
-                                        <th>Produk</th>
-                                        <th colspan="2">Terjual</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @forelse($topSellingProducts as $item)
-                                        <tr>
-                                            <td>
-                                                {{ $item->product->nama_produk ?? 'Unknown' }}
-                                                <a href="#" class="ms-1" aria-label="Open website">
-                                                </a>
-                                            </td>
-                                            <td>{{ number_format($item->total_qty) }}</td>
-                                            <td class="w-50">
-                                                <div class="progress progress-xs">
-                                                    <div class="progress-bar bg-primary"
-                                                        style="width: {{ min(100, ($item->total_qty / 100) * 100) }}%">
-                                                    </div>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    @empty
-                                        <tr>
-                                            <td colspan="3" class="text-center">Belum ada data</td>
-                                        </tr>
-                                    @endforelse
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    <!-- Low Stock -->
-                    <div class="col-12">
-                        <div class="card mt-3">
-                            <div class="card-header">
-                                <h3 class="card-title text-danger">Stok Menipis</h3>
-                            </div>
-                            <div class="list-group list-group-flush">
-                                @forelse($lowStockProducts as $product)
-                                    <div class="list-group-item d-flex justify-content-between align-items-center">
-                                        <div>
-                                            <span class="text-dark">{{ $product->nama_produk }}</span>
-                                        </div>
-                                        <span class="badge bg-danger-lt">{{ $product->stok_aktual }} left</span>
-                                    </div>
-                                @empty
-                                    <div class="list-group-item text-center text-muted">
-                                        Stok Aman
-                                    </div>
-                                @endforelse
-                            </div>
-                        </div>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <div class="card">
+                <div class="card-body">
+                    <div class="subheader mb-2">Alert</div>
+                    <div class="d-flex flex-wrap gap-2">
+                        @if ($lowStockCount > 0)
+                            <span class="badge bg-danger">{{ $lowStockCount }} Stok Rendah</span>
+                        @endif
+                        @if ($overdueReceivablesCount > 0)
+                            <span class="badge bg-warning">{{ $overdueReceivablesCount }} Piutang</span>
+                        @endif
+                        @if ($duePayablesCount > 0)
+                            <span class="badge bg-orange">{{ $duePayablesCount }} Hutang</span>
+                        @endif
+                        @if ($nearExpiryCount > 0)
+                            <span class="badge bg-purple">{{ $nearExpiryCount }} Expired</span>
+                        @endif
+                        @if ($lowStockCount == 0 && $overdueReceivablesCount == 0 && $duePayablesCount == 0 && $nearExpiryCount == 0)
+                            <span class="text-success">✓ Semua Aman</span>
+                        @endif
                     </div>
                 </div>
             </div>
         </div>
     </div>
+
+    {{-- Chart + Top Products --}}
+    <div class="row row-deck row-cards mb-4">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Grafik Penjualan</h3>
+                </div>
+                <div class="card-body">
+                    <div id="salesChart" style="height: 300px;" wire:ignore></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Top Produk</h3>
+                </div>
+                <div class="card-body p-0">
+                    @if (count($topProducts) > 0)
+                        <div class="list-group list-group-flush">
+                            @foreach ($topProducts as $index => $item)
+                                <div class="list-group-item d-flex align-items-center py-2">
+                                    <span
+                                        class="badge {{ $index === 0 ? 'bg-yellow' : 'bg-secondary' }} me-2">{{ $index + 1 }}</span>
+                                    <div class="flex-fill text-truncate">
+                                        <div class="text-truncate fw-medium">
+                                            {{ $item->product->nama_produk ?? '-' }}
+                                        </div>
+                                        <small class="text-muted">{{ number_format($item->total_qty, 0) }} terjual
+                                            •
+                                            Rp {{ number_format($item->total_revenue, 0, ',', '.') }}</small>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    @else
+                        <div class="p-3 text-center text-muted">
+                            <small>Belum ada data</small>
+                        </div>
+                    @endif
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Recent Transactions --}}
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Transaksi Terbaru</h3>
+            <div class="card-actions">
+                <a href="{{ url('/penjualan/daftar') }}" class="btn btn-sm btn-outline-primary">
+                    Lihat Semua
+                </a>
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-vcenter card-table table-hover">
+                <thead>
+                    <tr>
+                        <th>Invoice</th>
+                        <th>Customer</th>
+                        <th class="text-end">Total</th>
+                        <th>Status</th>
+                        <th>Waktu</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse ($recentTransactions as $tx)
+                        <tr>
+                            <td><code>{{ $tx->no_invoice }}</code></td>
+                            <td>{{ $tx->customer->nama_pelanggan ?? 'Walk-in' }}</td>
+                            <td class="text-end fw-bold">Rp {{ number_format($tx->total, 0, ',', '.') }}</td>
+                            <td>
+                                @if ($tx->status == 'paid' || $tx->status == 'lunas')
+                                    <span class="badge bg-success-lt">Lunas</span>
+                                @elseif ($tx->status == 'partial')
+                                    <span class="badge bg-warning-lt">Sebagian</span>
+                                @else
+                                    <span class="badge bg-secondary-lt">{{ ucfirst($tx->status) }}</span>
+                                @endif
+                            </td>
+                            <td class="text-muted">{{ $tx->created_at->diffForHumans() }}</td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="5" class="text-center text-muted py-4">Belum ada transaksi</td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
+
+@push('scripts')
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <script>
+        let salesChart = null;
+
+        function initChart() {
+            const chartEl = document.querySelector("#salesChart");
+            if (!chartEl) return;
+
+            const options = {
+                chart: {
+                    type: 'area',
+                    height: 300,
+                    toolbar: {
+                        show: false
+                    },
+                    fontFamily: 'inherit',
+                    animations: {
+                        enabled: true,
+                        easing: 'easeinout',
+                        speed: 500
+                    }
+                },
+                series: [{
+                    name: 'Penjualan',
+                    data: @json($chartData)
+                }],
+                xaxis: {
+                    categories: @json($chartLabels),
+                    labels: {
+                        style: {
+                            colors: '#666'
+                        }
+                    }
+                },
+                yaxis: {
+                    labels: {
+                        formatter: function(val) {
+                            if (val >= 1000000) {
+                                return 'Rp ' + (val / 1000000).toFixed(1) + 'jt';
+                            } else if (val >= 1000) {
+                                return 'Rp ' + (val / 1000).toFixed(0) + 'rb';
+                            }
+                            return 'Rp ' + val;
+                        },
+                        style: {
+                            colors: '#666'
+                        }
+                    }
+                },
+                tooltip: {
+                    y: {
+                        formatter: function(val) {
+                            return 'Rp ' + new Intl.NumberFormat('id-ID').format(val);
+                        }
+                    }
+                },
+                fill: {
+                    type: 'gradient',
+                    gradient: {
+                        shadeIntensity: 1,
+                        opacityFrom: 0.7,
+                        opacityTo: 0.1,
+                        stops: [0, 90, 100]
+                    }
+                },
+                stroke: {
+                    curve: 'smooth',
+                    width: 2
+                },
+                colors: ['#206bc4'],
+                dataLabels: {
+                    enabled: false
+                },
+                grid: {
+                    borderColor: '#f0f0f0',
+                    strokeDashArray: 3
+                }
+            };
+
+            if (salesChart) {
+                salesChart.destroy();
+            }
+
+            salesChart = new ApexCharts(chartEl, options);
+            salesChart.render();
+        }
+
+        document.addEventListener('DOMContentLoaded', initChart);
+
+        // Reinit on Livewire update
+        document.addEventListener('livewire:navigated', initChart);
+
+        Livewire.hook('morph.updated', ({
+            component
+        }) => {
+            setTimeout(initChart, 100);
+        });
+    </script>
+@endpush

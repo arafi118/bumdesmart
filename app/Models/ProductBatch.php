@@ -11,6 +11,10 @@ class ProductBatch extends Model
 
     protected $guarded = ['id'];
 
+    protected $casts = [
+        'tanggal_kadaluarsa' => 'date',
+    ];
+
     public function product()
     {
         return $this->belongsTo(Product::class);

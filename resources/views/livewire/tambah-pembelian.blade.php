@@ -37,12 +37,13 @@
                     <thead>
                         <tr>
                             <th width="5%">No</th>
-                            <th width="25%">Nama Produk</th>
-                            <th width="15%">Harga Satuan</th>
-                            <th width="10%">Qty</th>
-                            <th width="15%">Diskon</th>
-                            <th width="15%">Cashback</th>
-                            <th width="15%">Subtotal</th>
+                            <th width="20%">Nama Produk</th>
+                            <th width="12%">Harga Satuan</th>
+                            <th width="8%">Qty</th>
+                            <th width="10%">Exp. Date</th>
+                            <th width="12%">Diskon</th>
+                            <th width="12%">Cashback</th>
+                            <th width="12%">Subtotal</th>
                             <th width="5%"></th>
                         </tr>
                     </thead>
@@ -62,6 +63,10 @@
                                 <td>
                                     <input type="number" class="form-control" x-model="product.jumlah_beli"
                                         x-on:input="updateRow(product.id)" x-on:focus="$el.select()">
+                                </td>
+                                <td>
+                                    <input type="text" class="form-control" x-model="product.tanggal_kadaluarsa"
+                                        placeholder="Exp. Date" x-init="initExpDatePicker($el, product)" :id="'expDate-' + product.id">
                                 </td>
                                 <td>
                                     <!-- Trigger Modal Diskon -->
@@ -90,15 +95,15 @@
                             </tr>
                         </template>
                         <tr x-show="Object.keys(products).length === 0">
-                            <td colspan="8" class="text-center text-muted py-4">
+                            <td colspan="9" class="text-center text-muted py-4">
                                 <i>Belum ada produk yang dipilih</i>
                             </td>
                         </tr>
                     </tbody>
                     <tfoot>
                         <tr class="fw-bold bg-light">
-                            <td colspan="3" class="text-end">TOTAL</td>
-                            <td x-text="summary.itemCount"></td>
+                            <td colspan="4" class="text-end">TOTAL</td>
+                            <td></td>
                             <td x-text="formatRupiah(totalProducts.diskon)"></td>
                             <td x-text="formatRupiah(totalProducts.cashback)"></td>
                             <td x-text="totalProducts.subtotal"></td>
@@ -464,6 +469,28 @@
                     return parseFloat(String(val).replace(/,/g, '')) || 0;
                 },
 
+                initExpDatePicker(el, product) {
+                    // Destroy existing instance if any
+                    if (el._litepicker) {
+                        el._litepicker.destroy();
+                    }
+
+                    const picker = new Litepicker({
+                        element: el,
+                        format: 'YYYY-MM-DD',
+                        singleMode: true,
+                        autoApply: true,
+                        setup: (picker) => {
+                            picker.on('selected', (date) => {
+                                product.tanggal_kadaluarsa = date.format(
+                                    'YYYY-MM-DD');
+                            });
+                        }
+                    });
+
+                    el._litepicker = picker;
+                },
+
                 // --- Cart Logic ---
                 addProduct(product) {
                     let id = product.id;
@@ -478,6 +505,7 @@
                             harga_beli: this.formatRupiah(parseInt(product
                                 .harga_beli)), // Store as string for input support
                             jumlah_beli: 1,
+                            tanggal_kadaluarsa: '',
                             diskon: {
                                 jenis: 'nominal',
                                 jumlah: 0,
@@ -756,6 +784,7 @@
                             id: p.id,
                             jumlah_beli: p.jumlah_beli,
                             harga_beli: this.parseFormatted(p.harga_beli),
+                            tanggal_kadaluarsa: p.tanggal_kadaluarsa || null,
                             diskon: {
                                 jenis: p.diskon.jenis,
                                 jumlah: this.parseFormatted(p.diskon.jumlah),

@@ -80,6 +80,7 @@ class TambahPembelian extends Component
 
         $products = [];
         foreach ($purchase->purchaseDetails as $detail) {
+            $batch = $detail->productBatch;
             $products[$detail->product_id] = [
                 'id' => $detail->product_id,
                 'nama_produk' => $detail->product->nama_produk,
@@ -87,6 +88,7 @@ class TambahPembelian extends Component
                 'sku' => $detail->product->sku,
                 'harga_beli' => (string) $detail->harga_satuan, // Pass as string for formatting
                 'jumlah_beli' => $detail->jumlah,
+                'tanggal_kadaluarsa' => $batch ? ($batch->tanggal_kadaluarsa ? $batch->tanggal_kadaluarsa->format('Y-m-d') : '') : '',
                 'diskon' => [
                     'jenis' => $detail->jenis_diskon,
                     'jumlah' => $detail->jumlah_diskon, // This often stores the Rate or Nominal depending on logic
@@ -328,6 +330,7 @@ class TambahPembelian extends Component
                                 'jumlah_saat_ini' => $batch->jumlah_saat_ini + $qtyDiff, // Adjust current stock by delta
                                 'harga_satuan' => $newPrice,
                                 'tanggal_pembelian' => $data['tanggalPembelian'],
+                                'tanggal_kadaluarsa' => $item['tanggal_kadaluarsa'] ?? null,
                             ]);
                         }
 
@@ -353,6 +356,7 @@ class TambahPembelian extends Component
                             'harga_satuan' => $newPrice,
                             'jumlah_awal' => $newQty,
                             'jumlah_saat_ini' => $newQty,
+                            'tanggal_kadaluarsa' => $item['tanggal_kadaluarsa'] ?? null,
                             'status' => 'ACTIVE',
                         ]);
                     }
@@ -457,6 +461,7 @@ class TambahPembelian extends Component
                         'harga_satuan' => $this->parseNumber($item['harga_beli']),
                         'jumlah_awal' => $item['jumlah_beli'],
                         'jumlah_saat_ini' => $item['jumlah_beli'],
+                        'tanggal_kadaluarsa' => $item['tanggal_kadaluarsa'] ?? null,
                         'status' => 'ACTIVE',
                     ]);
 
