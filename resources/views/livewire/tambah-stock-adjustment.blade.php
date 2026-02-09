@@ -1,21 +1,37 @@
-<div class="col-12">
+@section('link')
+    <style>
+        .ts-control {
+            border: 1px solid #dce1e7;
+            padding: 8px 12px;
+            border-radius: 4px;
+        }
+
+        .ts-wrapper.multi .ts-control>div {
+            background: #f0f2f6;
+            color: #1d273b;
+            border: 1px solid #dce1e7;
+        }
+    </style>
+@endsection
+
+<div>
     <div class="card" wire:ignore x-data="stockAdjustment()" x-init="init()">
         <div class="card-body">
-
             <div class="row mb-3">
                 <div class="col-md-3">
                     <label class="form-label">Nomor Penyesuaian</label>
-                    <input type="text" class="form-control" x-model="nomorAdjustment">
+                    <input type="text" class="form-control" x-model="nomorAdjustment" readonly
+                        placeholder="Auto Generated">
                 </div>
 
                 <div class="col-md-3">
                     <label class="form-label">Tanggal Penyesuaian</label>
-                    <input type="text" id="tanggalAdjustment" class="form-control">
+                    <input type="text" id="tanggalAdjustment" class="form-control litepicker">
                 </div>
 
-                <div class="col-md-3">
+                <div class="col-md-3" wire:ignore>
                     <label class="form-label">Jenis Penyesuaian</label>
-                    <select id="jenisAdjustment" class="form-select">
+                    <select id="jenisAdjustment" class="form-select tom-select">
                         <option value="">-- pilih --</option>
                         <option value="damaged">Barang Rusak</option>
                         <option value="expired">Kadaluarsa</option>
@@ -25,26 +41,15 @@
                         <option value="sample">Sample</option>
                     </select>
                 </div>
-
-                <div class="col-md-3">
-                    <label class="form-label">Status</label>
-                    <select id="statusAdjustment" class="form-select">
-                        <option value="draft">Draft</option>
-                        <option value="approved">Approved</option>
-                        <option value="completed">Completed</option>
-                        <option value="rejected">Rejected</option>
-                        <option value="canceled">Canceled</option>
-                        <option value="closed">Closed</option>
-                    </select>
-                </div>
             </div>
 
             <hr>
 
             <div class="row mb-3">
-                <div class="col-md-3">
-                    <input type="text" class="form-control" placeholder="Cari produk..." x-model.debounce.500ms="search"
-                        @input="cari()">
+                <div class="col-md-6" wire:ignore>
+                    <label class="form-label">Cari & Tambah Produk</label>
+                    <select id="cariProduk" class="form-select"
+                        placeholder="Ketik nama produk atau scan barcode..."></select>
                 </div>
             </div>
 
@@ -54,34 +59,56 @@
                         <tr>
                             <th>No</th>
                             <th>Produk</th>
-                            <th>Harga</th>
-                            <th>Stok Sistem</th>
-                            <th>Stok Fisik</th>
-                            <th>Selisih</th>
+                            <th style="width: 15%">Harga Satuan</th>
+                            <th style="width: 10%">Stok Sistem</th>
+                            <th style="width: 10%">Stok Fisik</th>
+                            <th style="width: 10%">Selisih</th>
                             <th>Alasan</th>
+                            <th style="width: 5%"></th>
                         </tr>
                     </thead>
                     <tbody>
-                        <template x-for="(item, index) in products" :key="item.id">
+                        <template x-for="(item, index) in items" :key="item.id">
                             <tr>
-                                <td x-text="index + 1 + ((page - 1) * 10)"></td>
-                                <td x-text="item.nama_produk"></td>
+                                <td x-text="index + 1"></td>
+                                <td>
+                                    <div class="d-flex flex-column">
+                                        <span class="fw-bold" x-text="item.nama_produk"></span>
+                                        <small class="text-muted" x-text="item.sku"></small>
+                                    </div>
+                                </td>
                                 <td>
                                     <input type="text" class="form-control" :value="formatRupiah(item.harga_satuan)"
-                                        @input="updateHarga(item, $event.target.value)">
+                                        readonly>
                                 </td>
                                 <td>
                                     <input type="number" class="form-control" :value="item.stok_sistem" readonly>
                                 </td>
                                 <td>
-                                    <input type="number" class="form-control" x-model.number="item.stok_fisik"
-                                        @input="hitung(item)">
+                                    <input type="number" class="form-control" min="0"
+                                        x-model.number="item.stok_fisik" @input="hitung(item)">
                                 </td>
                                 <td>
-                                    <input type="number" class="form-control" :value="item.selisih" readonly>
+                                    <span :class="{ 'text-success': item.selisih > 0, 'text-danger': item.selisih < 0 }"
+                                        class="fw-bold" x-text="item.selisih"></span>
+                                    <small class="d-block text-muted" x-show="item.selisih > 0">(Surplus)</small>
+                                    <small class="d-block text-muted" x-show="item.selisih < 0">(Minus)</small>
                                 </td>
                                 <td>
-                                    <input type="text" class="form-control" x-model="item.alasan">
+                                    <input type="text" class="form-control" x-model="item.alasan"
+                                        placeholder="Alasan...">
+                                </td>
+                                <td>
+                                    <a href="#" class="text-danger" @click.prevent="removeItem(index)">
+                                        <span class="material-symbols-outlined">delete</span>
+                                    </a>
+                                </td>
+                            </tr>
+                        </template>
+                        <template x-if="items.length === 0">
+                            <tr>
+                                <td colspan="8" class="text-center py-4 text-muted">
+                                    Belum ada produk yang dipilih. Silakan cari produk di atas.
                                 </td>
                             </tr>
                         </template>
@@ -89,162 +116,193 @@
                 </table>
             </div>
 
-            <div class="d-flex justify-content-end gap-2 mt-3">
-                <button class="btn btn-outline-secondary" :disabled="page === 1" @click="prevPage()">Prev</button>
-                <button class="btn btn-outline-secondary" :disabled="!hasMore" @click="nextPage()">Next</button>
-            </div>
-
             <hr>
 
             <div class="row mt-3">
-                <div class="col-md-8">
+                <div class="col-md-6">
                     <label class="form-label">Catatan</label>
                     <textarea class="form-control" rows="3" x-model="catatan"></textarea>
                 </div>
-                <div class="col-md-4 d-flex align-items-end">
-                    <button class="btn btn-primary w-100" @click="simpan()">Simpan Adjustment</button>
+                <div class="col-md-6 d-flex align-items-end justify-content-end gap-2">
+                    <button class="btn btn-primary" @click="simpan('draft')">Simpan Draft</button>
                 </div>
             </div>
-
         </div>
     </div>
 </div>
+
 @section('script')
-<script>
-document.addEventListener('alpine:init', () => {
-    Alpine.data('stockAdjustment', () => ({
-        nomorAdjustment: '',
-        tanggalAdjustment: '',
-        jenisAdjustment: '',
-        status: 'draft',
-        catatan: '',
-        search: '',
-        page: 1,
-        hasMore: false,
-        products: [],
+    <script>
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('stockAdjustment', () => ({
+                nomorAdjustment: '',
+                tanggalAdjustment: '',
+                jenisAdjustment: '',
+                catatan: '',
+                items: [], // Selected items to adjust
 
-        tsJenis: null,
-        tsStatus: null,
+                tsJenis: null,
+                tsProduk: null,
 
-        init() {
-            this.initTanggal()
-            this.initJenis()
-            this.initStatus()
-            this.load()
-        },
+                init() {
+                    this.initTanggal()
+                    this.initJenis()
+                    this.initCariProduk()
+                },
 
-        initTanggal() {
-            if (this._tanggalInit) return
-            this._tanggalInit = true
+                initTanggal() {
+                    if (this._tanggalInit) return
+                    this._tanggalInit = true
 
-            new Litepicker({
-                element: document.getElementById('tanggalAdjustment'),
-                format: 'YYYY-MM-DD',
-                autoApply: true,
-                singleMode: true,
-                setup: p => p.on('selected', d => {
-                    this.tanggalAdjustment = d.format('YYYY-MM-DD')
-                })
-            })
-        },
+                    new Litepicker({
+                        element: document.getElementById('tanggalAdjustment'),
+                        format: 'YYYY-MM-DD',
+                        autoApply: true,
+                        singleMode: true,
+                        setup: p => p.on('selected', d => {
+                            this.tanggalAdjustment = d.format('YYYY-MM-DD')
+                        })
+                    })
+                },
 
-        initJenis() {
-            const el = document.getElementById('jenisAdjustment')
-            if (!el || el.tomselect) {
-                this.tsJenis = el?.tomselect
-                return
-            }
+                initJenis() {
+                    const el = document.getElementById('jenisAdjustment')
+                    if (!el || el.tomselect) {
+                        this.tsJenis = el?.tomselect
+                        return
+                    }
 
-            this.tsJenis = new TomSelect(el, {
-                persist: true,
-                onChange: v => this.jenisAdjustment = v
-            })
-        },
+                    this.tsJenis = new TomSelect(el, {
+                        persist: true,
+                        onChange: v => this.jenisAdjustment = v
+                    })
+                },
 
-        initStatus() {
-            const el = document.getElementById('statusAdjustment')
-            if (!el || el.tomselect) {
-                this.tsStatus = el?.tomselect
-                return
-            }
+                initCariProduk() {
+                    const el = document.getElementById('cariProduk')
+                    if (!el) return
 
-            this.tsStatus = new TomSelect(el, {
-                persist: true,
-                onChange: v => this.status = v
-            })
-        },
+                    if (el.tomselect) {
+                        this.tsProduk = el.tomselect
+                        return
+                    }
 
-        load() {
-            @this.call('loadProducts', this.page, this.search).then(res => {
-                this.products = res.data.map(p => ({
-                    id: p.id,
-                    nama_produk: p.nama_produk,
-                    stok_sistem: Number(p.stok_aktual),
-                    stok_fisik: Number(p.stok_aktual),
-                    selisih: 0,
-                    harga_satuan: Number(p.harga_beli ?? 0),
-                    alasan: ''
-                }))
-                this.hasMore = res.has_more
-            })
-        },
+                    this.tsProduk = new TomSelect(el, {
+                        valueField: 'id',
+                        labelField: 'nama_produk',
+                        searchField: ['nama_produk', 'sku'],
+                        placeholder: 'Ketik nama barang...',
+                        load: (query, callback) => {
+                            if (!query.length) return callback()
+                            @this.call('loadProducts', 1, query).then(res => {
+                                callback(res.data)
+                            }).catch(() => {
+                                callback()
+                            })
+                        },
+                        render: {
+                            option: function(item, escape) {
+                                return `<div class="d-flex align-items-center py-2 px-2 border-bottom">
+                                    ${item.gambar ? `<span class="avatar me-2" style="background-image: url(${escape(item.gambar)})"></span>` : ''}
+                                    <div class="flex-fill">
+                                        <div class="fw-bold">${escape(item.nama_produk)}</div>
+                                        <div class="text-muted small">SKU: ${escape(item.sku)} | Stok: ${escape(item.stok_aktual)} ${escape(item.unit)}</div>
+                                    </div>
+                                </div>`
+                            },
+                            item: function(item, escape) {
+                                return `<div>${escape(item.nama_produk)}</div>`
+                            }
+                        },
+                        onChange: (value) => {
+                            if (value) {
+                                const item = this.tsProduk.options[value]
+                                this.addItem(item)
+                                this.tsProduk.clear() // Reset search box
+                            }
+                        }
+                    })
+                },
 
-        hitung(item) {
-            item.selisih = item.stok_fisik - item.stok_sistem
-        },
+                addItem(product) {
+                    // Check if already exists
+                    const exists = this.items.find(i => i.id == product.id)
+                    if (exists) {
+                        Swal.fire({
+                            toast: true,
+                            position: 'top-end',
+                            icon: 'warning',
+                            title: 'Produk sudah ada di daftar',
+                            showConfirmButton: false,
+                            timer: 1500
+                        })
+                        return
+                    }
 
-        updateHarga(item, val) {
-            item.harga_satuan = Number(val.replace(/[^\d]/g, '')) || 0
-        },
+                    this.items.push({
+                        id: product.id,
+                        nama_produk: product.nama_produk,
+                        sku: product.sku,
+                        stok_sistem: Number(product.stok_aktual),
+                        stok_fisik: Number(product.stok_aktual), // Default match
+                        selisih: 0,
+                        harga_satuan: Number(product.harga_beli ?? 0),
+                        alasan: ''
+                    })
+                },
 
-        formatRupiah(val) {
-            return new Intl.NumberFormat('id-ID', {
-                style: 'currency',
-                currency: 'IDR',
-                minimumFractionDigits: 0
-            }).format(val || 0)
-        },
+                removeItem(index) {
+                    this.items.splice(index, 1)
+                },
 
-        cari() {
-            this.page = 1
-            this.load()
-        },
+                hitung(item) {
+                    item.selisih = item.stok_fisik - item.stok_sistem
+                },
 
-        nextPage() {
-            if (!this.hasMore) return
-            this.page++
-            this.load()
-        },
+                formatRupiah(val) {
+                    return new Intl.NumberFormat('id-ID', {
+                        style: 'currency',
+                        currency: 'IDR',
+                        minimumFractionDigits: 0
+                    }).format(val || 0)
+                },
 
-        prevPage() {
-            if (this.page === 1) return
-            this.page--
-            this.load()
-        },
+                simpan(status) {
+                    if (this.items.length === 0) {
+                        Swal.fire('Error', 'Belum ada produk yang dipilih', 'error')
+                        return
+                    }
 
-        simpan() {
-    const items = this.products
-        .filter(p => Number(p.selisih) !== 0)
-        .map(p => ({
-            product_id: p.id,
-            stok_sistem: Number(p.stok_sistem),
-            stok_fisik: Number(p.stok_fisik),
-            selisih: Number(p.selisih),
-            harga_satuan: Number(p.harga_satuan || 0),
-            alasan: p.alasan || null
-        }))
+                    // Check if any adjustments made
+                    const hasAdjustment = this.items.some(i => i.selisih !== 0)
+                    if (!hasAdjustment) {
+                        Swal.fire('Info',
+                            'Tidak ada perubahan selisih stok pada item yang dipilih. Data akan tetap disimpan.',
+                            'info')
+                    }
 
-    @this.call('saveAdjustment', {
-        no_penyesuaian: this.nomorAdjustment,
-        tanggal_penyesuaian: this.tanggalAdjustment,
-        jenis_penyesuaian: this.jenisAdjustment,
-        status: this.status,
-        catatan: this.catatan,
-        items: items
-    })
-}
+                    Swal.fire({
+                        title: 'Simpan Draft?',
+                        text: 'Data adjustment akan disimpan sebagai draft.',
+                        icon: 'question',
+                        showCancelButton: true,
+                        confirmButtonText: 'Ya, Simpan',
+                        cancelButtonText: 'Batal'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            @this.call('saveAdjustment', {
+                                no_penyesuaian: this.nomorAdjustment,
+                                tanggal_penyesuaian: this.tanggalAdjustment,
+                                jenis_penyesuaian: this.jenisAdjustment,
+                                status: status,
+                                catatan: this.catatan,
+                                items: this.items
+                            })
+                        }
+                    })
+                }
 
-    }))
-})
-</script>
+            }))
+        })
+    </script>
 @endsection

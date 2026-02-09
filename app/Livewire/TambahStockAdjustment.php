@@ -25,18 +25,31 @@ class TambahStockAdjustment extends Component
         $query = Product::where('business_id', $this->businessId);
 
         if ($search) {
-            $query->where('nama_produk', 'like', "%{$search}%");
+            $query->where(function($q) use ($search) {
+                $q->where('nama_produk', 'like', "%{$search}%")
+                  ->orWhere('sku', 'like', "%{$search}%");
+            });
         }
 
         $data = $query
             ->orderBy('nama_produk')
-            ->skip(($page - 1) * 10)
-            ->take(11)
+            ->skip(($page - 1) * 20)
+            ->take(21)
             ->get();
 
         return [
-            'data' => $data->take(10)->values(),
-            'has_more' => $data->count() > 10,
+            'data' => $data->take(20)->map(function ($item) {
+                return [
+                    'id' => $item->id,
+                    'nama_produk' => $item->nama_produk,
+                    'sku' => $item->sku,
+                    'stok_aktual' => $item->stok_aktual,
+                    'harga_beli' => $item->harga_beli,
+                    'unit' => $item->unit->nama_satuan ?? '',
+                    'gambar' => $item->gambar ? asset('storage/' . $item->gambar) : null,
+                ];
+            })->values(),
+            'has_more' => $data->count() > 20,
         ];
     }
     public function saveAdjustment($data)
@@ -53,13 +66,15 @@ class TambahStockAdjustment extends Component
                 throw new \Exception('Tanggal penyesuaian wajib diisi');
             }
 
+            $status = $data['status'] ?? 'draft';
+
             $adjustment = StockAdjustment::create([
                 'business_id'         => $this->businessId,
                 'user_id'             => auth()->id(),
                 'no_penyesuaian'      => $data['no_penyesuaian'] ?: 'ADJ-' . now()->format('YmdHis'),
                 'tanggal_penyesuaian' => $data['tanggal_penyesuaian'],
                 'jenis_penyesuaian'   => $data['jenis_penyesuaian'] ?? 'correction',
-                'status'              => $data['status'] ?? 'draft',
+                'status'              => $status,
                 'catatan'             => $data['catatan'] ?? null,
             ]);
 
@@ -78,9 +93,6 @@ class TambahStockAdjustment extends Component
                 $selisih = (int) $item['selisih'];
                 if ($selisih === 0) continue;
 
-                $jumlah = abs($selisih);
-                $jenis  = $selisih > 0 ? 'in' : 'out';
-
                 StockAdjustmentDetail::create([
                     'stock_adjustment_id' => $adjustment->id,
                     'product_id'          => $item['product_id'],
@@ -92,20 +104,23 @@ class TambahStockAdjustment extends Component
                     'catatan'             => $data['catatan'] ?? null,
                 ]);
 
-                $product = Product::lockForUpdate()->findOrFail($item['product_id']);
-                $product->stok_aktual += $selisih;
-                $product->save();
+                // ONLY update stock and create movement IF status is APPROVED
+                if ($status === 'approved') {
+                    $product = Product::lockForUpdate()->findOrFail($item['product_id']);
+                    $product->stok_aktual += $selisih;
+                    $product->save();
 
-                StockMovement::create([
-                    'business_id'            => $this->businessId,
-                    'product_id'             => $item['product_id'],
-                    'tanggal_perubahan_stok' => $data['tanggal_penyesuaian'],
-                    'jenis_perubahan'        => 'stock_adjustment',
-                    'jumlah_perubahan'       => $selisih,
-                    'reference_id'           => $adjustment->id,
-                    'reference_type'         => 'stok_adjustment',
-                    'catatan'                => $item['alasan'] ?? $data['catatan'] ?? null,
-                ]);
+                    StockMovement::create([
+                        'business_id'            => $this->businessId,
+                        'product_id'             => $item['product_id'],
+                        'tanggal_perubahan_stok' => $data['tanggal_penyesuaian'],
+                        'jenis_perubahan'        => 'stock_adjustment',
+                        'jumlah_perubahan'       => $selisih,
+                        'reference_id'           => $adjustment->id,
+                        'reference_type'         => 'stock_adjustment',
+                        'catatan'                => $item['alasan'] ?? $data['catatan'] ?? null,
+                    ]);
+                }
             }
 
             DB::commit();

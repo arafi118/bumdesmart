@@ -8,104 +8,91 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                @if ($stockdetail instanceof \App\Models\StockMovement)
-                    <div class="card mb-4 border-primary">
-                        <div class="card-body">
-                            <h5 class="card-title text-primary">Informasi Perubahan Stok</h5>
-                            <table class="table table-sm">
+                @if ($adjustmentDetail)
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <table class="table table-sm table-borderless">
                                 <tr>
-                                    <td class="fw-bold" width="30%">Tanggal Perubahan</td>
-                                    <td width="1%">:</td>
-                                    <td>
-                                        {{ \Carbon\Carbon::parse($stockdetail->tanggal_perubahan_stok)->format('d-m-Y H:i') }}
-                                    </td>
+                                    <td width="30%">No. Penyesuaian</td>
+                                    <td>: <strong>{{ $adjustmentDetail->no_penyesuaian }}</strong></td>
                                 </tr>
                                 <tr>
-                                    <td class="fw-bold">Jenis Perubahan</td>
-                                    <td>:</td>
-                                    <td>
-                                        <span class="badge text-light bg-primary">
-                                            {{ $stockdetail->jenis_perubahan }}
-                                        </span>
-                                    </td>
+                                    <td>Tanggal</td>
+                                    <td>: {{ $adjustmentDetail->tanggal_penyesuaian }}</td>
                                 </tr>
                                 <tr>
-                                    <td class="fw-bold">Jumlah Perubahan</td>
-                                    <td>:</td>
-                                    <td>
-                                        {{ $stockdetail->jumlah_perubahan }}
-                                        {{ $product?->unit?->nama_satuan }}
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td class="fw-bold">Catatan</td>
-                                    <td>:</td>
-                                    <td>{{ $stockdetail->catatan ?? '-' }}</td>
+                                    <td>Oleh</td>
+                                    <td>: {{ $adjustmentDetail->user->nama_lengkap ?? '-' }}</td>
                                 </tr>
                             </table>
                         </div>
+                        <div class="col-md-6 text-end">
+                            <span
+                                class="badge bg-{{ $adjustmentDetail->status == 'approved' ? 'success' : 'secondary' }}">
+                                {{ ucfirst($adjustmentDetail->status) }}
+                            </span>
+                        </div>
                     </div>
-                @endif
 
-                @if ($product instanceof \App\Models\Product)
-                    <div class="row">
-                        <div class="col-md-4 mb-3">
-                            <div class="card">
-                                <div class="card-body text-center">
-                                    <img
-                                        src="{{ $product->gambar ? asset('storage/' . $product->gambar) : asset('images/no-image.png') }}"
-                                        class="img-fluid rounded"
-                                        alt="Gambar Produk">
-                                </div>
-                            </div>
+                    <div class="table-responsive">
+                        <table class="table table-vcenter card-table">
+                            <thead>
+                                <tr>
+                                    <th>Produk</th>
+                                    <th>Jenis</th>
+                                    <th class="text-end">Jumlah</th>
+                                    <th>Alasan</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse ($adjustmentDetail->details as $detail)
+                                    <tr>
+                                        <td>
+                                            <div class="d-flex py-1 align-items-center">
+                                                @if ($detail->product->gambar)
+                                                    <span class="avatar me-2"
+                                                        style="background-image: url({{ asset('storage/' . $detail->product->gambar) }})"></span>
+                                                @endif
+                                                <div class="flex-fill">
+                                                    <div class="font-weight-medium">{{ $detail->product->nama_produk }}
+                                                    </div>
+                                                    <div class="text-muted"><a href="#" class="text-reset">Sku:
+                                                            {{ $detail->product->sku }}</a></div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span
+                                                class="badge bg-{{ $detail->jenis == 'in' ? 'success' : 'danger' }}-lt">
+                                                {{ $detail->jenis == 'in' ? 'Masuk' : 'Keluar' }}
+                                            </span>
+                                        </td>
+                                        <td class="text-end">
+                                            {{ $detail->jumlah }} {{ $detail->product->unit->nama_satuan ?? '' }}
+                                        </td>
+                                        <td>
+                                            {{ $detail->alasan ?? '-' }}
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="4" class="text-center">Tidak ada item</td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+
+                    @if ($adjustmentDetail->catatan)
+                        <div class="mt-3">
+                            <strong>Catatan:</strong>
+                            <p class="text-muted">{{ $adjustmentDetail->catatan }}</p>
                         </div>
-
-                        <div class="col-md-8 mb-3">
-                            <div class="card mb-3">
-                                <div class="card-body">
-                                    <h4>{{ $product->nama_produk }}</h4>
-
-                                    <table class="table table-sm">
-                                        <tr>
-                                            <td class="fw-bold">SKU</td>
-                                            <td>:</td>
-                                            <td>{{ $product->sku }}</td>
-                                        </tr>
-                                        <tr>
-                                            <td class="fw-bold">Kategori</td>
-                                            <td>:</td>
-                                            <td>{{ $product->category?->nama_kategori ?? '-' }}</td>
-                                        </tr>
-                                        <tr>
-                                            <td class="fw-bold">Merek</td>
-                                            <td>:</td>
-                                            <td>{{ $product->brand?->nama_brand ?? '-' }}</td>
-                                        </tr>
-                                        <tr>
-                                            <td class="fw-bold">Rak</td>
-                                            <td>:</td>
-                                            <td>
-                                                {{ $product->shelf?->nama_rak ?? '-' }}
-                                                ({{ $product->shelf?->lokasi ?? '-' }})
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td class="fw-bold">Harga Beli</td>
-                                            <td>:</td>
-                                            <td>Rp {{ number_format($product->harga_beli) }}</td>
-                                        </tr>
-                                        <tr>
-                                            <td class="fw-bold">Stok Saat Ini</td>
-                                            <td>:</td>
-                                            <td>
-                                                {{ $product->stok_aktual }}
-                                                {{ $product->unit?->nama_satuan }}
-                                            </td>
-                                        </tr>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
+                    @endif
+                @else
+                    <div class="text-center p-4">
+                        <div class="spinner-border text-primary" role="status"></div>
+                        <p class="mt-2">Memuat data...</p>
                     </div>
                 @endif
             </div>
