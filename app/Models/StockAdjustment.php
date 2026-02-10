@@ -25,4 +25,9 @@ class StockAdjustment extends Model
     {
         return $this->hasMany(StockAdjustmentDetail::class);
     }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
 }
