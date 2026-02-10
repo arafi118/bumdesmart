@@ -7,6 +7,8 @@ use App\Livewire\DaftarReturPembelian;
 use App\Livewire\DaftarReturPenjualan;
 use App\Livewire\Dashboard;
 use App\Livewire\Kategori;
+use App\Livewire\Laporan;
+use App\Livewire\Laporan\Cetak;
 use App\Livewire\Member;
 use App\Livewire\Merek;
 use App\Livewire\Pelanggan;
@@ -78,6 +80,9 @@ Route::group([
     Route::get('/penjualan/retur/{id}', TambahReturPenjualan::class);
     Route::get('/penjualan/daftar-retur', DaftarReturPenjualan::class);
     Route::get('/penjualan/pos', SalePos::class);
+
+    Route::get('/laporan', Laporan::class);
+    Route::get('/laporan/cetak', Cetak::class);
 
     Route::get('/master-pengaturan', Pengaturan::class);
 });

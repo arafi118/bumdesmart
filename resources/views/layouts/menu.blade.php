@@ -137,6 +137,11 @@
             ],
         ],
         [
+            'title' => 'Laporan',
+            'url' => '/laporan',
+            'icon' => 'analytics', // or 'assessment', 'description'
+        ],
+        [
             'title' => 'Pengaturan',
             'url' => '/master-pengaturan',
             'icon' => 'settings',
