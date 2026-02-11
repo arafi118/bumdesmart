@@ -137,9 +137,19 @@
             ],
         ],
         [
-            'title' => 'Laporan',
-            'url' => '/laporan',
-            'icon' => 'analytics', // or 'assessment', 'description'
+            'title' => 'Keuangan',
+            'url' => '/keuangan',
+            'icon' => 'analytics',
+            'child' => [
+                [
+                    'title' => 'Jurnal Umum',
+                    'url' => '/keuangan/jurnal-umum',
+                ],
+                [
+                    'title' => 'Pelaporan',
+                    'url' => '/keuangan/pelaporan',
+                ],
+            ],
         ],
         [
             'title' => 'Pengaturan',

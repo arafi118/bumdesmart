@@ -119,7 +119,7 @@
                     sub_laporan: this.jenis_sub_laporan
                 });
 
-                window.open('/laporan/cetak?' + params.toString(), '_blank');
+                window.open('/keuangan/pelaporan/cetak?' + params.toString(), '_blank');
             }
         }
     }

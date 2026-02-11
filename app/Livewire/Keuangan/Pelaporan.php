@@ -1,12 +1,12 @@
 <?php
 
-namespace App\Livewire;
+namespace App\Livewire\Keuangan;
 
 use Livewire\Attributes\Title;
 use Livewire\Component;
 
 #[Title('Laporan')]
-class Laporan extends Component
+class Pelaporan extends Component
 {
     // Filter Properties
     public $tahun;
@@ -28,6 +28,6 @@ class Laporan extends Component
 
     public function render()
     {
-        return view('livewire.laporan');
+        return view('livewire.keuangan.pelaporan');
     }
 }

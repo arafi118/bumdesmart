@@ -1,13 +1,12 @@
 <?php
 
-namespace App\Livewire\Laporan;
+namespace App\Livewire\Keuangan\Laporan;
 
 use App\Http\Controllers\Controller;
 use App\Models\Business;
 use App\Models\Customer;
 use App\Models\Product;
 use App\Models\Purchase;
-use App\Models\PurchaseDetail;
 use App\Models\PurchasesReturn;
 use App\Models\Sale;
 use App\Models\SaleDetail;
@@ -43,13 +42,18 @@ class Cetak extends Controller
     public function penjualanHarian(array $data)
     {
         $tahun = $data['tahun'] ?? date('Y');
-        $bulan = $data['bulan'] ?? date('m');
+        $bulan = $data['bulan'] ?? '-';
+        $hari = $data['periode'] ?? '-';
 
         $query = Sale::with(['customer'])
             ->whereYear('tanggal_transaksi', $tahun);
 
         if ($bulan != '-') {
             $query->whereMonth('tanggal_transaksi', $bulan);
+        }
+
+        if ($hari != '-') {
+            $query->whereDay('tanggal_transaksi', $hari);
         }
 
         $sales = $query->orderBy('tanggal_transaksi', 'desc')->get();
@@ -66,9 +70,9 @@ class Cetak extends Controller
             $periodeParts[] = Carbon::createFromDate($tahun, $bulan, 1)->isoFormat('MMMM');
         }
         $periodeParts[] = $tahun;
-        $subtitle = 'Periode: ' . implode(' ', $periodeParts);
+        $subtitle = 'Periode: '.implode(' ', $periodeParts);
 
-        $html = view('livewire.laporan.penjualan-harian', compact('title', 'subtitle', 'sales', 'summary'))->render();
+        $html = view('livewire.keuangan.pelaporan.penjualan-harian', compact('title', 'subtitle', 'sales', 'summary'))->render();
 
         return $this->streamPdf($html, 'laporan-penjualan-harian.pdf');
     }
@@ -91,9 +95,9 @@ class Cetak extends Controller
             ->sortByDesc('kekurangan');
 
         $title = 'Laporan Stok Minimum';
-        $subtitle = 'Tanggal: ' . Carbon::now()->isoFormat('D MMMM Y');
+        $subtitle = 'Tanggal: '.Carbon::now()->isoFormat('D MMMM Y');
 
-        $html = view('livewire.laporan.stok-minimum', compact('title', 'subtitle', 'products'))->render();
+        $html = view('livewire.keuangan.pelaporan.stok-minimum', compact('title', 'subtitle', 'products'))->render();
 
         return $this->streamPdf($html, 'laporan-stok-minimum.pdf');
     }
@@ -141,9 +145,9 @@ class Cetak extends Controller
             $periodeParts[] = Carbon::createFromDate($tahun, $bulan, 1)->isoFormat('MMMM');
         }
         $periodeParts[] = $tahun;
-        $subtitle = 'Periode: ' . implode(' ', $periodeParts);
+        $subtitle = 'Periode: '.implode(' ', $periodeParts);
 
-        $html = view('livewire.laporan.laba-rugi', compact('title', 'subtitle', 'summary'))->render();
+        $html = view('livewire.keuangan.pelaporan.laba-rugi', compact('title', 'subtitle', 'summary'))->render();
 
         return $this->streamPdf($html, 'laporan-laba-rugi.pdf');
     }
@@ -180,11 +184,11 @@ class Cetak extends Controller
             $periodeParts[] = Carbon::createFromDate($tahun, $bulan, 1)->isoFormat('MMMM');
         }
         $periodeParts[] = $tahun;
-        $subtitle = 'Periode: ' . implode(' ', $periodeParts) . ' (Top 20)';
+        $subtitle = 'Periode: '.implode(' ', $periodeParts).' (Top 20)';
 
         $products = $query;
 
-        $html = view('livewire.laporan.produk-terlaris', compact('title', 'subtitle', 'products'))->render();
+        $html = view('livewire.keuangan.pelaporan.produk-terlaris', compact('title', 'subtitle', 'products'))->render();
 
         return $this->streamPdf($html, 'laporan-produk-terlaris.pdf');
     }
@@ -211,9 +215,9 @@ class Cetak extends Controller
         $totalPiutang = $sales->sum('jumlah_utang');
 
         $title = 'Laporan Piutang (Customer)';
-        $subtitle = 'Per Tanggal: ' . Carbon::now()->isoFormat('D MMMM Y');
+        $subtitle = 'Per Tanggal: '.Carbon::now()->isoFormat('D MMMM Y');
 
-        $html = view('livewire.laporan.piutang', compact('title', 'subtitle', 'grouped', 'totalPiutang'))->render();
+        $html = view('livewire.keuangan.pelaporan.piutang', compact('title', 'subtitle', 'grouped', 'totalPiutang'))->render();
 
         return $this->streamPdf($html, 'laporan-piutang.pdf');
     }
@@ -240,9 +244,9 @@ class Cetak extends Controller
         $totalHutang = $purchases->sum('jumlah_utang');
 
         $title = 'Laporan Hutang (Supplier)';
-        $subtitle = 'Per Tanggal: ' . Carbon::now()->isoFormat('D MMMM Y');
+        $subtitle = 'Per Tanggal: '.Carbon::now()->isoFormat('D MMMM Y');
 
-        $html = view('livewire.laporan.hutang', compact('title', 'subtitle', 'grouped', 'totalHutang'))->render();
+        $html = view('livewire.keuangan.pelaporan.hutang', compact('title', 'subtitle', 'grouped', 'totalHutang'))->render();
 
         return $this->streamPdf($html, 'laporan-hutang.pdf');
     }
@@ -270,9 +274,9 @@ class Cetak extends Controller
             $periodeParts[] = Carbon::createFromDate($tahun, $bulan, 1)->isoFormat('MMMM');
         }
         $periodeParts[] = $tahun;
-        $subtitle = 'Periode: ' . implode(' ', $periodeParts);
+        $subtitle = 'Periode: '.implode(' ', $periodeParts);
 
-        $html = view('livewire.laporan.stok-opname', compact('title', 'subtitle', 'opnames'))->render();
+        $html = view('livewire.keuangan.pelaporan.stok-opname', compact('title', 'subtitle', 'opnames'))->render();
 
         return $this->streamPdf($html, 'laporan-stok-opname.pdf');
     }
@@ -307,9 +311,9 @@ class Cetak extends Controller
             $periodeParts[] = Carbon::createFromDate($tahun, $bulan, 1)->isoFormat('MMMM');
         }
         $periodeParts[] = $tahun;
-        $subtitle = 'Periode: ' . implode(' ', $periodeParts);
+        $subtitle = 'Periode: '.implode(' ', $periodeParts);
 
-        $html = view('livewire.laporan.pembelian', compact('title', 'subtitle', 'purchases', 'summary'))->render();
+        $html = view('livewire.keuangan.pelaporan.pembelian', compact('title', 'subtitle', 'purchases', 'summary'))->render();
 
         return $this->streamPdf($html, 'laporan-pembelian.pdf');
     }
@@ -332,9 +336,9 @@ class Cetak extends Controller
             ->sortByDesc('margin_pct');
 
         $title = 'Laporan Margin & Profitabilitas Produk';
-        $subtitle = 'Per Tanggal: ' . Carbon::now()->isoFormat('D MMMM Y');
+        $subtitle = 'Per Tanggal: '.Carbon::now()->isoFormat('D MMMM Y');
 
-        $html = view('livewire.laporan.margin-produk', compact('title', 'subtitle', 'products'))->render();
+        $html = view('livewire.keuangan.pelaporan.margin-produk', compact('title', 'subtitle', 'products'))->render();
 
         return $this->streamPdf($html, 'laporan-margin-produk.pdf');
     }
@@ -372,9 +376,9 @@ class Cetak extends Controller
             $periodeParts[] = Carbon::createFromDate($tahun, $bulan, 1)->isoFormat('MMMM');
         }
         $periodeParts[] = $tahun;
-        $subtitle = 'Periode: ' . implode(' ', $periodeParts) . ' (Top 20)';
+        $subtitle = 'Periode: '.implode(' ', $periodeParts).' (Top 20)';
 
-        $html = view('livewire.laporan.customer-terbaik', compact('title', 'subtitle', 'customers'))->render();
+        $html = view('livewire.keuangan.pelaporan.customer-terbaik', compact('title', 'subtitle', 'customers'))->render();
 
         return $this->streamPdf($html, 'laporan-customer-terbaik.pdf');
     }
@@ -406,9 +410,9 @@ class Cetak extends Controller
             ->sortByDesc('turnover_ratio');
 
         $title = 'Laporan Inventory Turnover';
-        $subtitle = '30 Hari Terakhir | Per Tanggal: ' . Carbon::now()->isoFormat('D MMMM Y');
+        $subtitle = '30 Hari Terakhir | Per Tanggal: '.Carbon::now()->isoFormat('D MMMM Y');
 
-        $html = view('livewire.laporan.inventory-turnover', compact('title', 'subtitle', 'products'))->render();
+        $html = view('livewire.keuangan.pelaporan.inventory-turnover', compact('title', 'subtitle', 'products'))->render();
 
         return $this->streamPdf($html, 'laporan-inventory-turnover.pdf');
     }
@@ -440,9 +444,9 @@ class Cetak extends Controller
             $periodeParts[] = Carbon::createFromDate($tahun, $bulan, 1)->isoFormat('MMMM');
         }
         $periodeParts[] = $tahun;
-        $subtitle = 'Periode: ' . implode(' ', $periodeParts);
+        $subtitle = 'Periode: '.implode(' ', $periodeParts);
 
-        $html = view('livewire.laporan.retur', compact('title', 'subtitle', 'salesReturns', 'purchaseReturns'))->render();
+        $html = view('livewire.keuangan.pelaporan.retur', compact('title', 'subtitle', 'salesReturns', 'purchaseReturns'))->render();
 
         return $this->streamPdf($html, 'laporan-retur.pdf');
     }
@@ -465,6 +469,6 @@ class Cetak extends Controller
 
         return response($output, 200)
             ->header('Content-Type', 'application/pdf')
-            ->header('Content-Disposition', 'inline; filename="' . $filename . '"');
+            ->header('Content-Disposition', 'inline; filename="'.$filename.'"');
     }
 }

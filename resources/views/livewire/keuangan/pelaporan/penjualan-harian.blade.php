@@ -34,13 +34,13 @@
             @foreach ($sales as $index => $sale)
                 <tr>
                     <td style="text-align: center;">{{ $index + 1 }}</td>
-                    <td>{{ $sale->invoice_number ?? ($sale->code ?? '#' . $sale->id) }}</td>
-                    <td>{{ $sale->created_at->format('d/m/Y H:i') }}</td>
-                    <td>{{ $sale->customer->name ?? 'Guest' }}</td>
-                    <td>{{ ucfirst($sale->payment_method ?? 'cash') }}</td>
-                    <td style="text-align: right;">Rp {{ number_format($sale->total_amount, 0, ',', '.') }}</td>
+                    <td>{{ $sale->no_invoice }}</td>
+                    <td>{{ $sale->tanggal_transaksi }}</td>
+                    <td>{{ $sale->customer->nama_pelanggan ?? 'Guest' }}</td>
+                    <td>{{ ucfirst($sale->jenis_pembayaran ?? 'cash') }}</td>
+                    <td style="text-align: right;">Rp {{ number_format($sale->total, 0, ',', '.') }}</td>
                     <td
-                        style="text-align: center; color: {{ $sale->status === 'paid' ? 'green' : ($sale->status === 'cancelled' ? 'red' : 'orange') }}">
+                        style="text-align: center; color: {{ $sale->status === 'paid' || $sale->status === 'completed' ? 'green' : ($sale->status === 'cancelled' ? 'red' : 'orange') }}">
                         {{ ucfirst($sale->status ?? 'paid') }}
                     </td>
                 </tr>
