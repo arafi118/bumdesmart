@@ -5,7 +5,7 @@
                 <div class="col-md-4 mb-3">
                     <div class="form-group">
                         <label class="form-label">Tahunan</label>
-                        <select x-model="tahun" class="form-select">
+                        <select x-model="tahun" class="form-select tom-select" id="tahun">
                             @for ($i = date('Y'); $i >= date('Y') - 5; $i--)
                                 <option value="{{ $i }}">{{ $i }}</option>
                             @endfor
@@ -15,7 +15,7 @@
                 <div class="col-md-4 mb-3">
                     <div class="form-group">
                         <label class="form-label">Bulanan</label>
-                        <select x-model="bulan" class="form-select">
+                        <select x-model="bulan" class="form-select tom-select" id="bulan">
                             <option value="-">-</option>
                             <option value="01">Januari</option>
                             <option value="02">Februari</option>
@@ -35,7 +35,7 @@
                 <div class="col-md-4 mb-3">
                     <div class="form-group">
                         <label class="form-label">Harian</label>
-                        <select x-model="periode" class="form-select">
+                        <select x-model="periode" class="form-select tom-select" id="periode">
                             <option value="-">-</option>
                             @for ($i = 1; $i <= 31; $i++)
                                 <option value="{{ $i }}">{{ $i }}</option>
@@ -47,7 +47,7 @@
                 <div class="col-md-6 mb-3">
                     <div class="form-group">
                         <label class="form-label">Nama Laporan</label>
-                        <select x-model="jenis_laporan" class="form-select">
+                        <select x-model="jenis_laporan" class="form-select tom-select" id="jenis_laporan">
                             <option value="">- pilih nama laporan -</option>
                             <optgroup label="📋 Laporan Harian">
                                 <option value="penjualanHarian">Laporan Penjualan Harian</option>
@@ -76,7 +76,8 @@
                 <div class="col-md-6 mb-3">
                     <div class="form-group">
                         <label class="form-label">Nama Sub Laporan</label>
-                        <select x-model="jenis_sub_laporan" class="form-select" disabled>
+                        <select x-model="jenis_sub_laporan" class="form-select tom-select" id="jenis_sub_laporan"
+                            disabled>
                             <option value="">-</option>
                         </select>
                     </div>

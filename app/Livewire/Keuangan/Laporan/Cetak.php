@@ -95,7 +95,7 @@ class Cetak extends Controller
             ->sortByDesc('kekurangan');
 
         $title = 'Laporan Stok Minimum';
-        $subtitle = 'Tanggal: '.Carbon::now()->isoFormat('D MMMM Y');
+        $subtitle = 'Periode: '.Carbon::now()->isoFormat('MMMM Y');
 
         $html = view('livewire.keuangan.pelaporan.stok-minimum', compact('title', 'subtitle', 'products'))->render();
 

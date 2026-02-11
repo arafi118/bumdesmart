@@ -110,7 +110,7 @@
                     <div class="subheader mb-2">Alert</div>
                     <div class="d-flex flex-wrap gap-2">
                         @if ($lowStockCount > 0)
-                            <span class="badge bg-danger">{{ $lowStockCount }} Stok Rendah</span>
+                            <span class="badge bg-danger text-light">{{ $lowStockCount }} Stok Rendah</span>
                         @endif
                         @if ($overdueReceivablesCount > 0)
                             <span class="badge bg-warning">{{ $overdueReceivablesCount }} Piutang</span>
