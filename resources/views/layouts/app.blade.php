@@ -7,24 +7,24 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta http-equiv="X-UA-Compatible" content="ie=edge" />
     <title>{{ $title ?? '' }} &mdash; {{ env('APP_NAME') }} | {{ env('APP_TITLE') }}</title>
-    <link rel="icon" href="{{ asset('assets/img/logo/logo.png') }}">
+    <link rel="icon" href="{{ asset('/assets/img/logo/logo.png') }}">
 
     <!-- BEGIN PAGE LEVEL STYLES -->
-    <link href="{{ asset('assets/libs/jsvectormap/dist/jsvectormap.css') }}" rel="stylesheet" />
+    <link href="{{ asset('/assets/libs/jsvectormap/dist/jsvectormap.css') }}" rel="stylesheet" />
     <!-- END PAGE LEVEL STYLES -->
 
     <!-- BEGIN GLOBAL MANDATORY STYLES -->
-    <link href="{{ asset('assets/css/tabler.css') }}" rel="stylesheet" />
+    <link href="{{ asset('/assets/css/tabler.css') }}" rel="stylesheet" />
     <!-- END GLOBAL MANDATORY STYLES -->
 
     <!-- BEGIN PLUGINS STYLES -->
-    <link href="{{ asset('assets/css/tabler-vendors.css') }}" rel="stylesheet" />
-    <link href="{{ asset('assets/css/tabler-themes.css') }}" rel="stylesheet" />
+    <link href="{{ asset('/assets/css/tabler-vendors.css') }}" rel="stylesheet" />
+    <link href="{{ asset('/assets/css/tabler-themes.css') }}" rel="stylesheet" />
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/sweetalert2/11.23.0/sweetalert2.min.css"
         integrity="sha512-Ivy7sPrd6LPp20adiK3al16GBelPtqswhJnyXuha3kGtmQ1G2qWpjuipfVDaZUwH26b3RDe8x707asEpvxl7iA=="
         crossorigin="anonymous" referrerpolicy="no-referrer" />
-    <link href="{{ asset('assets/libs/tom-select/dist/css/tom-select.bootstrap5.min.css') }}" rel="stylesheet" />
+    <link href="{{ asset('/assets/libs/tom-select/dist/css/tom-select.bootstrap5.min.css') }}" rel="stylesheet" />
 
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
@@ -179,12 +179,12 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/sweetalert2/11.23.0/sweetalert2.all.min.js"
         integrity="sha512-J+4Nt/+nieSNJjQGCPb8jKf5/wv31QiQM10bOotEHUKc9tB1Pn0gXQS6XXPtDoQhHHao5poTnSByMInzafUqzA=="
         crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-    <script src="{{ asset('assets/libs/tom-select/dist/js/tom-select.complete.min.js') }}"></script>
-    <script src="{{ asset('assets/libs/litepicker/dist/litepicker.js') }}"></script>
+    <script src="{{ asset('/assets/libs/tom-select/dist/js/tom-select.complete.min.js') }}"></script>
+    <script src="{{ asset('/assets/libs/litepicker/dist/litepicker.js') }}"></script>
     <!-- END PAGE LIBRARIES -->
 
     <!-- BEGIN GLOBAL MANDATORY SCRIPTS -->
-    <script src="{{ asset('assets/js/tabler.min.js') }}" defer></script>
+    <script src="{{ asset('/assets/js/tabler.min.js') }}" defer></script>
     <!-- END GLOBAL MANDATORY SCRIPTS -->
 
     <script>
