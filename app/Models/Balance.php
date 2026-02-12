@@ -8,4 +8,9 @@ use Illuminate\Database\Eloquent\Model;
 class Balance extends Model
 {
     use HasFactory;
+
+    public function account()
+    {
+        return $this->belongsTo(Balance::class, 'kode_akun', 'kode_akun');
+    }
 }

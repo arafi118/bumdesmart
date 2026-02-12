@@ -3,8 +3,8 @@
 namespace App\Livewire\Keuangan\Laporan;
 
 use App\Http\Controllers\Controller;
+use App\Models\AkunLevel1;
 use App\Models\Business;
-use App\Models\Customer;
 use App\Models\Product;
 use App\Models\Purchase;
 use App\Models\PurchasesReturn;
@@ -12,7 +12,6 @@ use App\Models\Sale;
 use App\Models\SaleDetail;
 use App\Models\SalesReturn;
 use App\Models\StockOpname;
-use App\Models\Supplier;
 use Carbon\Carbon;
 use Dompdf\Dompdf;
 use Dompdf\Options;
@@ -29,16 +28,12 @@ class Cetak extends Controller
             abort(404, 'Laporan tidak ditemukan');
         }
 
-        // Share business data ke semua view (untuk kop surat)
         $business = Business::first();
         view()->share('business', $business);
 
         return $this->{$data['laporan']}($data);
     }
 
-    // =====================================================
-    // 1. LAPORAN PENJUALAN HARIAN
-    // =====================================================
     public function penjualanHarian(array $data)
     {
         $tahun = $data['tahun'] ?? date('Y');
@@ -77,9 +72,6 @@ class Cetak extends Controller
         return $this->streamPdf($html, 'laporan-penjualan-harian.pdf');
     }
 
-    // =====================================================
-    // 2. LAPORAN STOK MINIMUM
-    // =====================================================
     public function stokMinimum(array $data)
     {
         $products = Product::with('category')
@@ -102,9 +94,6 @@ class Cetak extends Controller
         return $this->streamPdf($html, 'laporan-stok-minimum.pdf');
     }
 
-    // =====================================================
-    // 3. LAPORAN LABA RUGI
-    // =====================================================
     public function labaRugi(array $data)
     {
         $tahun = $data['tahun'] ?? date('Y');
@@ -152,9 +141,33 @@ class Cetak extends Controller
         return $this->streamPdf($html, 'laporan-laba-rugi.pdf');
     }
 
-    // =====================================================
-    // 4. LAPORAN PRODUK TERLARIS
-    // =====================================================
+    public function neraca(array $data)
+    {
+        $tahun = $data['tahun'] ?? date('Y');
+        $bulan = $data['bulan'] ?? date('m');
+
+        $akunLevel1s = AkunLevel1::with([
+            'akunLevel2.akunLevel3.accounts' => function ($query) {
+                $query->where('business_id', auth()->user()->business_id);
+            },
+            'akunLevel2.akunLevel3.accounts.balance' => function ($query) use ($tahun) {
+                $query->where('business_id', auth()->user()->business_id)->where('tahun', $tahun);
+            },
+        ])->where('id', '<=', '3')->get();
+
+        $title = 'Laporan Neraca';
+        $periodeParts = [];
+        if ($bulan != '-') {
+            $periodeParts[] = Carbon::createFromDate($tahun, $bulan, 1)->isoFormat('MMMM');
+        }
+        $periodeParts[] = $tahun;
+        $subtitle = 'Periode: '.implode(' ', $periodeParts);
+
+        $html = view('livewire.keuangan.pelaporan.neraca', compact('title', 'subtitle', 'akunLevel1s', 'bulan'))->render();
+
+        return $this->streamPdf($html, 'laporan-neraca.pdf');
+    }
+
     public function produkTerlaris(array $data)
     {
         $tahun = $data['tahun'] ?? date('Y');
@@ -193,9 +206,6 @@ class Cetak extends Controller
         return $this->streamPdf($html, 'laporan-produk-terlaris.pdf');
     }
 
-    // =====================================================
-    // 5. LAPORAN PIUTANG (Customer)
-    // =====================================================
     public function piutang(array $data)
     {
         $sales = Sale::with('customer')
@@ -222,9 +232,6 @@ class Cetak extends Controller
         return $this->streamPdf($html, 'laporan-piutang.pdf');
     }
 
-    // =====================================================
-    // 6. LAPORAN HUTANG (Supplier)
-    // =====================================================
     public function hutang(array $data)
     {
         $purchases = Purchase::with('supplier')
@@ -251,9 +258,6 @@ class Cetak extends Controller
         return $this->streamPdf($html, 'laporan-hutang.pdf');
     }
 
-    // =====================================================
-    // 7. LAPORAN STOK OPNAME
-    // =====================================================
     public function stokOpname(array $data)
     {
         $tahun = $data['tahun'] ?? date('Y');
@@ -281,9 +285,6 @@ class Cetak extends Controller
         return $this->streamPdf($html, 'laporan-stok-opname.pdf');
     }
 
-    // =====================================================
-    // 8. LAPORAN PEMBELIAN
-    // =====================================================
     public function pembelian(array $data)
     {
         $tahun = $data['tahun'] ?? date('Y');
@@ -318,9 +319,6 @@ class Cetak extends Controller
         return $this->streamPdf($html, 'laporan-pembelian.pdf');
     }
 
-    // =====================================================
-    // 9. LAPORAN MARGIN & PROFITABILITAS
-    // =====================================================
     public function marginProduk(array $data)
     {
         $products = Product::with('category')
@@ -343,9 +341,6 @@ class Cetak extends Controller
         return $this->streamPdf($html, 'laporan-margin-produk.pdf');
     }
 
-    // =====================================================
-    // 10. LAPORAN CUSTOMER TERBAIK
-    // =====================================================
     public function customerTerbaik(array $data)
     {
         $tahun = $data['tahun'] ?? date('Y');
@@ -383,9 +378,6 @@ class Cetak extends Controller
         return $this->streamPdf($html, 'laporan-customer-terbaik.pdf');
     }
 
-    // =====================================================
-    // 11. LAPORAN INVENTORY TURNOVER
-    // =====================================================
     public function inventoryTurnover(array $data)
     {
         $products = Product::with('category')
@@ -417,9 +409,6 @@ class Cetak extends Controller
         return $this->streamPdf($html, 'laporan-inventory-turnover.pdf');
     }
 
-    // =====================================================
-    // 12. LAPORAN RETUR
-    // =====================================================
     public function retur(array $data)
     {
         $tahun = $data['tahun'] ?? date('Y');
@@ -451,9 +440,6 @@ class Cetak extends Controller
         return $this->streamPdf($html, 'laporan-retur.pdf');
     }
 
-    // =====================================================
-    // STREAM PDF
-    // =====================================================
     private function streamPdf($html, $filename)
     {
         $options = new Options;

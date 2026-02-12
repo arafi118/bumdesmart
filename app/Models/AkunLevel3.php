@@ -8,4 +8,9 @@ use Illuminate\Database\Eloquent\Model;
 class AkunLevel3 extends Model
 {
     use HasFactory;
+
+    public function accounts()
+    {
+        return $this->hasMany(Account::class, 'parent_id', 'id');
+    }
 }
