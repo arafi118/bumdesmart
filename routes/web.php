@@ -12,7 +12,7 @@ use App\Livewire\Keuangan\Pelaporan;
 use App\Livewire\Member;
 use App\Livewire\Merek;
 use App\Livewire\Pelanggan;
-use App\Livewire\pengaturan;
+use App\Livewire\Pengaturan;
 use App\Livewire\Produk;
 use App\Livewire\Rak;
 use App\Livewire\Role;
