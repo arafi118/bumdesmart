@@ -1,5 +1,7 @@
 @php
     use App\Utils\KeuanganUtil;
+
+    $saldoAkunLevel1 = [];
 @endphp
 
 @extends('layouts.pdf')
@@ -13,6 +15,9 @@
                 </td>
             </tr>
 
+            @php
+                $saldoAkunLevel1[$akunLevel1->id] = 0;
+            @endphp
             @foreach ($akunLevel1->akunLevel2 as $akunLevel2)
                 <tr style="background-color: #d0d0d0;">
                     <td style="border: 0;">
@@ -28,9 +33,14 @@
                         $saldoAkun = 0;
                         foreach ($akunLevel3->accounts as $account) {
                             $saldo = KeuanganUtil::sumSaldo($account, $bulan);
+                            if ($account->kode == '3.2.01.01') {
+                                $saldo = KeuanganUtil::sumLabaRugi($tahun, $bulan);
+                            }
 
                             $saldoAkun += $saldo;
                         }
+
+                        $saldoAkunLevel1[$akunLevel1->id] += $saldoAkun;
                     @endphp
 
                     <tr style="background-color: {{ $index % 2 == 0 ? '#f0f0f0' : '#fefefe' }};">
@@ -48,8 +58,11 @@
             @endforeach
 
             <tr style="background-color: #b0b0b0;">
-                <td colspan="3" style="text-align: center; border: 0; ">
-                    {{ $akunLevel1->kode }}. {{ $akunLevel1->nama }}
+                <td colspan="2" style="text-align: left; border: 0; font-weight: bold;">
+                    Jumlah {{ $akunLevel1->nama }}
+                </td>
+                <td style="text-align: right; border: 0; font-weight: bold;">
+                    {{ number_format($saldoAkunLevel1[$akunLevel1->id], 2) }}
                 </td>
             </tr>
             <tr>

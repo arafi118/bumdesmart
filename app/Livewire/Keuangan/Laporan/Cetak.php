@@ -163,7 +163,7 @@ class Cetak extends Controller
         $periodeParts[] = $tahun;
         $subtitle = 'Periode: '.implode(' ', $periodeParts);
 
-        $html = view('livewire.keuangan.pelaporan.neraca', compact('title', 'subtitle', 'akunLevel1s', 'bulan'))->render();
+        $html = view('livewire.keuangan.pelaporan.neraca', compact('title', 'subtitle', 'akunLevel1s', 'tahun', 'bulan'))->render();
 
         return $this->streamPdf($html, 'laporan-neraca.pdf');
     }

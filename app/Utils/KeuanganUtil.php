@@ -2,6 +2,8 @@
 
 namespace App\Utils;
 
+use App\Models\Account;
+
 class KeuanganUtil
 {
     public static function sumSaldo($account, $bulan = '00'): string
@@ -23,5 +25,41 @@ class KeuanganUtil
         }
 
         return $saldo;
+    }
+
+    public static function sumLabaRugi($tahun, $bulan = '00'): string
+    {
+        $accounts = Account::where([
+            ['business_id', auth()->user()->business_id],
+            ['parent_id', '>=', '400'],
+        ])->with([
+            'balance' => function ($query) use ($tahun) {
+                $query->where('tahun', $tahun);
+            },
+        ])->get();
+
+        $pendapatan = 0;
+        $hpp = 0;
+        $beban = 0;
+        $pendapatanDanBebanNonUsaha = 0;
+        foreach ($accounts as $account) {
+            if ($account->parent_id >= '400' && $account->parent_id < '500') {
+                $pendapatan = 0;
+            }
+
+            if ($account->parent_id >= '500' && $account->parent_id < '600') {
+                $beban = 0;
+            }
+
+            if ($account->parent_id >= '600' && $account->parent_id < '700') {
+                $hpp = 0;
+            }
+
+            if ($account->parent_id >= '700') {
+                $pendapatanDanBebanNonUsaha = 0;
+            }
+        }
+
+        return '0';
     }
 }
