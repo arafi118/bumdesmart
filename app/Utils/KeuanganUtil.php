@@ -32,11 +32,11 @@ class KeuanganUtil
     {
         $labaRugi = self::labaRugi($tahun, $bulan);
 
-        foreach ($labaRugi as $lr) {
-            foreach ($lr['kode'] as $account) {
-                dd($account);
-            }
-        }
+        // foreach ($labaRugi as $lr) {
+        //     foreach ($lr['kode'] as $account) {
+        //         dd($account);
+        //     }
+        // }
 
         dd($labaRugi);
 
@@ -160,14 +160,88 @@ class KeuanganUtil
         }
 
         $labaRugi = [];
-        foreach ($group as $value) {
-            foreach ($value['kode'] as $kode) {
+        foreach ($group as $key => $value) {
+
+            $child = [];
+            foreach ($value['kode'] as $index => $kode) {
                 if ($kode['kode'] == '1.1.03.01') {
-                    dd($kode);
+                    $saldoPenjualanBersih = [
+                        'saldo_bulan_ini' => '0',
+                        'saldo_bulan_lalu' => '0',
+                        'saldo_tahun_lalu' => '0',
+                    ];
+                    foreach ($child as $ch) {
+                        $saldoPenjualanBersih['saldo_bulan_ini'] += $ch['saldo_bulan_ini'];
+                        $saldoPenjualanBersih['saldo_bulan_lalu'] += $ch['saldo_bulan_lalu'];
+                        $saldoPenjualanBersih['saldo_tahun_lalu'] += $ch['saldo_tahun_lalu'];
+                    }
+
+                    $child[] = [
+                        'kode' => '',
+                        'nama' => 'Penjualan Bersih',
+                        'saldo_bulan_ini' => $saldoPenjualanBersih['saldo_bulan_ini'],
+                        'saldo_bulan_lalu' => $saldoPenjualanBersih['saldo_bulan_lalu'],
+                        'saldo_tahun_lalu' => $saldoPenjualanBersih['saldo_tahun_lalu'],
+                    ];
+
+                    $child[] = [
+                        'kode' => '',
+                        'nama' => 'Persediaan Awal',
+                        'saldo_bulan_ini' => $kode['saldo_bulan_lalu'],
+                        'saldo_bulan_lalu' => '0',
+                        'saldo_tahun_lalu' => '0',
+                    ];
                 }
 
-                $labaRugi[] = $kode;
+                $child[] = $kode;
+
+                if ($kode['kode'] == '5.1.01.06') {
+                    dd($child);
+
+                    $child[] = [
+                        'kode' => '',
+                        'nama' => 'Total Pembelian',
+                        'saldo_bulan_ini' => '0',
+                        'saldo_bulan_lalu' => '0',
+                        'saldo_tahun_lalu' => '0',
+                    ];
+
+                    $child[] = [
+                        'kode' => '',
+                        'nama' => 'Total Persediaan',
+                        'saldo_bulan_ini' => '0',
+                        'saldo_bulan_lalu' => '0',
+                        'saldo_tahun_lalu' => '0',
+                    ];
+
+                    $child[] = [
+                        'kode' => '',
+                        'nama' => 'Persediaan Akhir',
+                        'saldo_bulan_ini' => '0',
+                        'saldo_bulan_lalu' => '0',
+                        'saldo_tahun_lalu' => '0',
+                    ];
+
+                    $child[] = [
+                        'kode' => '',
+                        'nama' => 'Harga Pokok Penjualan',
+                        'saldo_bulan_ini' => '0',
+                        'saldo_bulan_lalu' => '0',
+                        'saldo_tahun_lalu' => '0',
+                    ];
+
+                    $child[] = [
+                        'kode' => '',
+                        'nama' => 'Laba Kotor',
+                        'saldo_bulan_ini' => '0',
+                        'saldo_bulan_lalu' => '0',
+                        'saldo_tahun_lalu' => '0',
+                    ];
+                }
             }
+
+            $group[$key]['kode'] = $child;
+            $labaRugi[] = $group[$key];
         }
 
         return $labaRugi;
