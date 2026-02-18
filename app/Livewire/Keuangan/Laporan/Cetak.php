@@ -12,6 +12,7 @@ use App\Models\Sale;
 use App\Models\SaleDetail;
 use App\Models\SalesReturn;
 use App\Models\StockOpname;
+use App\Utils\KeuanganUtil;
 use Carbon\Carbon;
 use Dompdf\Dompdf;
 use Dompdf\Options;
@@ -154,6 +155,7 @@ class Cetak extends Controller
                 $query->where('business_id', auth()->user()->business_id)->where('tahun', $tahun);
             },
         ])->where('id', '<=', '3')->get();
+        $labaRugi = KeuanganUtil::sumLabaRugi($tahun, $bulan);
 
         $title = 'Laporan Neraca';
         $periodeParts = [];
