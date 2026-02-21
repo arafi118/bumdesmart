@@ -48,7 +48,7 @@
                         @include('livewire.keuangan.partials.form_inventaris')
                     </div>
 
-                    <div class="row">
+                    <div class="row" x-show="!showFormInventaris">
                         <div class="col-12 my-3">
                             <label class="form-label">Nominal Rp.</label>
                             <input type="text" class="form-control" x-model="nominalFormatted"
@@ -78,6 +78,52 @@
     </div>
 </div>
 @section('script')
+    <script>
+        function asetForm() {
+            return {
+                nama_barang: '',
+                umur_ekonomis: '',
+                jumlah: 0,
+                harga_satuan: '',
+                harga_perolehan: '',
+
+                init() {
+                    window.addEventListener('kirimInventaris', () => {
+                        this.kirimData();
+                    });
+                },
+
+                formatHarga() {
+                    let angka = this.harga_satuan.replace(/\D/g, '');
+                    let nilai = angka ? parseInt(angka) : 0;
+                    this.harga_satuan = new Intl.NumberFormat('id-ID').format(nilai);
+                    this.hitung();
+                },
+
+                hitung() {
+                    let harga = this.harga_satuan.replace(/\D/g, '');
+                    let jumlah = parseInt(this.jumlah) || 0;
+                    let total = (parseInt(harga) || 0) * jumlah;
+
+                    this.harga_perolehan = new Intl.NumberFormat('id-ID').format(total);
+
+                    Livewire.dispatch('setHargaPerolehan', { total: total });
+                },
+
+                kirimData() {
+                    const data = {
+                        nama_barang: this.nama_barang,
+                        umur_ekonomis: this.umur_ekonomis,
+                        jumlah: this.jumlah,
+                        harga_satuan: this.harga_satuan.replace(/\D/g, ''),
+                        harga_perolehan: this.harga_perolehan.replace(/\D/g, '')
+                    };
+
+                    window.dispatchEvent(new CustomEvent('inventarisUpdated', { detail: data }));
+                }
+            }
+        }
+    </script>
     <script>
         let jenisTransaksi = new TomSelect('#jenis_transaksi', {
             valueField: 'id',
@@ -114,6 +160,7 @@
                 nominalFormatted: '',
 
                 showFormInventaris: false,
+                inventarisData: null,
 
                 formatNominal() {
                     let angka = this.nominalFormatted.replace(/\D/g, '');
@@ -122,6 +169,10 @@
                 },
 
                 init() {
+                    window.addEventListener('inventarisUpdated', (event) => {
+                        this.inventarisData = event.detail;
+                    });
+
                     this.$watch('selectedJenisTransaksi', (value) => {
                         this.setKodeAkun(value);
                     });
@@ -189,28 +240,6 @@
                             ];
                         } else if (kodetujuan.startsWith('1.2.01') || kodetujuan.startsWith('1.2.02') ||
                             kodetujuan.startsWith('1.2.03')) {
-                            this.inputKeterangan = [{
-                                    label: 'Nama Barang',
-                                    value: ''
-                                },
-                                {
-                                    label: 'Jml. Unit',
-                                    value: ''
-                                },
-                                {
-                                    label: 'Harga Satuan',
-                                    value: ''
-                                },
-                                {
-                                    label: 'Umur Eko. (bulan)',
-                                    value: ''
-                                },
-                                {
-                                    label: 'Harga Perolehan',
-                                    value: ''
-                                }
-                            ];
-
                             this.showFormInventaris = true;
                         } else {
                             this.inputKeterangan = [{
@@ -257,27 +286,7 @@
                             ];
                         } else if (kodetujuan.startsWith('1.2.01') || kodetujuan.startsWith('1.2.02') ||
                             kodetujuan.startsWith('1.2.03')) {
-                            this.inputKeterangan = [{
-                                    label: 'Nama Barang',
-                                    value: ''
-                                },
-                                {
-                                    label: 'Jml. Unit',
-                                    value: ''
-                                },
-                                {
-                                    label: 'Harga Satuan',
-                                    value: ''
-                                },
-                                {
-                                    label: 'Umur Eko. (bulan)',
-                                    value: ''
-                                },
-                                {
-                                    label: 'Harga Perolehan',
-                                    value: ''
-                                }
-                            ];
+                            this.showFormInventaris = true;
                         } else {
                             this.inputKeterangan = [{
                                 label: 'Keterangan',
@@ -403,28 +412,26 @@
                         confirmButtonText: 'Ya, Simpan',
                         cancelButtonText: 'Batal'
                     }).then((result) => {
-                        if (result.isConfirmed) {
 
-                            // pastikan nominal sudah diparse
-                            this.formatNominal();
+                        if (!result.isConfirmed) return;
+                        window.dispatchEvent(new CustomEvent('kirimInventaris'));
+                        this.formatNominal();
 
-                            return @this.call('saveJurnalUmum', {
-                                tanggal_pembayaran: document.getElementById(
-                                    'tanggal_transaksi').value,
-                                jenis_transaksi: this.selectedJenisTransaksi,
-                                sumber_dana: this.selectedSumberDana,
-                                disimpan_ke: this.selectedDisimpanKe,
-                                relasi: this.inputKeterangan.length > 0 ? this
-                                    .inputKeterangan[0].value : null,
-                                keterangan: this.inputKeterangan.length > 1 ? this
-                                    .inputKeterangan[1].value : null,
-                                nominal: this.nominal
-                            });
+                        const payload = {
+                            tanggal_pembayaran: document.getElementById('tanggal_transaksi').value,
+                            jenis_transaksi: this.selectedJenisTransaksi,
+                            sumber_dana: this.selectedSumberDana,
+                            disimpan_ke: this.selectedDisimpanKe,
+                            relasi: this.inputKeterangan.length > 0 ? this.inputKeterangan[0].value : null,
+                            keterangan: this.inputKeterangan.length > 1 ? this.inputKeterangan[1].value : null,
+                            nominal: String(this.nominal).replace(/\D/g, ''), // <-- koma ini penting
+                            inventaris: this.showFormInventaris ? this.inventarisData : null 
+                        };
 
-                        }
-                    })
+                        @this.call('saveJurnalUmum', payload);
+                    });
                 }
             }))
-        })
+        });
     </script>
 @endsection
