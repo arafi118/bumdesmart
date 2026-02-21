@@ -35,17 +35,13 @@ class PaymentUtil
                 'rekening_kredit' => $rekeningKredit,
                 'rekening_debit' => $rekeningDebit,
             ];
-        }
 
-        if ($jenisTransaksi == 'purchase-diskon') {
             $rekeningDebit = '5.1.01.02';
             $return['purchase-diskon'] = [
                 'rekening_kredit' => $rekeningDebit,
                 'rekening_debit' => $rekeningKredit,
             ];
-        }
 
-        if ($jenisTransaksi == 'purchase-cashback') {
             $rekeningDebit = '4.1.01.02';
             $return['purchase-cashback'] = [
                 'rekening_kredit' => $rekeningKredit,
@@ -70,17 +66,13 @@ class PaymentUtil
                 'rekening_kredit' => '4.1.01.01',
                 'rekening_debit' => $rekeningDebit,
             ];
-        }
 
-        if ($jenisTransaksi == 'sales-diskon') {
             $rekeningDebit = '5.1.01.02';
             $return['sales-diskon'] = [
                 'rekening_kredit' => $rekeningKas,
                 'rekening_debit' => $rekeningDebit,
             ];
-        }
 
-        if ($jenisTransaksi == 'sales-cashback') {
             $rekeningDebit = '4.1.01.02';
             $return['purchase-cashback'] = [
                 'rekening_kredit' => $rekeningKas,

@@ -190,7 +190,20 @@ class DaftarPembelian extends Component
                     ->decrement('stok_aktual', $jumlah);
             }
 
-            \App\Models\BatchMovement::whereIn('id', $deleteBatchMovements)->delete();
+            // NEW: Check if batches are used before deleting
+            $usedBatches = \App\Models\BatchMovement::whereIn('batch_id', $deleteProductBatchs)
+                ->where('jenis_transaksi', '!=', 'purchase')
+                ->exists();
+
+            if ($usedBatches) {
+                throw new \Exception('Tidak dapat menghapus pembelian karena produk dalam batch ini sudah terjual atau digunakan.');
+            }
+
+            // Delete ALL batch movements associated with these batches (safe because we checked usage above)
+            // This prevents FK errors if the relation traversal missed some
+            \App\Models\BatchMovement::whereIn('batch_id', $deleteProductBatchs)->delete();
+
+            // \App\Models\BatchMovement::whereIn('id', $deleteBatchMovements)->delete(); // Replaced by strict batch_id delete
             \App\Models\ProductBatch::whereIn('id', $deleteProductBatchs)->delete();
 
             $purchase->purchaseDetails()->delete();

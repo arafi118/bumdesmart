@@ -370,7 +370,7 @@ class TambahPembelian extends Component
                         'jumlah_perubahan' => $newQty,
                         'reference_id' => $purchase->id,
                         'reference_type' => 'purchase',
-                        'catatan' => 'Pembelian via PO '.($data['nomorPembelian'] ?? ''),
+                        'catatan' => 'Pembelian via PO '.($no_pembelian ?? ''),
                     ]);
 
                     $batchMovementData[] = [
@@ -407,6 +407,7 @@ class TambahPembelian extends Component
                         throw new \Exception('Tidak dapat menghapus produk yang sudah terjual/digunakan (Batch Constraint).');
                     }
 
+                    \App\Models\BatchMovement::whereIn('batch_id', $batchesToDelete)->delete();
                     \App\Models\ProductBatch::whereIn('purchase_detail_id', $detailsToDelete)->delete();
                     $purchase->purchaseDetails()->whereIn('id', $detailsToDelete)->delete();
                 }
@@ -474,7 +475,7 @@ class TambahPembelian extends Component
                         'jumlah_perubahan' => $item['jumlah_beli'],
                         'reference_id' => $purchase->id,
                         'reference_type' => 'purchase',
-                        'catatan' => 'Pembelian via PO '.($data['nomorPembelian'] ?? ''),
+                        'catatan' => 'Pembelian via PO '.($no_pembelian ?? ''),
                     ]);
 
                     // 4. Create Batch Movement (Linkage)
@@ -527,7 +528,7 @@ class TambahPembelian extends Component
             $payments[] = [
                 'business_id' => $this->businessId,
                 'user_id' => auth()->user()->id,
-                'no_pembayaran' => $data['nomorPembelian'],
+                'no_pembayaran' => $no_pembelian,
                 'tanggal_pembayaran' => $data['tanggalPembelian'],
                 'jenis_transaksi' => 'purchase',
                 'transaction_id' => $purchase->id,
@@ -546,15 +547,16 @@ class TambahPembelian extends Component
                 $payments[] = [
                     'business_id' => $this->businessId,
                     'user_id' => auth()->user()->id,
-                    'no_pembayaran' => $data['nomorPembelian'].'-DISC',
+                    'no_pembayaran' => $no_pembelian.'-DISC',
                     'tanggal_pembayaran' => $data['tanggalPembelian'],
                     'jenis_transaksi' => 'purchase',
                     'transaction_id' => $purchase->id,
                     'total_harga' => $totalDiskonAll,
-                    'metode_pembayaran' => 'internal',
+                    'metode_pembayaran' => $data['metodeBayar'],
+                    'no_referensi' => $data['noRekening'],
                     'catatan' => 'Diskon Pembelian Diterima',
-                    'rekening_debit' => $kodeRekening['purchase_discount']['rekening_debit'],
-                    'rekening_kredit' => $kodeRekening['purchase_discount']['rekening_kredit'],
+                    'rekening_debit' => $kodeRekening['purchase-diskon']['rekening_debit'],
+                    'rekening_kredit' => $kodeRekening['purchase-diskon']['rekening_kredit'],
                     'created_at' => $timestamp,
                     'updated_at' => $timestamp,
                 ];
@@ -565,15 +567,16 @@ class TambahPembelian extends Component
                 $payments[] = [
                     'business_id' => $this->businessId,
                     'user_id' => auth()->user()->id,
-                    'no_pembayaran' => $data['nomorPembelian'].'-CSHBK',
+                    'no_pembayaran' => $no_pembelian.'-CSHBK',
                     'tanggal_pembayaran' => $data['tanggalPembelian'],
                     'jenis_transaksi' => 'purchase',
                     'transaction_id' => $purchase->id,
                     'total_harga' => $totalCashbackAll,
-                    'metode_pembayaran' => 'internal',
+                    'metode_pembayaran' => $data['metodeBayar'],
+                    'no_referensi' => $data['noRekening'],
                     'catatan' => 'Cashback Pembelian Diterima',
-                    'rekening_debit' => $kodeRekening['purchase_cashback']['rekening_debit'],
-                    'rekening_kredit' => $kodeRekening['purchase_cashback']['rekening_kredit'],
+                    'rekening_debit' => $kodeRekening['purchase-cashback']['rekening_debit'],
+                    'rekening_kredit' => $kodeRekening['purchase-cashback']['rekening_kredit'],
                     'created_at' => $timestamp,
                     'updated_at' => $timestamp,
                 ];
