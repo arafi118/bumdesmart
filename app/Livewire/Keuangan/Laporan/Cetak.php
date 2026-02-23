@@ -12,6 +12,7 @@ use App\Models\Sale;
 use App\Models\SaleDetail;
 use App\Models\SalesReturn;
 use App\Models\StockOpname;
+use App\Utils\KeuanganUtil;
 use Carbon\Carbon;
 use Dompdf\Dompdf;
 use Dompdf\Options;
@@ -99,34 +100,7 @@ class Cetak extends Controller
         $tahun = $data['tahun'] ?? date('Y');
         $bulan = $data['bulan'] ?? date('m');
 
-        $query = Sale::with('saleDetails')
-            ->whereYear('tanggal_transaksi', $tahun);
-
-        if ($bulan != '-') {
-            $query->whereMonth('tanggal_transaksi', $bulan);
-        }
-
-        $sales = $query->get();
-
-        $totalRevenue = $sales->sum('total');
-        $totalHpp = 0;
-        $totalProfit = 0;
-
-        foreach ($sales as $sale) {
-            foreach ($sale->saleDetails as $detail) {
-                $totalHpp += $detail->hpp * $detail->jumlah;
-                $totalProfit += $detail->profit;
-            }
-        }
-
-        $grossMargin = $totalRevenue > 0 ? ($totalProfit / $totalRevenue) * 100 : 0;
-
-        $summary = [
-            'total_revenue' => $totalRevenue,
-            'total_hpp' => $totalHpp,
-            'gross_profit' => $totalProfit,
-            'gross_margin' => $grossMargin,
-        ];
+        $labaRugi = KeuanganUtil::labaRugi($tahun, $bulan);
 
         $title = 'Laporan Laba Rugi';
         $periodeParts = [];
@@ -136,7 +110,7 @@ class Cetak extends Controller
         $periodeParts[] = $tahun;
         $subtitle = 'Periode: '.implode(' ', $periodeParts);
 
-        $html = view('livewire.keuangan.pelaporan.laba-rugi', compact('title', 'subtitle', 'summary'))->render();
+        $html = view('livewire.keuangan.pelaporan.laba-rugi', compact('title', 'subtitle', 'labaRugi'))->render();
 
         return $this->streamPdf($html, 'laporan-laba-rugi.pdf');
     }
