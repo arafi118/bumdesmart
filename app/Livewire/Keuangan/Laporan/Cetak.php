@@ -205,6 +205,41 @@ class Cetak extends Controller
         return $this->streamPdf($html, 'laporan-laba-rugi.pdf');
     }
 
+    public function asetTetapInventaris(array $data)
+    {
+        $tahun = $data['tahun'] ?? date('Y');
+        $bulan = $data['bulan'] ?? date('m');
+
+        // Batas tanggal penyusutan
+        $tgl_kondisi = Carbon::createFromDate($tahun, $bulan == '-' ? 12 : $bulan)->endOfMonth()->format('Y-m-d');
+
+        // Ambil data Inventaris (jenis = 1, kategori = 1 s.d 4)
+        $inventarisGroups = \App\Models\Inventory::where([
+            ['jenis', '1'],
+            ['status', '!=', '0'],
+            ['tanggal_beli', '<=', $tgl_kondisi],
+            ['harga_satuan', '>', '0'],
+        ])
+            ->whereNotNull('tanggal_beli')
+            ->whereIn('kategori', [1, 2, 3, 4])
+            ->orderBy('kategori', 'ASC')
+            ->orderBy('tanggal_beli', 'ASC')
+            ->get()
+            ->groupBy('kategori');
+
+        $title = 'Aset Tetap Inventaris';
+        $periodeParts = [];
+        if ($bulan != '-') {
+            $periodeParts[] = Carbon::createFromDate($tahun, $bulan, 1)->isoFormat('MMMM');
+        }
+        $periodeParts[] = $tahun;
+        $subtitle = 'Periode: '.implode(' ', $periodeParts);
+
+        $html = view('livewire.keuangan.pelaporan.aset-tetap-inventaris', compact('title', 'subtitle', 'inventarisGroups', 'tgl_kondisi', 'tahun', 'bulan'))->render();
+
+        return $this->streamPdf($html, 'laporan-aset-tetap-inventaris.pdf', 'landscape');
+    }
+
     public function produkTerlaris(array $data)
     {
         $tahun = $data['tahun'] ?? date('Y');
@@ -477,7 +512,7 @@ class Cetak extends Controller
         return $this->streamPdf($html, 'laporan-retur.pdf');
     }
 
-    private function streamPdf($html, $filename)
+    private function streamPdf($html, $filename, $orientation = 'portrait')
     {
         $options = new Options;
         $options->set('defaultFont', 'sans-serif');
@@ -485,7 +520,7 @@ class Cetak extends Controller
 
         $dompdf = new Dompdf($options);
         $dompdf->loadHtml($html);
-        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->setPaper('A4', $orientation);
         $dompdf->render();
 
         $output = $dompdf->output();

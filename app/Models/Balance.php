@@ -11,6 +11,6 @@ class Balance extends Model
 
     public function account()
     {
-        return $this->belongsTo(Balance::class, 'kode_akun', 'kode_akun');
+        return $this->belongsTo(Account::class, 'kode_akun', 'kode');
     }
 }

@@ -60,6 +60,7 @@
                                 <option value="bukuBesar">Laporan Buku Besar</option>
                                 <option value="neraca">Laporan Neraca</option>
                                 <option value="labaRugi">Laporan Laba Rugi</option>
+                                <option value="asetTetapInventaris">Aset Tetap dan Inventaris</option>
                                 <option value="pembelian">Laporan Pembelian</option>
                                 <option value="piutang">Laporan Piutang (Customer)</option>
                                 <option value="hutang">Laporan Hutang (Supplier)</option>

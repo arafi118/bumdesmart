@@ -165,6 +165,11 @@ class JurnalUmum extends Component
                     'rekening_debit' => $simpan,
                     'rekening_kredit' => $sumber,
                 ]);
+
+                $kodeInventaris = explode('.', $simpan);
+                $jenis = intval($kodeInventaris[2]);
+                $kategori = intval($kodeInventaris[3]);
+
                 if (! empty($data['inventaris'])) {
                     $inv = $data['inventaris'];
                     $inventaris = Inventory::create([
@@ -176,8 +181,8 @@ class JurnalUmum extends Component
                         'jumlah' => $inv['jumlah'] ?? 0,
                         'harga_satuan' => $inv['harga_satuan'] ?? 0,
                         'umur_ekonomis' => $inv['umur_ekonomis'] ?? 0,
-                        'jenis' => 0,
-                        'kategori' => 0,
+                        'jenis' => $jenis,
+                        'kategori' => $kategori,
                         'status' => 'baik',
                     ]);
                 }
