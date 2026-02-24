@@ -100,14 +100,14 @@ class JurnalUmum extends Component
             $sumber = $data['sumber_dana'] ?? '';
             $simpan = $data['disimpan_ke'] ?? '';
 
-            $noPembayaran = 'PAY-'.date('Ymd').'-'.
+            $noPembayaran = 'PAY-' . date('Ymd') . '-' .
                 str_pad(Payment::whereDate('created_at', today())->count() + 1, 4, '0', STR_PAD_LEFT);
 
             $urutan = Jurnal::whereYear('tanggal', $this->tahun)
                 ->whereMonth('tanggal', $this->bulan)
                 ->whereDay('tanggal', $this->tanggal)
                 ->count() + 1;
-            $noJurnal = 'JU-'.date('Ymd').'-'.str_pad($urutan, 4, '0', STR_PAD_LEFT);
+            $noJurnal = 'JU-' . date('Ymd') . '-' . str_pad($urutan, 4, '0', STR_PAD_LEFT);
 
             // PENGHAPUSAN / PENJUALAN ASET
             if (
@@ -131,7 +131,6 @@ class JurnalUmum extends Component
 
                     Payment::create(
                         [
-<<<<<<< HEAD
                             'business_id'           => auth()->user()->business_id,
                             'user_id'               => auth()->id(),
                             'no_pembayaran'         => $noPembayaran,
@@ -144,20 +143,6 @@ class JurnalUmum extends Component
                             'catatan'               => 'transaksi Jurnal Umum',
                             'rekening_debit'        => $simpan,
                             'rekening_kredit'       => $sumber,
-=======
-                            'business_id' => auth()->user()->business_id,
-                            'user_id' => auth()->id(),
-                            'no_pembayaran' => $noPembayaran,
-                            'tanggal_pembayaran' => $data['tanggal_pembayaran'],
-                            'jenis_transaksi' => 'jurnal',
-                            'transaksi_id' => $data['id_barang'],
-                            'total_harga' => $data['nominal'] ?? 0,
-                            'metode_pembayaran' => 'tunai',
-                            'no_referensi' => null,
-                            'catatan' => 'transaksi Jurnal Umum',
-                            'rekening_debit' => $sumber,
-                            'rekening_kredit' => $simpan,
->>>>>>> 08bc9cdddc1d434eac4f9020a68aed917e94fec5
                         ]
                     );
                 }
@@ -171,7 +156,6 @@ class JurnalUmum extends Component
                     'user_id' => auth()->id(),
                     'no_pembayaran' => $noPembayaran,
                     'tanggal_pembayaran' => $data['tanggal_pembayaran'],
-<<<<<<< HEAD
                     'jenis_transaksi'    => 'jurnal_Inventaris',
                     'transaksi_id'       => null,
                     'total_harga'        => $data['nominal'] ?? 0,
@@ -180,16 +164,6 @@ class JurnalUmum extends Component
                     'catatan'            => 'transaksi Jurnal Inventaris',
                     'rekening_debit'     => $simpan,
                     'rekening_kredit'    => $sumber,
-=======
-                    'jenis_transaksi' => 'jurnal_inventaris',
-                    'transaksi_id' => null,
-                    'total_harga' => $data['nominal'] ?? 0,
-                    'metode_pembayaran' => 'tunai',
-                    'no_referensi' => null,
-                    'catatan' => 'transaksi Jurnal Inventaris',
-                    'rekening_debit' => $sumber,
-                    'rekening_kredit' => $simpan,
->>>>>>> 08bc9cdddc1d434eac4f9020a68aed917e94fec5
                 ]);
                 if (! empty($data['inventaris'])) {
                     $inv = $data['inventaris'];
@@ -219,7 +193,6 @@ class JurnalUmum extends Component
                 ]);
 
                 Payment::create([
-<<<<<<< HEAD
                     'business_id'           => auth()->user()->business_id,
                     'user_id'               => auth()->id(),
                     'no_pembayaran'         => $noPembayaran,
@@ -232,20 +205,6 @@ class JurnalUmum extends Component
                     'catatan'               => 'transaksi Jurnal Umum',
                     'rekening_debit'        => $simpan,
                     'rekening_kredit'       => $sumber,
-=======
-                    'business_id' => auth()->user()->business_id,
-                    'user_id' => auth()->id(),
-                    'no_pembayaran' => $noPembayaran,
-                    'tanggal_pembayaran' => $data['tanggal_pembayaran'],
-                    'jenis_transaksi' => 'jurnal',
-                    'transaction_id' => $jurnal->id,
-                    'total_harga' => $data['nominal'] ?? 0,
-                    'metode_pembayaran' => 'tunai',
-                    'no_referensi' => null,
-                    'catatan' => 'transaksi Jurnal Umum',
-                    'rekening_debit' => $sumber,
-                    'rekening_kredit' => $simpan,
->>>>>>> 08bc9cdddc1d434eac4f9020a68aed917e94fec5
                 ]);
             }
             DB::commit();
