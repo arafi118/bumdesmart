@@ -26,11 +26,11 @@ class Payment extends Model
 
     public function accountDebit()
     {
-        return $this->belongsTo(Account::class, 'rekening_debit', 'kode_akun');
+        return $this->belongsTo(Account::class, 'rekening_debit', 'kode');
     }
 
     public function accountKredit()
     {
-        return $this->belongsTo(Account::class, 'rekening_kredit', 'kode_akun');
+        return $this->belongsTo(Account::class, 'rekening_kredit', 'kode');
     }
 }

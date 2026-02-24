@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Account;
 use App\Models\AkunLevel1;
 use App\Models\Business;
+use App\Models\Jurnal;
 use App\Models\Payment;
 use App\Models\Product;
 use App\Models\Purchase;
@@ -97,51 +98,30 @@ class Cetak extends Controller
         return $this->streamPdf($html, 'laporan-stok-minimum.pdf');
     }
 
-    public function labaRugi(array $data)
+    public function jurnalTransaksi(array $data)
     {
         $tahun = $data['tahun'] ?? date('Y');
         $bulan = $data['bulan'] ?? date('m');
 
-        $labaRugi = KeuanganUtil::labaRugi($tahun, $bulan);
+        $jurnals = Jurnal::where('business_id', auth()->user()->business_id)->where('tanggal', 'LIKE', $tahun.'-'.$bulan.'-%')->with([
+            'getPayment.accountDebit',
+            'getPayment.accountKredit',
+            'user',
+        ])->get();
 
-        $title = 'Laporan Laba Rugi';
+        $title = 'Jurnal Transaksi';
         $periodeParts = [];
         if ($bulan != '-') {
             $periodeParts[] = Carbon::createFromDate($tahun, $bulan, 1)->isoFormat('MMMM');
         }
+
         $periodeParts[] = $tahun;
-        $subtitle = 'Periode: '.implode(' ', $periodeParts);
+        $namaBulan = implode(' ', $periodeParts);
+        $subtitle = 'Periode: '.$namaBulan;
 
-        $html = view('livewire.keuangan.pelaporan.laba-rugi', compact('title', 'subtitle', 'labaRugi'))->render();
+        $html = view('livewire.keuangan.pelaporan.jurnal-transaksi', compact('title', 'subtitle', 'jurnals'))->render();
 
-        return $this->streamPdf($html, 'laporan-laba-rugi.pdf');
-    }
-
-    public function neraca(array $data)
-    {
-        $tahun = $data['tahun'] ?? date('Y');
-        $bulan = $data['bulan'] ?? date('m');
-
-        $akunLevel1s = AkunLevel1::with([
-            'akunLevel2.akunLevel3.accounts' => function ($query) {
-                $query->where('business_id', auth()->user()->business_id);
-            },
-            'akunLevel2.akunLevel3.accounts.balance' => function ($query) use ($tahun) {
-                $query->where('business_id', auth()->user()->business_id)->where('tahun', $tahun);
-            },
-        ])->where('id', '<=', '3')->get();
-
-        $title = 'Laporan Neraca';
-        $periodeParts = [];
-        if ($bulan != '-') {
-            $periodeParts[] = Carbon::createFromDate($tahun, $bulan, 1)->isoFormat('MMMM');
-        }
-        $periodeParts[] = $tahun;
-        $subtitle = 'Periode: '.implode(' ', $periodeParts);
-
-        $html = view('livewire.keuangan.pelaporan.neraca', compact('title', 'subtitle', 'akunLevel1s', 'tahun', 'bulan'))->render();
-
-        return $this->streamPdf($html, 'laporan-neraca.pdf');
+        return $this->streamPdf($html, 'laporan-jurnal-transaksi.pdf');
     }
 
     public function bukuBesar(array $data)
@@ -177,6 +157,53 @@ class Cetak extends Controller
         $html = view('livewire.keuangan.pelaporan.buku-besar', compact('title', 'subtitle', 'akun', 'payments', 'tahun', 'bulan', 'namaBulan'))->render();
 
         return $this->streamPdf($html, 'laporan-buku-besar.pdf');
+    }
+
+    public function neraca(array $data)
+    {
+        $tahun = $data['tahun'] ?? date('Y');
+        $bulan = $data['bulan'] ?? date('m');
+
+        $akunLevel1s = AkunLevel1::with([
+            'akunLevel2.akunLevel3.accounts' => function ($query) {
+                $query->where('business_id', auth()->user()->business_id);
+            },
+            'akunLevel2.akunLevel3.accounts.balance' => function ($query) use ($tahun) {
+                $query->where('business_id', auth()->user()->business_id)->where('tahun', $tahun);
+            },
+        ])->where('id', '<=', '3')->get();
+
+        $title = 'Laporan Neraca';
+        $periodeParts = [];
+        if ($bulan != '-') {
+            $periodeParts[] = Carbon::createFromDate($tahun, $bulan, 1)->isoFormat('MMMM');
+        }
+        $periodeParts[] = $tahun;
+        $subtitle = 'Periode: '.implode(' ', $periodeParts);
+
+        $html = view('livewire.keuangan.pelaporan.neraca', compact('title', 'subtitle', 'akunLevel1s', 'tahun', 'bulan'))->render();
+
+        return $this->streamPdf($html, 'laporan-neraca.pdf');
+    }
+
+    public function labaRugi(array $data)
+    {
+        $tahun = $data['tahun'] ?? date('Y');
+        $bulan = $data['bulan'] ?? date('m');
+
+        $labaRugi = KeuanganUtil::labaRugi($tahun, $bulan);
+
+        $title = 'Laporan Laba Rugi';
+        $periodeParts = [];
+        if ($bulan != '-') {
+            $periodeParts[] = Carbon::createFromDate($tahun, $bulan, 1)->isoFormat('MMMM');
+        }
+        $periodeParts[] = $tahun;
+        $subtitle = 'Periode: '.implode(' ', $periodeParts);
+
+        $html = view('livewire.keuangan.pelaporan.laba-rugi', compact('title', 'subtitle', 'labaRugi'))->render();
+
+        return $this->streamPdf($html, 'laporan-laba-rugi.pdf');
     }
 
     public function produkTerlaris(array $data)
