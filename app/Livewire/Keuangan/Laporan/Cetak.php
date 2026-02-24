@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\Account;
 use App\Models\AkunLevel1;
 use App\Models\Business;
-use App\Models\Jurnal;
 use App\Models\Payment;
 use App\Models\Product;
 use App\Models\Purchase;
@@ -103,9 +102,9 @@ class Cetak extends Controller
         $tahun = $data['tahun'] ?? date('Y');
         $bulan = $data['bulan'] ?? date('m');
 
-        $jurnals = Jurnal::where('business_id', auth()->user()->business_id)->where('tanggal', 'LIKE', $tahun.'-'.$bulan.'-%')->with([
-            'getPayment.accountDebit',
-            'getPayment.accountKredit',
+        $payments = Payment::where('business_id', auth()->user()->business_id)->where('tanggal_pembayaran', 'LIKE', $tahun.'-'.$bulan.'-%')->with([
+            'accountDebit',
+            'accountKredit',
             'user',
         ])->get();
 
@@ -119,7 +118,7 @@ class Cetak extends Controller
         $namaBulan = implode(' ', $periodeParts);
         $subtitle = 'Periode: '.$namaBulan;
 
-        $html = view('livewire.keuangan.pelaporan.jurnal-transaksi', compact('title', 'subtitle', 'jurnals'))->render();
+        $html = view('livewire.keuangan.pelaporan.jurnal-transaksi', compact('title', 'subtitle', 'payments'))->render();
 
         return $this->streamPdf($html, 'laporan-jurnal-transaksi.pdf');
     }

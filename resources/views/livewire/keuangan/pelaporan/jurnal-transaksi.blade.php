@@ -17,31 +17,33 @@
             $totalDebit = 0;
             $totalKredit = 0;
         @endphp
-        @forelse ($jurnals as $index => $jurnal)
+        @forelse ($payments as $index => $payment)
             @php
-                $totalDebit += $jurnal->jumlah;
-                $totalKredit += $jurnal->jumlah;
+                $totalDebit += $payment->total_harga;
+                $totalKredit += $payment->total_harga;
             @endphp
             <tr style="background-color: {{ $index % 2 == 0 ? '#f0f0f0' : '#fefefe' }};">
                 <td rowspan="2" style="text-align: center; border: 0;">{{ $loop->iteration }}</td>
-                <td rowspan="2" style="text-align: center; border: 0;">{{ $jurnal->tanggal }}</td>
-                <td rowspan="2" style="text-align: center; border: 0;">{{ $jurnal->id }}</td>
-                <td style="text-align: center; border: 0;">{{ $jurnal->getPayment->rekening_debit }}</td>
-                <td style="border: 0;">
-                    {{ $jurnal->getPayment->accountDebit->nama_akun }}
+                <td rowspan="2" style="text-align: center; border: 0;">
+                    {{ date('Y-m-d', strtotime($payment->tanggal_pembayaran)) }}
                 </td>
-                <td style="text-align: right; border: 0;">{{ number_format($jurnal->jumlah) }}</td>
+                <td rowspan="2" style="text-align: center; border: 0;">{{ $payment->transaction_id }}</td>
+                <td style="text-align: center; border: 0;">{{ $payment->rekening_debit }}</td>
+                <td style="border: 0;">
+                    {{ $payment->accountDebit->nama }}
+                </td>
+                <td style="text-align: right; border: 0;">{{ number_format($payment->total_harga) }}</td>
                 <td style="text-align: right; border: 0;">0</td>
-                <td rowspan="2" style="text-align: center; border: 0;">{{ $jurnal->user->initial }}</td>
+                <td rowspan="2" style="text-align: center; border: 0;">{{ $payment->user->initial }}</td>
             </tr>
 
             <tr style="background-color: {{ $index % 2 == 0 ? '#f0f0f0' : '#fefefe' }};">
-                <td style="text-align: center; border: 0;">{{ $jurnal->getPayment->rekening_kredit }}</td>
+                <td style="text-align: center; border: 0;">{{ $payment->rekening_kredit }}</td>
                 <td style="border: 0;">
-                    {{ $jurnal->getPayment->accountKredit->nama_akun }}
+                    {{ $payment->accountKredit->nama }}
                 </td>
                 <td style="text-align: right; border: 0;">0</td>
-                <td style="text-align: right; border: 0;">{{ number_format($jurnal->jumlah) }}</td>
+                <td style="text-align: right; border: 0;">{{ number_format($payment->total_harga) }}</td>
             </tr>
         @empty
             <tr style="background-color: {{ $index % 2 == 0 ? '#f0f0f0' : '#fefefe' }};">
