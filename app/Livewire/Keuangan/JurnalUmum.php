@@ -140,8 +140,8 @@ class JurnalUmum extends Component
                             'metode_pembayaran'     => 'tunai',
                             'no_referensi'          => null,
                             'catatan'               => 'transaksi Jurnal Umum',
-                            'rekening_debit'        => $sumber,
-                            'rekening_kredit'       => $simpan,
+                            'rekening_debit'        => $simpan,
+                            'rekening_kredit'       => $sumber,
                         ]
                     );
                 }
@@ -161,8 +161,8 @@ class JurnalUmum extends Component
                     'metode_pembayaran'  => 'tunai',
                     'no_referensi'       => null,
                     'catatan'            => 'transaksi Jurnal Inventaris',
-                    'rekening_debit'     => $sumber,
-                    'rekening_kredit'    => $simpan,
+                    'rekening_debit'     => $simpan,
+                    'rekening_kredit'    => $sumber,
                 ]);
                 if (!empty($data['inventaris'])) {
                     $inv = $data['inventaris'];
@@ -201,8 +201,8 @@ class JurnalUmum extends Component
                     'metode_pembayaran'     => 'tunai',
                     'no_referensi'          => null,
                     'catatan'               => 'transaksi Jurnal Umum',
-                    'rekening_debit'        => $sumber,
-                    'rekening_kredit'       => $simpan,
+                    'rekening_debit'        => $simpan,
+                    'rekening_kredit'       => $sumber,
                 ]);
             }
             DB::commit();
