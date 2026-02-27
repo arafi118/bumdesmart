@@ -7,7 +7,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta http-equiv="X-UA-Compatible" content="ie=edge" />
     <title>Login &mdash; {{ env('APP_NAME') }} | {{ env('APP_TITLE') }}</title>
-    <link rel="icon" href="{{ asset('assets/img/logo/logo.png') }}">
+    @php
+        $owner = \App\Models\Owner::first();
+        $logoUrl =
+            $owner && $owner->logo ? asset('storage/' . $owner->logo) : asset('assets/img/logo/logo-transparent.png');
+    @endphp
+    <link rel="icon" href="{{ $logoUrl }}">
 
     <!-- BEGIN GLOBAL MANDATORY STYLES -->
     <link href="{{ asset('assets/css/tabler.css') }}" rel="stylesheet" />
@@ -34,8 +39,8 @@
         <div class="container container-tight py-4">
             <div class="text-center mb-4">
                 <a href="." aria-label="Tabler" class="navbar-brand navbar-brand-autodark">
-                    <img src="{{ asset('assets/img/logo/logo-transparent.png') }}" alt="{{ env('APP_NAME') }}"
-                        width="128">
+                    <img src="{{ $logoUrl }}" alt="{{ env('APP_NAME') }}" style="max-height: 128px; width: auto;"
+                        class="img-fluid">
                 </a>
             </div>
             <div class="card card-md">

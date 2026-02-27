@@ -167,13 +167,29 @@
     <div class="kop">
         <table class="kop-table">
             <tr>
-                @if (isset($logo) && $logo)
+                @php
+                    $owner = $business ? $business->owner : \App\Models\Owner::first();
+                    $logoPath = $owner && $owner->logo ? storage_path('app/public/' . $owner->logo) : null;
+                    if (!$logoPath && isset($logo) && $logo) {
+                        // Handle legacy static string fallback if it exists
+                        $logoPath = public_path($logo);
+                    }
+
+                    $base64Logo = null;
+                    if ($logoPath && file_exists($logoPath)) {
+                        $type = pathinfo($logoPath, PATHINFO_EXTENSION);
+                        $data = file_get_contents($logoPath);
+                        $base64Logo = 'data:image/' . $type . ';base64,' . base64_encode($data);
+                    }
+                @endphp
+                @if ($base64Logo)
                     <td class="kop-logo">
-                        <img src="{{ $logo }}" alt="Logo">
+                        <img src="{{ $base64Logo }}" alt="Logo">
                     </td>
                 @endif
                 <td class="kop-text">
-                    <p class="kop-nama">{{ $business->nama_usaha ?? env('APP_NAME', 'BUMDes Smart') }}</p>
+                    <p class="kop-nama">
+                        {{ $owner->nama_usaha ?? ($business->nama_usaha ?? env('APP_NAME', 'BUMDes Smart')) }}</p>
                     <p class="kop-alamat">
                         {{ $business->alamat ?? '' }}
                         @if (isset($business->no_telp) && $business->no_telp)

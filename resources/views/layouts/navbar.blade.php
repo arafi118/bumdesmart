@@ -11,8 +11,17 @@
         <!-- BEGIN NAVBAR LOGO -->
         <div class="navbar-brand navbar-brand-autodark d-none-navbar-horizontal pe-0 pe-md-3">
             <a href="/dashboard" aria-label="Tabler">
-                <img src="{{ asset('assets/img/logo/logo-transparent.png') }}" alt="{{ env('APP_NAME') }}"
-                    width="40">
+                @php
+                    $owner =
+                        auth()->check() && auth()->user()->business
+                            ? auth()->user()->business->owner
+                            : \App\Models\Owner::first();
+                    $logoUrl =
+                        $owner && $owner->logo
+                            ? asset('storage/' . $owner->logo)
+                            : asset('assets/img/logo/logo-transparent.png');
+                @endphp
+                <img src="{{ $logoUrl }}" alt="{{ env('APP_NAME') }}" style="max-height: 40px; width: auto;">
             </a>
         </div>
         <!-- END NAVBAR LOGO -->

@@ -151,6 +151,11 @@
                 ],
             ],
         ],
+        [
+            'title' => 'Pengaturan',
+            'url' => '/master-pengaturan',
+            'icon' => 'settings',
+        ],
     ];
 
     $path = '/' . request()->path();

@@ -96,10 +96,22 @@
             <button onclick="window.close()" style="padding: 5px 10px; cursor: pointer;">Tutup</button>
         </div>
 
-        <div class="text-center">
-            <h3>{{ env('APP_NAME', 'Toko Anda') }}</h3>
-            <p>{{ $owner->alamat ?? 'Alamat Toko' }}</p>
-            <p>Telp: {{ $owner->telepon ?? '-' }}</p>
+        <div class="receipt">
+            @php
+                $owner =
+                    $sale->user && $sale->user->business ? $sale->user->business->owner : \App\Models\Owner::first();
+                $logoUrl = $owner && $owner->logo ? asset('storage/' . $owner->logo) : null;
+            @endphp
+
+            <div class="receipt-header text-center">
+                @if ($logoUrl)
+                    <img src="{{ $logoUrl }}" alt="Logo"
+                        style="max-width: 100px; max-height: 60px; margin-bottom: 5px;">
+                @endif
+                <h3>{{ env('APP_NAME', 'BUMDESMART') }}</h3>
+                <p>{{ $owner->alamat ?? 'Alamat Toko' }}</p>
+                <p>Telp: {{ $owner->telepon ?? '-' }}</p>
+            </div>
         </div>
 
         <div class="divider"></div>
