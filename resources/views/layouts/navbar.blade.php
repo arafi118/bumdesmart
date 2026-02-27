@@ -27,6 +27,12 @@
         <!-- END NAVBAR LOGO -->
 
         <div class="navbar-nav flex-row order-md-last">
+            <div class="nav-item">
+                <a href="/penjualan/pos" class="nav-link px-0" title="Point of Sale" data-bs-toggle="tooltip"
+                    data-bs-placement="bottom">
+                    POS
+                </a>
+            </div>
             <!-- BEGIN USER MENU -->
             <div class="nav-item dropdown">
                 <a href="#" class="nav-link d-flex lh-1 p-0 px-2" data-bs-toggle="dropdown"
