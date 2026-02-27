@@ -21,13 +21,15 @@
                         <td>{{ $user->no_hp }}</td>
                         <td>{{ $user->role->nama_role }}</td>
                         <td>
-                            <button class="btn btn-sm btn-primary" wire:click="edit({{ $user->id }})">
-                                <i class="fas fa-edit"></i> Edit
-                            </button>
-                            <button class="btn btn-sm btn-danger"
-                                wire:click="$dispatch('confirm-delete', {id: {{ $user->id }}})">
-                                <i class="fas fa-trash"></i> Hapus
-                            </button>
+                            @if ($user->role->nama_role != 'owner')
+                                <button class="btn btn-sm btn-primary" wire:click="edit({{ $user->id }})">
+                                    <i class="fas fa-edit"></i> Edit
+                                </button>
+                                <button class="btn btn-sm btn-danger"
+                                    wire:click="$dispatch('confirm-delete', {id: {{ $user->id }}})">
+                                    <i class="fas fa-trash"></i> Hapus
+                                </button>
+                            @endif
                         </td>
                     </tr>
                 @empty

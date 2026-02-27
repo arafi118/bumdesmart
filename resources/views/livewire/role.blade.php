@@ -20,13 +20,15 @@
                         <td>{{ $role->nama_role }}</td>
                         <td>{{ $role->deskripsi }}</td>
                         <td>
-                            <button class="btn btn-sm btn-primary" wire:click="edit({{ $role->id }})">
-                                <i class="fas fa-edit"></i> Edit
-                            </button>
-                            <button class="btn btn-sm btn-danger"
-                                wire:click="$dispatch('confirm-delete', {id: {{ $role->id }}})">
-                                <i class="fas fa-trash"></i> Hapus
-                            </button>
+                            @if ($role->nama_role != 'owner')
+                                <button class="btn btn-sm btn-primary" wire:click="edit({{ $role->id }})">
+                                    <i class="fas fa-edit"></i> Edit
+                                </button>
+                                <button class="btn btn-sm btn-danger"
+                                    wire:click="$dispatch('confirm-delete', {id: {{ $role->id }}})">
+                                    <i class="fas fa-trash"></i> Hapus
+                                </button>
+                            @endif
                         </td>
                     </tr>
                 @empty
