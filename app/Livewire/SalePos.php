@@ -3,6 +3,7 @@
 namespace App\Livewire;
 
 use App\Models\BatchMovement;
+use App\Models\cashDrawer;
 use App\Models\Category;
 use App\Models\Customer;
 use App\Models\Product;
@@ -23,6 +24,14 @@ class SalePos extends Component
     public $businessId;
 
     public $searchProduct = null;
+
+    public $cashDrawer = null;
+
+    public $openingBalance = 0;
+
+    public $closingBalanceManual = 0;
+
+    public $cashDrawerNote = '';
 
     public function updatedSearchProduct($value)
     {
@@ -58,6 +67,60 @@ class SalePos extends Component
     public function mount()
     {
         $this->businessId = auth()->user()->business_id;
+        $this->checkCashDrawer();
+    }
+
+    public function checkCashDrawer()
+    {
+        $this->cashDrawer = cashDrawer::where('business_id', $this->businessId)
+            ->where('user_id', auth()->id())
+            ->where('status', 'OPEN')
+            ->first();
+    }
+
+    public function openCashier()
+    {
+        $this->validate([
+            'openingBalance' => 'required|numeric|min:0',
+        ]);
+
+        $this->cashDrawer = cashDrawer::create([
+            'business_id' => $this->businessId,
+            'user_id' => auth()->id(),
+            'tanggal_buka' => now(),
+            'saldo_awal' => $this->openingBalance,
+            'status' => 'OPEN',
+        ]);
+
+        $this->dispatch('alert', type: 'success', message: 'Kasir berhasil dibuka!');
+        $this->dispatch('close-modal', id: 'openCashierModal');
+    }
+
+    public function closeCashier()
+    {
+        if (! $this->cashDrawer) {
+            return;
+        }
+
+        $salesTotal = Sale::where('business_id', $this->businessId)
+            ->where('user_id', auth()->id())
+            ->whereBetween('created_at', [$this->cashDrawer->tanggal_buka, now()])
+            ->sum('dibayar');
+
+        $expectedBalance = $this->cashDrawer->saldo_awal + $salesTotal;
+
+        $this->cashDrawer->update([
+            'tanggal_tutup' => now(),
+            'saldo_akhir' => $this->closingBalanceManual,
+            'saldo_akhir_aplikasi' => $expectedBalance,
+            'selisih' => $this->closingBalanceManual - $expectedBalance,
+            'catatan' => $this->cashDrawerNote,
+            'status' => 'CLOSED',
+        ]);
+
+        $this->cashDrawer = null;
+        $this->dispatch('alert', type: 'success', message: 'Kasir berhasil ditutup!');
+        $this->dispatch('close-modal', id: 'closeCashierModal');
     }
 
     public function loadCustomers($query, $offset = 0)
@@ -76,6 +139,12 @@ class SalePos extends Component
 
     public function saveSale($data)
     {
+        if (! $this->cashDrawer) {
+            $this->dispatch('alert', type: 'error', message: 'Kasir belum dibuka!');
+
+            return;
+        }
+
         if (empty($data['products'])) {
             $this->dispatch('alert', type: 'error', message: 'Keranjang kosong');
 
@@ -86,7 +155,7 @@ class SalePos extends Component
         try {
             $user = auth()->user();
             $nomorPenjualan = 'INV-'.time();
-            $tgl = date('Y-m-d');
+            $tgl = now();
 
             $sale = $this->createSaleRecord($data, $user, $nomorPenjualan, $tgl);
 

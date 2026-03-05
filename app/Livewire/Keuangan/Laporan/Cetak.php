@@ -14,6 +14,7 @@ use App\Models\Sale;
 use App\Models\SaleDetail;
 use App\Models\SalesReturn;
 use App\Models\StockOpname;
+use App\Models\cashDrawer;
 use App\Utils\KeuanganUtil;
 use Carbon\Carbon;
 use Dompdf\Dompdf;
@@ -535,6 +536,62 @@ class Cetak extends Controller
         $html = view('livewire.keuangan.pelaporan.retur', compact('title', 'subtitle', 'salesReturns', 'purchaseReturns'))->render();
 
         return $this->streamPdf($html, 'laporan-retur.pdf');
+    }
+
+    public function cashierReport(array $data)
+    {
+        $tahun = $data['tahun'] ?? date('Y');
+        $bulan = $data['bulan'] ?? '-';
+        $hari = $data['periode'] ?? '-';
+        $userId = $data['sub_laporan'] ?? '';
+
+        $query = cashDrawer::with(['user', 'business'])
+            ->whereYear('tanggal_buka', $tahun);
+
+        if ($bulan != '-') {
+            $query->whereMonth('tanggal_buka', $bulan);
+        }
+
+        if ($hari != '-') {
+            $query->whereDay('tanggal_buka', $hari);
+        }
+
+        if ($userId != '') {
+            $query->where('user_id', $userId);
+        }
+
+        $sessions = $query->orderBy('tanggal_buka', 'desc')->get();
+
+        foreach ($sessions as $session) {
+            $session->sales_items = SaleDetail::select(
+                'product_id',
+                DB::raw('SUM(jumlah) as total_qty'),
+                DB::raw('SUM(subtotal) as total_amount')
+            )
+            ->whereHas('sale', function ($q) use ($session) {
+                $q->where('user_id', $session->user_id)
+                  ->where('created_at', '>=', $session->tanggal_buka);
+                
+                if ($session->tanggal_tutup) {
+                    $q->where('created_at', '<=', $session->tanggal_tutup);
+                }
+            })
+            ->groupBy('product_id')
+            ->with('product')
+            ->get();
+        }
+
+        $title = 'Laporan Kasir';
+        $periodeParts = [];
+        if ($bulan != '-') {
+            $periodeParts[] = Carbon::createFromDate($tahun, $bulan, 1)->isoFormat('MMMM');
+        }
+        $periodeParts[] = $tahun;
+        $subtitle = 'Periode: '.implode(' ', $periodeParts);
+
+        $html = view('livewire.keuangan.pelaporan.cashier-report', compact('title', 'subtitle', 'sessions'))->render();
+
+        return $this->streamPdf($html, 'laporan-kasir.pdf', 'landscape');
     }
 
     private function streamPdf($html, $filename, $orientation = 'portrait')

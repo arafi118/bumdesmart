@@ -21,6 +21,7 @@ class Pelaporan extends Component
     public $jenis_sub_laporan;
 
     public $daftarAkun = [];
+    public $daftarUser = [];
 
     public function mount()
     {
@@ -36,6 +37,12 @@ class Pelaporan extends Component
             'id' => $a->id,
             'kode' => $a->kode,
             'nama' => $a->nama,
+        ])->toArray();
+
+        $users = \App\Models\User::where('business_id', auth()->user()->business_id)->get();
+        $this->daftarUser = $users->map(fn ($u) => [
+            'id' => $u->id,
+            'nama' => $u->nama_lengkap,
         ])->toArray();
     }
 

@@ -54,6 +54,7 @@
                             <optgroup label="📋 Laporan Harian">
                                 <option value="penjualanHarian">Laporan Penjualan Harian</option>
                                 <option value="stokMinimum">Laporan Stok Minimum</option>
+                                <option value="cashierReport">Laporan Kasir</option>
                             </optgroup>
                             <optgroup label="📊 Laporan Keuangan">
                                 <option value="jurnalTransaksi">Jurnal Transaksi</option>
@@ -108,6 +109,7 @@
             jenis_laporan: @entangle('jenis_laporan'),
             jenis_sub_laporan: @entangle('jenis_sub_laporan'),
             daftarAkun: @entangle('daftarAkun'),
+            daftarUser: @entangle('daftarUser'),
             init() {
                 this.$watch('jenis_laporan', (value) => this.jenisLaporan(value));
             },
@@ -121,7 +123,13 @@
                             text: `${account.kode}. ${account.nama}`
                         });
                     });
-
+                } else if (value === 'cashierReport') {
+                    this.daftarUser.forEach(user => {
+                        Select['jenis_sub_laporan'].addOption({
+                            value: user.id,
+                            text: user.nama
+                        });
+                    });
                 }
             },
             openReport() {

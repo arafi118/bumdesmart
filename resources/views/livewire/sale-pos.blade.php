@@ -1,4 +1,22 @@
 <div class="row main-row" x-data="posSystem()" @sale-stored.window="cart = []">
+    @if (!$cashDrawer)
+        <div class="position-absolute d-flex flex-column align-items-center justify-content-center"
+            style="z-index: 100; background: rgba(255,255,255,0.7); backdrop-filter: blur(5px); top: 0; left: 0; right: 0; bottom: 0;">
+            <div class="card shadow-lg" style="width: 400px;">
+                <div class="card-body text-center p-5">
+                    <span class="material-symbols-outlined text-primary mb-3" style="font-size: 64px;">
+                        lock_open
+                    </span>
+                    <h2 class="mb-3">Kasir Belum Dibuka</h2>
+                    <p class="text-secondary mb-4">Silahkan buka kasir untuk memulai transaksi.</p>
+                    <button class="btn btn-primary btn-lg w-100" data-bs-toggle="modal"
+                        data-bs-target="#openCashierModal">
+                        Buka Kasir Sekarang
+                    </button>
+                </div>
+            </div>
+        </div>
+    @endif
     <div class="col-6 col-md-7 col-lg-8 d-flex flex-column h-100">
         <div class="mb-3">
             <div class="card">
@@ -179,6 +197,30 @@
                     </a>
                 </div>
 
+                @if ($cashDrawer)
+                    <div class="mt-3 p-3 bg-blue-lt rounded border border-blue-subtle">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <div>
+                                <span class="btn btn-success btn-sm">Kasir Terbuka</span>
+                            </div>
+                            <button class="btn btn-outline-danger btn-sm" data-bs-toggle="modal"
+                                data-bs-target="#closeCashierModal">
+                                Tutup Kasir
+                            </button>
+                        </div>
+                        <div class="space-y-1">
+                            <div class="d-flex align-items-center text-secondary small">
+                                <span class="material-symbols-outlined fs-5 me-2">person</span>
+                                <span>{{ auth()->user()->nama_lengkap }}</span>
+                            </div>
+                            <div class="d-flex align-items-center text-secondary small">
+                                <span class="material-symbols-outlined fs-5 me-2">schedule</span>
+                                <span>{{ \Carbon\Carbon::parse($cashDrawer->tanggal_buka)->format('d/m/Y H:i') }}</span>
+                            </div>
+                        </div>
+                    </div>
+                @endif
+
                 <div class="w-100 border-top border-bottom mt-2 py-2">
                     <div class="d-flex justify-content-between pb-1 text-secondary">
                         <span>Subtotal</span>
@@ -211,6 +253,93 @@
     @include('livewire.sale-pos-component.modal-diskon')
     @include('livewire.sale-pos-component.modal-cashback')
     @include('livewire.sale-pos-component.modal-pembayaran')
+
+    <!-- Open Cashier Modal -->
+    <div wire:ignore.self class="modal modal-blur fade" id="openCashierModal" data-bs-backdrop="static"
+        data-bs-keyboard="false" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-sm" role="document">
+            <div class="modal-content">
+                <form wire:submit.prevent="openCashier">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Buka Kasir</h5>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Saldo Awal</label>
+                            <div class="input-group" x-data="{
+                                displayValue: '',
+                                format(val) {
+                                    if (!val) return '';
+                                    return new Intl.NumberFormat('id-ID').format(val);
+                                },
+                                updateRaw(val) {
+                                    let raw = val.replace(/\./g, '').replace(/[^0-9]/g, '');
+                                    this.displayValue = this.format(raw);
+                                    @this.set('openingBalance', raw);
+                                }
+                            }" x-init="displayValue = format($wire.openingBalance)">
+                                <span class="input-group-text">Rp</span>
+                                <input type="text" class="form-control" x-model="displayValue"
+                                    @input="updateRaw($event.target.value)" placeholder="0" required>
+                            </div>
+                            @error('openingBalance')
+                                <span class="text-danger small">{{ $message }}</span>
+                            @enderror
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-primary w-100">Buka Kasir</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Close Cashier Modal -->
+    <div wire:ignore.self class="modal modal-blur fade" id="closeCashierModal" tabindex="-1" role="dialog"
+        aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <form wire:submit.prevent="closeCashier">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Tutup Kasir</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"
+                            aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Saldo Akhir di Tangan (Tunai)</label>
+                            <div class="input-group" x-data="{
+                                displayValue: '',
+                                format(val) {
+                                    if (!val) return '';
+                                    return new Intl.NumberFormat('id-ID').format(val);
+                                },
+                                updateRaw(val) {
+                                    let raw = val.replace(/\./g, '').replace(/[^0-9]/g, '');
+                                    this.displayValue = this.format(raw);
+                                    @this.set('closingBalanceManual', raw);
+                                }
+                            }" x-init="displayValue = format($wire.closingBalanceManual)">
+                                <span class="input-group-text">Rp</span>
+                                <input type="text" class="form-control" x-model="displayValue"
+                                    @input="updateRaw($event.target.value)" placeholder="0" required>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Catatan</label>
+                            <textarea class="form-control" wire:model="cashDrawerNote" rows="3" placeholder="Opsional..."></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-link link-secondary me-auto"
+                            data-bs-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-danger">Tutup Kasir</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 
     <!-- Held Sales Modal -->
     <div class="modal modal-blur fade" id="heldSalesModal" tabindex="-1" role="dialog" aria-hidden="true">
@@ -311,6 +440,7 @@
             margin: 0 !important;
             display: flex;
             flex-wrap: nowrap;
+            position: relative;
         }
 
         .overflow-y-auto::-webkit-scrollbar {
@@ -962,6 +1092,10 @@
         document.addEventListener('livewire:initialized', () => {
             Livewire.on('sale-stored', () => {
                 window.dispatchEvent(new CustomEvent('sale-stored'));
+            });
+
+            Livewire.on('close-modal', (event) => {
+                $(`#${event.id}`).modal('hide');
             });
 
             Livewire.on('add-to-cart', (event) => {
