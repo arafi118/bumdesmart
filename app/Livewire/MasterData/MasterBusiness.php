@@ -29,6 +29,9 @@ class MasterBusiness extends Component
     public $phone;
     public $email;
 
+    public $username;
+    public $password;
+
     // Owners list for dropdown
     public $ownersList = [];
 
@@ -55,7 +58,7 @@ class MasterBusiness extends Component
 
     public function resetForm()
     {
-        $this->reset('id', 'ownerId', 'businessName', 'address', 'phone', 'email');
+        $this->reset('id', 'ownerId', 'businessName', 'address', 'phone', 'email', 'username', 'password');
     }
 
     public function create()
@@ -130,15 +133,24 @@ class MasterBusiness extends Component
             Role::insert($roles);
 
             // Create default user (owner)
-            $ownerRole   = Role::where('business_id', $business->id)->where('nama_role', 'owner')->first();
-            $baseUsername = strtolower(str_replace(' ', '_', $this->businessName)) . '_owner';
-            $username    = $baseUsername;
-            $counter     = 1;
+            $ownerRole    = Role::where('business_id', $business->id)->where('nama_role', 'owner')->first();
+            
+            // Logic for username: use provided or generate default
+            if ($this->username) {
+                $username = $this->username;
+            } else {
+                $baseUsername = strtolower(str_replace(' ', '_', $this->businessName)) . '_owner';
+                $username    = $baseUsername;
+                $counter     = 1;
 
-            while (User::where('username', $username)->exists()) {
-                $username = $baseUsername . $counter;
-                $counter++;
+                while (User::where('username', $username)->exists()) {
+                    $username = $baseUsername . $counter;
+                    $counter++;
+                }
             }
+
+            // Logic for password: use provided or default 'password'
+            $password = $this->password ? $this->password : 'password';
 
             User::create([
                 'business_id'  => $business->id,
@@ -147,10 +159,10 @@ class MasterBusiness extends Component
                 'initial'      => substr(Owner::find($this->ownerId)->nama_usaha, 0, 3),
                 'no_hp'        => $this->phone,
                 'username'     => $username,
-                'password'     => Hash::make('password'),
+                'password'     => Hash::make($password),
             ]);
 
-            $message = "Business berhasil ditambahkan. Username Default: {$username} / Password: password";
+            $message = "Business berhasil ditambahkan. Username Default: {$username} / Password: {$password}";
         }
 
         $this->dispatch('hide-modal', modalId: 'masterBusinessModal');

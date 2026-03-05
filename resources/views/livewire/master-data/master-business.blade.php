@@ -110,10 +110,33 @@
                                 @enderror
                             </div>
 
-                            <div class="col-md-6 mb-3">
+                            <div class="col-md-12 mb-3">
                                 <label class="form-label">Alamat Lengkap <span class="text-danger">*</span></label>
                                 <textarea class="form-control" wire:model="address" placeholder="Alamat lengkap" rows="3"></textarea>
                                 @error('address')
+                                    <small class="text-danger">{{ $message }}</small>
+                                @enderror
+                            </div>
+
+                            <hr>
+                            <h5>Default Admin/Owner User (Opsional)</h5>
+                            <p class="text-muted small">Jika dikosongkan, sistem akan membuatkan username default dan
+                                password "password".</p>
+
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Username</label>
+                                <input type="text" class="form-control" wire:model="username"
+                                    placeholder="Username admin" />
+                                @error('username')
+                                    <small class="text-danger">{{ $message }}</small>
+                                @enderror
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Password</label>
+                                <input type="password" class="form-control" wire:model="password"
+                                    placeholder="Password admin" />
+                                @error('password')
                                     <small class="text-danger">{{ $message }}</small>
                                 @enderror
                             </div>
