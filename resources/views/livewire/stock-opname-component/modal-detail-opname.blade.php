@@ -112,6 +112,13 @@
                 @endif
             </div>
             <div class="modal-footer">
+                @if ($selectedOpname)
+                    <a href="/keuangan/pelaporan/cetak?laporan=buktiStokOpname&id={{ $selectedOpname->id }}" target="_blank"
+                        class="btn btn-primary">
+                        <span class="material-symbols-outlined me-1">print</span>
+                        Cetak PDF
+                    </a>
+                @endif
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
             </div>
         </div>

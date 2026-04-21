@@ -5,6 +5,8 @@ namespace App\Livewire\Keuangan\Laporan;
 use App\Http\Controllers\Controller;
 use App\Models\Account;
 use App\Models\AkunLevel1;
+use App\Models\AkunLevel2;
+use App\Models\AkunLevel3;
 use App\Models\Business;
 use App\Models\Payment;
 use App\Models\Product;
@@ -381,6 +383,25 @@ class Cetak extends Controller
         $html = view('livewire.keuangan.pelaporan.stok-opname', compact('title', 'subtitle', 'opnames'))->render();
 
         return $this->streamPdf($html, 'laporan-stok-opname.pdf');
+    }
+
+    public function buktiStokOpname(array $data)
+    {
+        $id = $data['id'] ?? null;
+        if (! $id) {
+            abort(404, 'ID Stock Opname tidak ditemukan');
+        }
+
+        $opname = StockOpname::with(['details.product', 'user', 'approvedBy'])
+            ->where('business_id', auth()->user()->business_id)
+            ->findOrFail($id);
+
+        $title = 'Bukti Stock Opname';
+        $subtitle = 'No: '.$opname->no_opname;
+
+        $html = view('livewire.keuangan.pelaporan.bukti-stok-opname', compact('title', 'subtitle', 'opname'))->render();
+
+        return $this->streamPdf($html, 'bukti-so-'.$opname->no_opname.'.pdf');
     }
 
     public function pembelian(array $data)

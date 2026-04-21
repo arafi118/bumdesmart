@@ -55,6 +55,9 @@
                                                 wire:click="showDetail({{ $opname->id }})">
                                                 Detail
                                             </a>
+                                            <a class="dropdown-item" href="/keuangan/pelaporan/cetak?laporan=buktiStokOpname&id={{ $opname->id }}" target="_blank">
+                                                Cetak Bukti SO
+                                            </a>
                                             @if ($opname->status == 'draft')
                                                 <a class="dropdown-item text-success" href="#"
                                                     wire:click="$dispatch('confirm-approve', {id: {{ $opname->id }}})">
