@@ -28,6 +28,8 @@ class TambahStockOpname extends Component
     public $approvedBy;
 
     public $catatan;
+    public $opnameId;
+    public $existingData = null;
 
     // Properties for filtering and data
     public $products = [];
@@ -40,11 +42,56 @@ class TambahStockOpname extends Component
 
     public $shelves = [];
 
-    public function mount()
+    public function mount($id = null)
     {
-        $this->title = 'Tambah Stock Opname';
+        $this->title = $id ? 'Edit Stock Opname' : 'Tambah Stock Opname';
         $this->businessId = auth()->user()->business_id;
+
+        if ($id) {
+            $this->opnameId = $id;
+            $this->loadOpnameData($id);
+        }
+
         $this->loadMasterData();
+    }
+
+    public function loadOpnameData($id)
+    {
+        $opname = StockOpname::with(['details.product'])->findOrFail($id);
+
+        if ($opname->status !== 'draft') {
+            return redirect()->to('/stock/opname/daftar');
+        }
+
+        $this->nomorOpname = $opname->no_opname;
+        $this->tanggalOpname = $opname->tanggal_opname;
+        $this->catatan = $opname->catatan;
+        $this->status = $opname->status;
+
+        $items = [];
+        foreach ($opname->details as $detail) {
+            $items[] = [
+                'id' => $detail->product_id,
+                'nama_produk' => $detail->product->nama_produk ?? 'Produk Terhapus',
+                'kode_produk' => $detail->product->sku ?? '-',
+                'harga_beli' => $detail->harga_satuan,
+                'sistem' => $detail->stok_sistem,
+                'fisik' => $detail->stok_fisik,
+                'selisih' => $detail->selisih,
+                'jenis_selisih' => $detail->jenis_selisih,
+                'alasan' => $detail->alasan,
+                'counted' => true,
+            ];
+        }
+
+        $this->existingData = [
+            'opnameId' => $id,
+            'nomorOpname' => $opname->no_opname,
+            'tanggalOpname' => $opname->tanggal_opname,
+            'status' => $opname->status,
+            'catatan' => $opname->catatan,
+            'items' => $items
+        ];
     }
 
     public function loadMasterData()
@@ -134,16 +181,36 @@ class TambahStockOpname extends Component
             $tanggalApproved = $status === 'approved' ? ($data['tanggal_approved'] ?? now()->format('Y-m-d')) : null;
             $approvedBy = $status === 'approved' ? ($data['approved_by'] ?? auth()->id()) : null;
 
-            $opname = StockOpname::create([
-                'business_id' => $this->businessId,
-                'user_id' => auth()->id(),
-                'no_opname' => $data['no_opname'] ?: 'SO-'.now()->format('YmdHis'),
-                'tanggal_opname' => $tanggalOpname,
-                'status' => $status,
-                'catatan' => $data['catatan'] ?? null,
-                'approved_by' => $approvedBy,
-                'tanggal_approved' => $tanggalApproved,
-            ]);
+            if ($this->opnameId) {
+                $opname = StockOpname::findOrFail($this->opnameId);
+                
+                if ($opname->status !== 'draft') {
+                    throw new \Exception('Hanya Stock Opname status DRAFT yang dapat diedit.');
+                }
+
+                $opname->update([
+                    'no_opname' => $data['no_opname'] ?: $opname->no_opname,
+                    'tanggal_opname' => $tanggalOpname,
+                    'status' => $status,
+                    'catatan' => $data['catatan'] ?? null,
+                    'approved_by' => $approvedBy,
+                    'tanggal_approved' => $tanggalApproved,
+                ]);
+
+                // Clear old details
+                StockOpnameDetail::where('stock_opname_id', $opname->id)->delete();
+            } else {
+                $opname = StockOpname::create([
+                    'business_id' => $this->businessId,
+                    'user_id' => auth()->id(),
+                    'no_opname' => $data['no_opname'] ?: 'SO-'.now()->format('YmdHis'),
+                    'tanggal_opname' => $tanggalOpname,
+                    'status' => $status,
+                    'catatan' => $data['catatan'] ?? null,
+                    'approved_by' => $approvedBy,
+                    'tanggal_approved' => $tanggalApproved,
+                ]);
+            }
 
             // Filter items that have been modified/counted or just save all?
             // Usually we save all loaded items to keep track of what was checked in this session

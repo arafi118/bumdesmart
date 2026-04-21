@@ -2,7 +2,7 @@
     <div class="col-12">
         <div class="card" x-data="stockOpname()">
             <div class="card-header">
-                <h3 class="card-title">Form Tambah Stock Opname</h3>
+                <h3 class="card-title" x-text="$wire.opnameId ? 'Form Edit Stock Opname' : 'Form Tambah Stock Opname'"></h3>
             </div>
             <div class="card-body">
                 <!-- Header Form -->
@@ -204,7 +204,12 @@
                                 this.tanggalOpname = new Date().toISOString().split('T')[0];
                             }
 
-                            // Sync products from Livewire to Alpine
+                            // Hydrate from existing data if editing
+                            if (this.$wire.existingData) {
+                                this.items = this.$wire.existingData.items || [];
+                            }
+
+                            // Sync products from Livewire to Alpine (when searching/filtering)
                             this.$watch('$wire.products', (value) => {
                                 if (value && value.length > 0) {
                                     this.mergeItems(value);

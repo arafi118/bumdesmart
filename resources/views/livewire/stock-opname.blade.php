@@ -63,9 +63,9 @@
                                                     wire:click="$dispatch('confirm-approve', {id: {{ $opname->id }}})">
                                                     Approve & Finalize
                                                 </a>
-                                                {{-- <a class="dropdown-item" href="{{ url('/stock/opname/edit/' . $opname->id) }}">
-                                        Edit
-                                    </a> --}}
+                                                <a class="dropdown-item" href="{{ url('/stock/opname/edit/' . $opname->id) }}">
+                                                    Edit
+                                                </a>
                                                 <div class="dropdown-divider"></div>
                                                 <a class="dropdown-item text-danger" href="#"
                                                     wire:click="$dispatch('confirm-delete', {id: {{ $opname->id }}})">
