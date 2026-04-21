@@ -23,7 +23,7 @@ class SalePos extends Component
 
     public $businessId;
 
-    public $searchProduct = null;
+    public $searchProduct = '';
 
     public $cashDrawer = null;
 
@@ -136,6 +136,23 @@ class SalePos extends Component
             ->get();
 
         return ['data' => $customers];
+    }
+
+    public function loadProducts($query, $offset = 0)
+    {
+        $perPage = 10;
+        $products = Product::where('business_id', $this->businessId)
+            ->where('is_active', true)
+            ->where(function ($q) use ($query) {
+                $q->where('nama_produk', 'LIKE', "%{$query}%")
+                    ->orWhere('sku', 'LIKE', "%{$query}%");
+            })
+            ->with(['unit'])
+            ->offset($offset)
+            ->limit($perPage)
+            ->get();
+
+        return ['data' => $products];
     }
 
     public function saveSale($data)
@@ -496,10 +513,11 @@ class SalePos extends Component
     {
         $products = Product::where('business_id', $this->businessId)
             ->where('is_active', true)
-            ->where('stok_aktual', '>', 0)
-            ->where(function ($q) {
-                $q->where('nama_produk', 'LIKE', "%{$this->searchProduct}%")
-                    ->orWhere('sku', 'LIKE', "%{$this->searchProduct}%");
+            ->when($this->searchProduct, function ($q) {
+                $q->where(function ($sq) {
+                    $sq->where('nama_produk', 'LIKE', "%{$this->searchProduct}%")
+                        ->orWhere('sku', 'LIKE', "%{$this->searchProduct}%");
+                });
             })
             ->when($this->selectedCategory, function ($q) {
                 $q->where('category_id', $this->selectedCategory);

@@ -114,11 +114,17 @@
 
 <body>
     <div class="page">
-        {{-- NAVBAR --}}
-        @include('layouts.navbar')
+        @php
+            $url = request()->url();
+        @endphp
 
-        {{-- MENU --}}
-        @include('layouts.menu')
+        {{-- NAVBAR --}}
+        @if (!str_contains($url, 'pos'))
+            @include('layouts.navbar')
+
+            {{-- MENU --}}
+            @include('layouts.menu')
+        @endif
 
         <div class="page-wrapper">
 

@@ -17,18 +17,29 @@
             </div>
         </div>
     @endif
-    <div class="col-6 col-md-7 col-lg-8 d-flex flex-column h-100">
+    <div class="col-6 col-md-5 col-lg-4 d-flex flex-column h-100">
         <div class="mb-3">
             <div class="card">
                 <div class="card-body">
-                    <div class="input-icon mb-3">
-                        <input type="text" value="" class="form-control" placeholder="Cari Produk..."
-                            wire:model.live.debounce.500ms="searchProduct" />
-                        <span class="input-icon-addon">
-                            <span class="material-symbols-outlined">
-                                search
-                            </span>
-                        </span>
+                    <!-- Customer Selection -->
+                    <div class="mb-3">
+                        <div class="input-group" wire:ignore>
+                            <a href="/dashboard" class="btn btn-icon btn-outline-primary" title="Kembali ke Dashboard">
+                                <span class="material-symbols-outlined">home</span>
+                            </a>
+                            <div class="flex-fill">
+                                <select class="form-select" id="customerSearch" placeholder="Pilih Pelanggan...">
+                                    <option value=""></option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Product Search -->
+                    <div class="mb-3" wire:ignore>
+                        <select id="productSearchSelect" class="form-select" placeholder="Cari Produk atau Scan Barcode...">
+                            <option value=""></option>
+                        </select>
                     </div>
 
                     <div class="w-100 overflow-x-auto category-scroll p-1">
@@ -61,24 +72,36 @@
                 </div>
             </div>
         </div>
-        <div class="flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
-            <div class="row">
+        <div class="flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-1">
+            <div class="row g-2">
                 @foreach ($products as $product)
-                    <div class="col-6 col-md-4 col-lg-3 mb-3">
+                    <div class="col-6 mb-2">
                         <div class="card text-bg-dark border-0 shadow-sm product-card"
+                            style="height: 100px;"
                             @click="addToCart({
                                 id: {{ $product->id }},
                                 name: '{{ addslashes($product->nama_produk) }}',
                                 price: {{ $product->harga_jual }},
                                 stock: {{ $product->stok_aktual }},
-                                image: '{{ asset('storage/' . $product->gambar) }}'
+                                image: '{{ $product->gambar && $product->gambar !== "products/no-image.png" ? asset('storage/' . $product->gambar) : "https://placehold.co/400x400?text=No+Image" }}'
                             })">
-                            <img src="{{ asset('storage/' . $product->gambar) }}" class="card-img"
-                                alt="{{ $product->nama_produk }}">
-                            <div class="card-img-overlay d-flex flex-column justify-content-end">
-                                <h5 class="card-title mb-1">{{ $product->nama_produk }}</h5>
-                                <div class="card-text">Rp {{ number_format($product->harga_jual, 0, ',', '.') }}</div>
-                                <span class="badge">{{ $product->stok_aktual }}</span>
+                            <div class="h-100 bg-muted-lt d-flex align-items-center justify-content-center overflow-hidden position-relative">
+                                @if($product->gambar && $product->gambar !== "products/no-image.png" && file_exists(public_path('storage/' . $product->gambar)))
+                                    <img src="{{ asset('storage/' . $product->gambar) }}" 
+                                        class="card-img h-100"
+                                        style="object-fit: cover; opacity: 0.6;"
+                                        alt="{{ $product->nama_produk }}">
+                                @else
+                                    <img src="https://placehold.co/400x400?text=No+Image" 
+                                        class="card-img h-100"
+                                        style="object-fit: cover; opacity: 0.3;"
+                                        alt="{{ $product->nama_produk }}">
+                                @endif
+                            </div>
+                            <div class="card-img-overlay d-flex flex-column justify-content-end p-2">
+                                <h5 class="card-title mb-0 text-truncate" style="font-size: 0.7rem;">{{ $product->nama_produk }}</h5>
+                                <div class="card-text fw-bold text-primary" style="font-size: 0.75rem;">Rp {{ number_format($product->harga_jual, 0, ',', '.') }}</div>
+                                <span class="badge bg-dark-lt position-absolute top-0 end-0 m-1" style="font-size: 0.6rem;">{{ $product->stok_aktual }}</span>
                             </div>
                         </div>
                     </div>
@@ -89,7 +112,7 @@
         {{ $products->links('components.pos-pagination') }}
     </div>
 
-    <div class="col-6 col-md-5 col-lg-4 overflow-hidden" wire:ignore>
+    <div class="col-6 col-md-7 col-lg-8 overflow-hidden" wire:ignore>
         <div class="card h-100">
 
             <div class="card-body p-0 px-3 overflow-x-hidden overflow-y-auto">
@@ -103,123 +126,92 @@
                     </template>
 
                     <template x-for="(item, index) in cart" :key="item.id">
-                        <div class="list-group-item py-3 px-0">
-                            <div class="row align-items-center">
+                        <div class="list-group-item py-2 px-0 border-0 border-bottom">
+                            <div class="row g-2 align-items-center">
+                                <!-- Image -->
                                 <div class="col-auto">
-                                    <a href="#">
-                                        <span class="avatar avatar-1"
-                                            :style="`background-image: url(${item.image})`"></span>
-                                    </a>
+                                    <span class="avatar avatar-sm rounded shadow-sm"
+                                        :style="`background-image: url(${item.image})`"></span>
                                 </div>
-                                <div class="col">
+                                
+                                <!-- Name & Unit Price -->
+                                <div class="col min-w-0">
                                     <div role="button" @click="openModal(item)"
-                                        class="fw-bold text-primary d-block text-truncate" x-text="item.name"></div>
-                                    <div class="d-block text-truncate">
-                                        <!-- Price Display Logic -->
+                                        class="fw-bold text-dark d-block text-truncate fs-5 lh-1 mb-1" x-text="item.name"></div>
+                                    <div class="text-secondary small">
                                         <template x-if="calculateItemDiscount(item) > 0">
-                                            <div class="lh-1">
-                                                <small
-                                                    class="text-secondary opacity-75 text-decoration-line-through me-1"
-                                                    style="font-size: 0.7em;" x-text="formatRupiah(item.price)"></small>
-                                                <span style="font-size: 0.8em;"
-                                                    x-text="formatRupiah(item.price - (calculateItemDiscount(item) / item.qty))"></span>
-                                            </div>
+                                            <span>
+                                                <span class="text-decoration-line-through opacity-50 me-1" x-text="formatRupiah(item.price)"></span>
+                                                <span class="text-primary" x-text="formatRupiah(item.price - (calculateItemDiscount(item) / item.qty))"></span>
+                                            </span>
                                         </template>
                                         <template x-if="calculateItemDiscount(item) <= 0">
-                                            <span class="text-secondary" x-text="formatRupiah(item.price)"></span>
+                                            <span x-text="formatRupiah(item.price)"></span>
                                         </template>
                                     </div>
                                 </div>
-                                <div class="col-4 align-self-sm-start text-end">
-                                    <span class="fw-bold"
-                                        x-text="formatRupiah((item.price * item.qty) - calculateItemDiscount(item))"></span>
-                                </div>
-                            </div>
 
-                            <div class="d-flex justify-content-between">
-                                <div class="d-flex justify-content-between align-items-center mt-1">
-                                    <div class="d-flex align-items-center gap-2 bg-primary rounded p-1">
-                                        <button class="qty-btn" @click="updateQty(item.id, -1)">
-                                            <span class="material-symbols-outlined">remove</span>
+                                <!-- Quantity Controls -->
+                                <div class="col-auto">
+                                    <div class="d-flex align-items-center bg-light rounded-pill p-1 border shadow-sm">
+                                        <button class="btn btn-sm btn-icon btn-ghost-secondary border-0 rounded-circle" style="width: 24px; height: 24px;" @click="updateQty(item.id, -1)">
+                                            <span class="material-symbols-outlined" style="font-size: 14px;">remove</span>
                                         </button>
-                                        <span class="qty-display" x-text="item.qty"></span>
-                                        <button class="qty-btn" @click="updateQty(item.id, 1)">
-                                            <span class="material-symbols-outlined">add</span>
+                                        <span class="fw-bold px-2" style="min-width: 25px; text-align: center; font-size: 0.8rem;" x-text="item.qty"></span>
+                                        <button class="btn btn-sm btn-icon btn-ghost-secondary border-0 rounded-circle" style="width: 24px; height: 24px;" @click="updateQty(item.id, 1)">
+                                            <span class="material-symbols-outlined" style="font-size: 14px;">add</span>
                                         </button>
                                     </div>
                                 </div>
 
-                                <div class="d-flex align-items-center">
-                                    <a href="#" class="link-danger link-offset-2 link-underline-opacity-0"
-                                        @click.prevent="removeFromCart(item.id)">
-                                        <span class="material-symbols-outlined">delete</span>
-                                    </a>
+                                <!-- Total Nominal -->
+                                <div class="col-2 text-end fw-bold text-dark fs-4" 
+                                    x-text="formatRupiah((item.price * item.qty) - calculateItemDiscount(item))">
+                                </div>
+
+                                <!-- Delete Button -->
+                                <div class="col-auto">
+                                    <button class="btn btn-sm btn-icon btn-ghost-danger border-0" @click="removeFromCart(item.id)">
+                                        <span class="material-symbols-outlined" style="font-size: 18px;">delete</span>
+                                    </button>
                                 </div>
                             </div>
                         </div>
                     </template>
                 </div>
             </div>
-            <div class="card-footer mt-0">
-                <div class="d-flex gap-2">
-                    <a class="btn btn-outline-info d-flex flex-column align-items-center flex-fill"
+            <div class="card-footer mt-0 p-2">
+                <div class="d-flex gap-1">
+                    <button class="btn btn-outline-info flex-fill p-1" title="Diskon Global"
                         @click="openGlobalDiscountModal()">
-                        <span class="material-symbols-outlined fs-1">
-                            percent_discount
-                        </span>
-                    </a>
-                    <a class="btn btn-outline-info d-flex flex-column align-items-center flex-fill"
+                        <span class="material-symbols-outlined fs-3">percent_discount</span>
+                    </button>
+                    <button class="btn btn-outline-info flex-fill p-1" title="Cashback Global"
                         @click="openGlobalCashbackModal()">
-                        <span class="material-symbols-outlined fs-1">
-                            currency_exchange
-                        </span>
-                    </a>
-                    <a class="btn btn-outline-warning d-flex flex-column align-items-center flex-fill"
+                        <span class="material-symbols-outlined fs-3">currency_exchange</span>
+                    </button>
+                    <button class="btn btn-outline-warning flex-fill p-1" title="Tunda Transaksi"
                         @click="pauseSale()">
-                        <span class="material-symbols-outlined fs-1">
-                            inactive_order
-                        </span>
-                    </a>
-                    <a class="btn btn-outline-secondary d-flex flex-column align-items-center flex-fill position-relative"
+                        <span class="material-symbols-outlined fs-3">inactive_order</span>
+                    </button>
+                    <button class="btn btn-outline-secondary flex-fill p-1 position-relative" title="Transaksi Tertunda"
                         x-show="heldSales.length > 0" @click="openHeldSalesModal()">
-                        <span class="material-symbols-outlined fs-1">
-                            restore_page
-                        </span>
+                        <span class="material-symbols-outlined fs-3">restore_page</span>
                         <span class="badge bg-info text-light badge-notification"
-                            style="position: absolute; top: 0; right: 0; width: 1.5rem; height: 1.5rem; display: flex; align-items: center; justify-content: center;"
+                            style="position: absolute; top: -5px; right: -5px; min-width: 1rem; height: 1rem; padding: 0; display: flex; align-items: center; justify-content: center; font-size: 0.6rem;"
                             x-text="heldSales.length"></span>
-                    </a>
-                    <a class="btn btn-outline-danger d-flex flex-column align-items-center flex-fill"
+                    </button>
+                    <button class="btn btn-outline-danger flex-fill p-1" title="Reset Keranjang"
                         @click="clearCart()">
-                        <span class="material-symbols-outlined fs-1">
-                            delete_sweep
-                        </span>
-                    </a>
+                        <span class="material-symbols-outlined fs-3">delete_sweep</span>
+                    </button>
+                    @if ($cashDrawer)
+                        <button class="btn btn-outline-dark flex-fill p-1" title="Tutup Kasir"
+                            data-bs-toggle="modal" data-bs-target="#closeCashierModal">
+                            <span class="material-symbols-outlined fs-3">logout</span>
+                        </button>
+                    @endif
                 </div>
-
-                @if ($cashDrawer)
-                    <div class="mt-3 p-3 bg-blue-lt rounded border border-blue-subtle">
-                        <div class="d-flex justify-content-between align-items-start mb-2">
-                            <div>
-                                <span class="btn btn-success btn-sm">Kasir Terbuka</span>
-                            </div>
-                            <button class="btn btn-outline-danger btn-sm" data-bs-toggle="modal"
-                                data-bs-target="#closeCashierModal">
-                                Tutup Kasir
-                            </button>
-                        </div>
-                        <div class="space-y-1">
-                            <div class="d-flex align-items-center text-secondary small">
-                                <span class="material-symbols-outlined fs-5 me-2">person</span>
-                                <span>{{ auth()->user()->nama_lengkap }}</span>
-                            </div>
-                            <div class="d-flex align-items-center text-secondary small">
-                                <span class="material-symbols-outlined fs-5 me-2">schedule</span>
-                                <span>{{ \Carbon\Carbon::parse($cashDrawer->tanggal_buka)->format('d/m/Y H:i') }}</span>
-                            </div>
-                        </div>
-                    </div>
-                @endif
 
                 <div class="w-100 border-top border-bottom mt-2 py-2">
                     <div class="d-flex justify-content-between pb-1 text-secondary">
@@ -665,37 +657,28 @@
                 addToCart(product) {
                     const existingItem = this.cart.find(item => item.id === product.id);
                     if (existingItem) {
-                        if (existingItem.qty < product.stock) {
-                            existingItem.qty++;
-                        } else {
-                            Toast.fire({
-                                icon: 'error',
-                                title: 'Stok tidak mencukupi'
-                            });
-                        }
+                        existingItem.qty++;
                     } else {
-                        if (product.stock > 0) {
-                            let originalPrice = parseFloat(product.price);
-                            let specialPrice = this.getSpecialPrice(product.id);
-                            let finalPrice = specialPrice !== null ? specialPrice : originalPrice;
+                        let originalPrice = parseFloat(product.price);
+                        let specialPrice = this.getSpecialPrice(product.id);
+                        let finalPrice = specialPrice !== null ? specialPrice : originalPrice;
 
-                            this.cart.push({
-                                ...product,
-                                qty: 1,
-                                original_price: originalPrice,
-                                price: finalPrice,
-                                diskon: {
-                                    jenis: 'nominal',
-                                    jumlah: 0,
-                                    nominal: 0
-                                },
-                                cashback: {
-                                    jenis: 'nominal',
-                                    jumlah: 0,
-                                    nominal: 0
-                                }
-                            });
-                        }
+                        this.cart.push({
+                            ...product,
+                            qty: 1,
+                            original_price: originalPrice,
+                            price: finalPrice,
+                            diskon: {
+                                jenis: 'nominal',
+                                jumlah: 0,
+                                nominal: 0
+                            },
+                            cashback: {
+                                jenis: 'nominal',
+                                jumlah: 0,
+                                nominal: 0
+                            }
+                        });
                     }
                 },
 
@@ -706,13 +689,8 @@
                     const newQty = parseFloat(item.qty) + delta;
                     if (newQty <= 0) {
                         this.removeFromCart(id);
-                    } else if (newQty <= item.stock) {
-                        item.qty = newQty;
                     } else {
-                        Toast.fire({
-                            icon: 'error',
-                            title: 'Stok tidak mencukupi'
-                        });
+                        item.qty = newQty;
                     }
                 },
 
@@ -1096,7 +1074,7 @@
 
             Livewire.on('close-modal', (event) => {
                 $(`#${event.id}`).modal('hide');
-                
+
                 // Refresh if it's cashier related to ensure full state sync
                 if (event.id === 'openCashierModal' || event.id === 'closeCashierModal') {
                     window.location.reload();
@@ -1150,6 +1128,59 @@
                         if (el) {
                             let data = this.options[value];
                             Alpine.$data(el).selectedCustomer = data || null;
+                        }
+                    }
+                });
+            }
+
+            if (document.getElementById('productSearchSelect')) {
+                productSearchTomSelect = new TomSelect('#productSearchSelect', {
+                    valueField: 'id',
+                    labelField: 'nama_produk',
+                    searchField: ['nama_produk', 'sku'],
+                    closeAfterSelect: true,
+                    load: function(query, callback) {
+                        if (query.length < 2) return callback();
+                        @this.call('loadProducts', query, 0).then(res => callback(res.data)).catch(
+                            () => callback());
+                    },
+                    render: {
+                        option: function(data, escape) {
+                            return `<div class="d-flex flex-column py-1">
+                                            <div class="fw-bold text-dark">${escape(data.nama_produk)}</div>
+                                            <div class="d-flex justify-content-between align-items-center mt-1">
+                                                <small class="text-secondary">${escape(data.sku || '-')}</small>
+                                                <span class="badge bg-primary-lt">Rp ${parseFloat(data.harga_jual).toLocaleString('id-ID')}</span>
+                                            </div>
+                                            <small class="text-muted mt-1">Stok: ${Math.round(data.stok_aktual)} ${data.unit ? data.unit.nama_satuan : ''}</small>
+                                        </div>`;
+                        },
+                        item: function(data, escape) {
+                            return `<div>${escape(data.nama_produk)}</div>`;
+                        }
+                    },
+                    onChange: function(value) {
+                        if (!value) return;
+                        
+                        let el = document.querySelector('[x-data]');
+                        if (el) {
+                            let raw = this.options[value];
+                            let productData = {
+                                id: raw.id,
+                                name: raw.nama_produk,
+                                price: parseFloat(raw.harga_jual),
+                                stock: parseFloat(raw.stok_aktual),
+                                image: (raw.gambar && raw.gambar !== 'products/no-image.png') ? ('/storage/' + raw.gambar) : 'https://placehold.co/400x400?text=No+Image',
+                            };
+                            Alpine.$data(el).addToCart(productData);
+                            
+                            // Full reset of TomSelect state to ensure previous results are gone
+                            setTimeout(() => {
+                                this.clear(true);
+                                this.setTextboxValue('');
+                                this.clearOptions();
+                                this.close();
+                            }, 50);
                         }
                     }
                 });
