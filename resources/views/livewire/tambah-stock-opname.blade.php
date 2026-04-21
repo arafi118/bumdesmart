@@ -57,6 +57,10 @@
                                     <span x-show="isSaving" class="spinner-border spinner-border-sm me-2"></span>
                                     <span x-text="status === 'approved' ? 'Approve & Finalize' : 'Simpan Draft'"></span>
                                 </button>
+                                <button type="button" class="btn btn-outline-info w-100 mt-2" @click="cetakForm"
+                                    :disabled="items.length === 0">
+                                    <i class="fas fa-print me-2"></i> Cetak Form SO (PDF)
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -238,6 +242,13 @@
                             if (item.selisih > 0) item.jenis_selisih = 'plus';
                             else if (item.selisih < 0) item.jenis_selisih = 'minus';
                             else item.jenis_selisih = 'match';
+                        },
+
+                        cetakForm() {
+                            const categoryId = @js($this->categoryId);
+                            const shelfId = @js($this->shelfId);
+                            const url = `/keuangan/pelaporan/cetak?laporan=formStockOpname&categoryId=${categoryId}&shelfId=${shelfId}`;
+                            window.open(url, '_blank');
                         },
 
                         save() {

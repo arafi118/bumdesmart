@@ -97,7 +97,7 @@ class TambahStockOpname extends Component
                     'sistem' => $product->stok_aktual,
                     'fisik' => $product->stok_aktual, // Default to system stock
                     'selisih' => 0,
-                    'jenis' => null,
+                    'jenis_selisih' => 'match',
                     'alasan' => '',
                     'counted' => false, // UI helper
                 ];
@@ -162,7 +162,7 @@ class TambahStockOpname extends Component
                     'stok_sistem' => $item['stok_sistem'],
                     'stok_fisik' => $item['stok_fisik'],
                     'selisih' => $item['selisih'],
-                    'jenis_selisih' => $item['jenis_selisih'],
+                    'jenis_selisih' => $item['jenis_selisih'] ?? 'match',
                     'alasan' => $item['alasan'] ?? null,
                     'harga_satuan' => $item['harga_satuan'] ?? 0,
                     'total_harga' => ($item['selisih']) * ($item['harga_satuan'] ?? 0), // Total value of variance

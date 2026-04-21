@@ -404,6 +404,33 @@ class Cetak extends Controller
         return $this->streamPdf($html, 'bukti-so-'.$opname->no_opname.'.pdf');
     }
 
+    public function formStockOpname(array $data)
+    {
+        $business = Business::first();
+        $categoryId = $data['categoryId'] ?? null;
+        $shelfId = $data['shelfId'] ?? null;
+
+        $query = Product::where('business_id', auth()->user()->business_id)
+            ->where('is_active', true);
+
+        if ($categoryId) {
+            $query->where('category_id', $categoryId);
+        }
+
+        if ($shelfId) {
+            $query->where('shelf_id', $shelfId);
+        }
+
+        $products = $query->orderBy('nama_produk')->get();
+
+        $title = 'Form Stock Opname (Lembar Kerja)';
+        $subtitle = 'Per Tanggal: '.Carbon::now()->isoFormat('D MMMM Y');
+
+        $html = view('livewire.keuangan.pelaporan.form-stock-opname', compact('title', 'subtitle', 'products', 'business'))->render();
+
+        return $this->streamPdf($html, 'form-stock-opname.pdf');
+    }
+
     public function pembelian(array $data)
     {
         $tahun = $data['tahun'] ?? date('Y');
