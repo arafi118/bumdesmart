@@ -22,9 +22,10 @@
     } else {
         $userRole = auth()->user()->role;
         if ($userRole) {
-            $menus = $userRole->menus()->with('children')->whereNull('parent_id')->orderBy('order')->get();
+            $assignedMenuIds = $userRole->menus()->pluck('menus.id')->toArray();
+            $menus = $userRole->menus()->whereNull('parent_id')->orderBy('order')->get();
 
-            $listMenu = $menus->map(function ($menu) {
+            $listMenu = $menus->map(function ($menu) use ($assignedMenuIds) {
                 $item = [
                     'title' => $menu->title,
                     'url'   => $menu->url,
@@ -32,14 +33,14 @@
                 ];
 
                 if ($menu->children->count() > 0) {
-                    $item['child'] = $menu->children->map(function ($child) {
+                    $item['child'] = $menu->children->whereIn('id', $assignedMenuIds)->map(function ($child) use ($assignedMenuIds) {
                         $subItem = [
                             'title' => $child->title,
                             'url'   => $child->url,
                         ];
 
                         if ($child->children->count() > 0) {
-                            $subItem['child'] = $child->children->map(function ($subChild) {
+                            $subItem['child'] = $child->children->whereIn('id', $assignedMenuIds)->map(function ($subChild) {
                                 return [
                                     'title' => $subChild->title,
                                     'url'   => $subChild->url,
