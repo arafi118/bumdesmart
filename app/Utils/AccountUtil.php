@@ -964,21 +964,29 @@ class AccountUtil
         $accounts = self::getDefaultAccounts();
         $accountData = [];
 
+        // Pre-fetch level 3 accounts for mapping
+        $level3Map = AkunLevel3::pluck('id', 'kode')->toArray();
+
         foreach ($accounts as $rek) {
             $kodeAkun = explode('.', $rek['kode']);
             if (count($kodeAkun) === 4 && intval($kodeAkun[3]) > 0) {
                 // This is a Level 4 account
-                $accountData[] = [
-                    'business_id' => $businessId,
-                    'kode' => $rek['kode'],
-                    'nama' => $rek['nama'],
-                    'parent_id' => $kodeAkun[0] . $kodeAkun[1] . $kodeAkun[2],
-                    'jenis_mutasi' => $rek['jenis_mutasi'],
-                    'no_rek_bank' => $rek['no_rek_bank'] ?? null,
-                    'atas_nama_rek' => $rek['atas_nama_rek'] ?? null,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ];
+                $parentKode = $kodeAkun[0] . '.' . $kodeAkun[1] . '.' . $kodeAkun[2] . '.00';
+                $parentId = $level3Map[$parentKode] ?? null;
+
+                if ($parentId) {
+                    $accountData[] = [
+                        'business_id' => $businessId,
+                        'kode' => $rek['kode'],
+                        'nama' => $rek['nama'],
+                        'parent_id' => $parentId,
+                        'jenis_mutasi' => $rek['jenis_mutasi'],
+                        'no_rek_bank' => $rek['no_rek_bank'] ?? null,
+                        'atas_nama_rek' => $rek['atas_nama_rek'] ?? null,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ];
+                }
             }
         }
 
