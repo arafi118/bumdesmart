@@ -558,7 +558,7 @@
             Alpine.data('posSystem', () => ({
                 cart: [],
                 selectedItem: null,
-                selectedCustomer: null,
+                selectedCustomer: @js($defaultCustomer),
                 customerSearch: '',
                 customerResults: [],
                 showCustomerResults: false,
@@ -1131,6 +1131,12 @@
                         }
                     }
                 });
+
+                // Pre-populate default customer
+                @if ($defaultCustomer)
+                    customerTomSelect.addOption(@js($defaultCustomer));
+                    customerTomSelect.setValue(@js($defaultCustomer->id));
+                @endif
             }
 
             if (document.getElementById('productSearchSelect')) {
