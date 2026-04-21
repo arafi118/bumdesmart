@@ -35,7 +35,7 @@
                                     {{ $loop->iteration + ($products->currentPage() - 1) * $products->perPage() }}
                                 </td>
                                 <td>
-                                    <img src="{{ asset('storage/' . $product->gambar) }}"
+                                    <img src="{{ $product->gambar && $product->gambar != 'products/no-image.png' ? asset('storage/' . $product->gambar) : 'https://placehold.co/400x400?text=No+Image' }}"
                                         alt="{{ $product->nama_produk }}"
                                         style="width: 50px; height: 50px; object-fit: cover;">
                                 </td>
@@ -218,7 +218,7 @@
                                     <div class="card">
                                         <div class="card-body">
                                             <div class="mb-3 d-flex justify-content-center">
-                                                <img src="{{ $gambar ? $gambar->temporaryUrl() : asset('storage/' . $displayGambar) }}"
+                                                <img src="{{ $gambar ? $gambar->temporaryUrl() : ($displayGambar && $displayGambar != 'products/no-image.png' ? asset('storage/' . $displayGambar) : 'https://placehold.co/400x400?text=No+Image') }}"
                                                     alt="Gambar" class="img-fluid"
                                                     style="width: 200px; height: 200px; object-fit: cover;">
                                             </div>

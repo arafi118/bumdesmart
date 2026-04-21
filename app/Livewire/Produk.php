@@ -42,7 +42,7 @@ class Produk extends Component
 
     public $gambar;
 
-    public $displayGambar = 'products/no-image.png';
+    public $displayGambar;
 
     public $activeTab = 'daftarProduk';
 
@@ -81,7 +81,7 @@ class Produk extends Component
 
     public function resetForm()
     {
-        $this->reset('id', 'sku', 'namaProduk', 'kategori', 'merek', 'satuan', 'rakPenyimpanan', 'hargaBeliDefault', 'hargaJualDefault', 'stokMinimal', 'gambar', 'aktif');
+        $this->reset('id', 'sku', 'namaProduk', 'kategori', 'merek', 'satuan', 'rakPenyimpanan', 'hargaBeliDefault', 'hargaJualDefault', 'stokMinimal', 'gambar', 'aktif', 'displayGambar');
     }
 
     public function create()
@@ -153,7 +153,7 @@ class Produk extends Component
             $data['gambar'] = $produkLama->gambar;
             if ($this->gambar) {
                 $data['gambar'] = $this->gambar->storeAs('products', time().'.'.$this->gambar->getClientOriginalExtension());
-                if ($produkLama->gambar != 'products/no-image.png') {
+                if ($produkLama->gambar && $produkLama->gambar != 'products/no-image.png') {
                     Storage::delete($produkLama->gambar);
                 }
             }
@@ -182,7 +182,7 @@ class Produk extends Component
     public function destroy($id)
     {
         $product = \App\Models\Product::find($id);
-        if ($product->gambar != 'products/no-image.png') {
+        if ($product->gambar && $product->gambar != 'products/no-image.png') {
             Storage::delete($product->gambar);
         }
 
