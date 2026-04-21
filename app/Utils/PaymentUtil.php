@@ -74,7 +74,7 @@ class PaymentUtil
             ];
 
             $rekeningDebit = '4.1.01.02';
-            $return['purchase-cashback'] = [
+            $return['sales-cashback'] = [
                 'rekening_kredit' => $rekeningKas,
                 'rekening_debit' => $rekeningDebit,
             ];

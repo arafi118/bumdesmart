@@ -579,6 +579,7 @@
                     bayar: '',
                     kembalian: 0,
                     payment_method: 'tunai',
+                    no_rekening: '',
                     note: ''
                 },
                 globalDiskon: {
@@ -1003,9 +1004,12 @@
                     return this.formatDecimal(num);
                 },
 
-                parseFormatted(val) {
+                parseNumber(val) {
                     if (typeof val === 'number') return val;
-                    return parseFloat(String(val).replace(/,/g, '')) || 0;
+                    if (!val) return 0;
+                    // Standard Indonesian: 1.234,56
+                    let clean = String(val).replace(/\./g, '').replace(/,/g, '.');
+                    return parseFloat(clean) || 0;
                 },
 
                 processPayment() {
@@ -1064,6 +1068,7 @@
                         bayar: this.checkOut.bayar,
                         kembalian: this.calculateChange(),
                         payment_method: this.checkOut.payment_method,
+                        no_rekening: this.checkOut.no_rekening,
                         note: this.checkOut.note,
                         globalDiskon: this.globalDiskon,
                         globalCashback: this.globalCashback
@@ -1078,6 +1083,7 @@
                         bayar: '',
                         kembalian: 0,
                         payment_method: 'tunai',
+                        no_rekening: '',
                         note: ''
                     };
                 }

@@ -212,6 +212,9 @@ class SalePos extends Component
         }
 
         $keterangan = $data['note'] ?? 'POS Transaction';
+        if (! empty($data['no_rekening'])) {
+            $keterangan .= ' [Transfer: '.$data['no_rekening'].']';
+        }
 
         return Sale::create([
             'business_id' => $this->businessId,
@@ -379,7 +382,7 @@ class SalePos extends Component
             $pay -= $this->parseNumber($data['kembalian']);
         }
 
-        $kodeRekening = PaymentUtil::ambilRekening('sales', $jenisPembayaran, $metodeBayar, null);
+        $kodeRekening = PaymentUtil::ambilRekening('sales', $jenisPembayaran, $metodeBayar, $data['no_rekening'] ?? null);
 
         $details = $sale->saleDetails;
         $totalHppAll = $details->sum(function ($d) {
@@ -404,7 +407,7 @@ class SalePos extends Component
                 'transaction_id' => $sale->id,
                 'total_harga' => $totalHppAll,
                 'metode_pembayaran' => $metodeBayar,
-                'no_referensi' => null,
+                'no_referensi' => $data['no_rekening'] ?? null,
                 'catatan' => 'HPP Penjualan POS',
                 'rekening_debit' => $kodeRekening['sales']['rekening_debit'],
                 'rekening_kredit' => $kodeRekening['sales']['rekening_kredit'],
@@ -423,7 +426,7 @@ class SalePos extends Component
                 'transaction_id' => $sale->id,
                 'total_harga' => $totalProfit,
                 'metode_pembayaran' => $metodeBayar,
-                'no_referensi' => null,
+                'no_referensi' => $data['no_rekening'] ?? null,
                 'catatan' => 'Laba Penjualan POS',
                 'rekening_debit' => $kodeRekening['laba']['rekening_debit'],
                 'rekening_kredit' => $kodeRekening['laba']['rekening_kredit'],
@@ -508,9 +511,44 @@ class SalePos extends Component
         return ($this->parseNumber($item['price']) * $item['qty'] * $this->parseNumber($d['jumlah'])) / 100;
     }
 
-    private function parseNumber($val)
+    private function parseNumber($value)
     {
-        return (float) str_replace(',', '', $val);
+        if (is_numeric($value)) {
+            return (float) $value;
+        }
+        if (empty($value)) {
+            return 0;
+        }
+
+        $str = trim($value);
+
+        // If it contains a comma, it's definitely Indonesian format (dot=thousands, comma=decimal)
+        if (strpos($str, ',') !== false) {
+            $clean = str_replace('.', '', $str);
+            $clean = str_replace(',', '.', $clean);
+            return (float) $clean;
+        }
+
+        // If it contains a dot:
+        if (strpos($str, '.') !== false) {
+            $lastDotIdx = strrpos($str, '.');
+            $remainingLength = strlen($str) - $lastDotIdx - 1;
+            
+            // In Indonesian, thousands dots are ALWAYS followed by 3 digits.
+            if ($remainingLength !== 3) {
+                return (float) $str;
+            }
+            
+            // If there's another dot, it's thousands
+            if (strpos($str, '.') !== $lastDotIdx) {
+                return (float) str_replace('.', '', $str);
+            }
+            
+            // Ambiguous 1.250 -> Treat as 1250 for Indonesian apps
+            return (float) str_replace('.', '', $str);
+        }
+
+        return (float) $str;
     }
 
     #[Layout('layouts.app')]

@@ -49,6 +49,33 @@
                 </div>
 
                 <div class="mb-3 mt-3">
+                    <label class="form-label">Metode Pembayaran</label>
+                    <div class="form-selectgroup w-100">
+                        <label class="form-selectgroup-item flex-grow-1">
+                            <input type="radio" name="payment_method" value="tunai"
+                                class="form-selectgroup-input" x-model="checkOut.payment_method">
+                            <span class="form-selectgroup-label">
+                                <span class="material-symbols-outlined me-1">payments</span>
+                                Tunai
+                            </span>
+                        </label>
+                        <label class="form-selectgroup-item flex-grow-1">
+                            <input type="radio" name="payment_method" value="transfer"
+                                class="form-selectgroup-input" x-model="checkOut.payment_method">
+                            <span class="form-selectgroup-label">
+                                <span class="material-symbols-outlined me-1">account_balance</span>
+                                Transfer
+                            </span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="mb-3" x-show="checkOut.payment_method === 'transfer'" x-transition>
+                    <label class="form-label">No. Rekening / Ref</label>
+                    <input type="text" class="form-control" x-model="checkOut.no_rekening" placeholder="Opsional...">
+                </div>
+
+                <div class="mb-3 mt-3">
                     <label class="form-label">Catatan</label>
                     <textarea class="form-control" rows="2" x-model="checkOut.note" placeholder="Catatan transaksi..."></textarea>
                 </div>
