@@ -19,7 +19,7 @@
                 <div class="mb-3">
                     <label class="form-label">Jumlah Bayar</label>
                     <input type="text" class="form-control" x-mask:dynamic="$money($input)"
-                        x-model="formatRupiah(checkOut.bayar)" placeholder="0" id="paymentInput" />
+                        x-model="checkOut.bayar" placeholder="0" id="paymentInput" />
                     <!-- Quick Amounts -->
                     <div class="mt-2 d-flex gap-2 flex-wrap justify-content-center">
                         <button type="button" class="btn btn-sm btn-outline-primary"

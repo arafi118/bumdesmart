@@ -1039,12 +1039,12 @@
                 },
 
                 calculateChange() {
-                    let pay = parseFloat(this.checkOut.bayar) || 0;
+                    let pay = this.parseNumber(this.checkOut.bayar) || 0;
                     return pay - this.subtotal;
                 },
 
                 submitSale() {
-                    if ((this.checkOut.bayar === '' || parseFloat(this.checkOut.bayar) < 0) && this
+                    if ((this.checkOut.bayar === '' || this.parseNumber(this.checkOut.bayar) < 0) && this
                         .checkOut.payment_method !== 'credit') {
                         Toast.fire({
                             icon: 'error',
@@ -1065,7 +1065,7 @@
                         products: this.cart,
                         customer_id: this.selectedCustomer ? this.selectedCustomer.id : null,
                         grandTotal: this.subtotal,
-                        bayar: this.checkOut.bayar,
+                        bayar: this.parseNumber(this.checkOut.bayar),
                         kembalian: this.calculateChange(),
                         payment_method: this.checkOut.payment_method,
                         no_rekening: this.checkOut.no_rekening,
