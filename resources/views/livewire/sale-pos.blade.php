@@ -77,8 +77,8 @@
                                 alt="{{ $product->nama_produk }}">
                             <div class="card-img-overlay d-flex flex-column justify-content-end">
                                 <h5 class="card-title mb-1">{{ $product->nama_produk }}</h5>
-                                <div class="card-text">Rp {{ number_format($product->harga_jual, 0, ',', '.') }}</div>
-                                <span class="badge">{{ $product->stok_aktual }}</span>
+                                <div class="card-text">Rp {{ \App\Utils\NumberUtil::format($product->harga_jual) }}</div>
+                                <span class="badge">{{ \App\Utils\NumberUtil::format($product->stok_aktual) }}</span>
                             </div>
                         </div>
                     </div>
@@ -142,7 +142,7 @@
                                         <button class="qty-btn" @click="updateQty(item.id, -1)">
                                             <span class="material-symbols-outlined">remove</span>
                                         </button>
-                                        <span class="qty-display" x-text="item.qty"></span>
+                                        <span class="qty-display" x-text="formatDecimal(item.qty)"></span>
                                         <button class="qty-btn" @click="updateQty(item.id, 1)">
                                             <span class="material-symbols-outlined">add</span>
                                         </button>
@@ -1000,8 +1000,16 @@
                     return val > 0 ? val : 0;
                 },
 
+                formatDecimal(num) {
+                    if (num === null || num === undefined) return '';
+                    return Number(num).toLocaleString('id-ID', {
+                        maximumFractionDigits: 2,
+                        minimumFractionDigits: 0
+                    });
+                },
+
                 formatRupiah(num) {
-                    return new Intl.NumberFormat('en-US').format(num || 0);
+                    return this.formatDecimal(num);
                 },
 
                 parseFormatted(val) {
