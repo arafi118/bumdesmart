@@ -25,11 +25,12 @@ return new class extends Migration
         });
 
         Schema::table('product_batches', function (Blueprint $table) {
-            $table->decimal('jumlah_stok', 15, 4)->change();
+            $table->decimal('jumlah_awal', 15, 4)->change();
+            $table->decimal('jumlah_saat_ini', 15, 4)->change();
         });
 
         Schema::table('stock_movements', function (Blueprint $table) {
-            $table->decimal('jumlah', 15, 4)->change();
+            $table->decimal('jumlah_perubahan', 15, 4)->change();
         });
 
         Schema::table('batch_movements', function (Blueprint $table) {
@@ -37,6 +38,7 @@ return new class extends Migration
         });
 
         Schema::table('stock_opname_details', function (Blueprint $table) {
+            $table->decimal('stok_sistem', 15, 4)->change();
             $table->decimal('stok_fisik', 15, 4)->change();
             $table->decimal('selisih', 15, 4)->change();
         });
