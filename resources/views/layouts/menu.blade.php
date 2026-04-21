@@ -27,16 +27,27 @@
             $listMenu = $menus->map(function ($menu) {
                 $item = [
                     'title' => $menu->title,
-                    'url' => $menu->url,
-                    'icon' => $menu->icon,
+                    'url'   => $menu->url,
+                    'icon'  => $menu->icon,
                 ];
 
                 if ($menu->children->count() > 0) {
                     $item['child'] = $menu->children->map(function ($child) {
-                        return [
+                        $subItem = [
                             'title' => $child->title,
-                            'url' => $child->url,
+                            'url'   => $child->url,
                         ];
+
+                        if ($child->children->count() > 0) {
+                            $subItem['child'] = $child->children->map(function ($subChild) {
+                                return [
+                                    'title' => $subChild->title,
+                                    'url'   => $subChild->url,
+                                ];
+                            })->toArray();
+                        }
+
+                        return $subItem;
                     })->toArray();
                 }
 
