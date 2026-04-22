@@ -595,6 +595,23 @@
                 },
                 heldSales: [],
                 init() {
+                    // Check if shift/session changed
+                    let currentDrawerId = @js($cashDrawer ? $cashDrawer->id : null);
+                    let currentUserId = @js(auth()->id());
+                    let currentSessionId = @js(session()->getId());
+                    
+                    let storedDrawerId = localStorage.getItem('pos_drawer_id');
+                    let storedUserId = localStorage.getItem('pos_user_id');
+                    let storedSessionId = localStorage.getItem('pos_session_id');
+
+                    if (storedUserId != currentUserId || storedDrawerId != currentDrawerId || storedSessionId != currentSessionId) {
+                        localStorage.removeItem('pos_cart');
+                        // pos_held_sales sengaja tidak dihapus sesuai permintaan user
+                        localStorage.setItem('pos_drawer_id', currentDrawerId);
+                        localStorage.setItem('pos_user_id', currentUserId);
+                        localStorage.setItem('pos_session_id', currentSessionId);
+                    }
+
                     let loadedCart = JSON.parse(localStorage.getItem('pos_cart')) || [];
                     this.cart = loadedCart.map(item => ({
                         ...item,
