@@ -156,8 +156,13 @@
                     if (this._tanggalInit) return
                     this._tanggalInit = true
 
+                    const el = document.getElementById('tanggalAdjustment');
+                    const today = new Date().toISOString().split('T')[0];
+                    this.tanggalAdjustment = today;
+                    el.value = today;
+
                     new Litepicker({
-                        element: document.getElementById('tanggalAdjustment'),
+                        element: el,
                         format: 'YYYY-MM-DD',
                         autoApply: true,
                         singleMode: true,
