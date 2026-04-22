@@ -62,9 +62,9 @@
                                 </td>
                                 <td>
                                     <div class="input-group">
-                                        <input type="number" :step="product.allow_decimal ? 'any' : '1'" class="form-control" x-model="product.jumlah_beli"
+                                        <input type="number" :step="product.allow_decimal ? 'any' : '1'"
+                                            class="form-control" x-model="product.jumlah_beli"
                                             x-on:input="updateRow(product.id)" x-on:focus="$el.select()">
-                                        <span class="input-group-text small" x-text="product.unit"></span>
                                     </div>
                                 </td>
                                 <td>
@@ -162,7 +162,8 @@
                                             </div>
                                             <div class="col">
                                                 <input type="text" class="form-control"
-                                                    x-mask:dynamic="$money($input, ',', '.', 0)" x-model="globalDiskon.jumlah">
+                                                    x-mask:dynamic="$money($input, ',', '.', 0)"
+                                                    x-model="globalDiskon.jumlah">
                                             </div>
                                         </div>
                                     </div>
@@ -187,7 +188,8 @@
                                             </div>
                                             <div class="col">
                                                 <input type="text" class="form-control"
-                                                    x-mask:dynamic="$money($input, ',', '.', 0)" x-model="globalCashback.jumlah">
+                                                    x-mask:dynamic="$money($input, ',', '.', 0)"
+                                                    x-model="globalCashback.jumlah">
                                             </div>
                                         </div>
                                     </div>
@@ -341,8 +343,20 @@
                 status: 'completed',
 
                 // Summary Data (Reactive instead of complex getters)
-                summary: { itemCount: 0, subtotal: '0', orderDiscount: '0', orderTax: '0', grandTotal: '0', orderCashback: '0' },
-                totalProducts: { subtotal: '0', diskon: 0, cashback: 0, jumlah_beli: 0 },
+                summary: {
+                    itemCount: 0,
+                    subtotal: '0',
+                    orderDiscount: '0',
+                    orderTax: '0',
+                    grandTotal: '0',
+                    orderCashback: '0'
+                },
+                totalProducts: {
+                    subtotal: '0',
+                    diskon: 0,
+                    cashback: 0,
+                    jumlah_beli: 0
+                },
 
                 isLoading: false,
 
@@ -365,12 +379,18 @@
 
                 init() {
                     // Watchers
-                    this.$watch('products', () => this.updateTotals(), { deep: true });
-                    this.$watch('globalDiskon', () => this.updateTotals(), { deep: true });
-                    this.$watch('globalCashback', () => this.updateTotals(), { deep: true });
+                    this.$watch('products', () => this.updateTotals(), {
+                        deep: true
+                    });
+                    this.$watch('globalDiskon', () => this.updateTotals(), {
+                        deep: true
+                    });
+                    this.$watch('globalCashback', () => this.updateTotals(), {
+                        deep: true
+                    });
                     this.$watch('jenisPajak', () => this.updateTotals());
                     this.$watch('bayar', () => this.calculateKembalian());
-                    
+
                     this.$watch('jenisPembayaran', (val) => {
                         if (val === 'cash') {
                             let pay = this.parseFormatted(this.bayar);
@@ -414,8 +434,14 @@
 
                     // Configs
                     this.jenisPajak = data.jenisPajak || 'tidak ada';
-                    this.globalDiskon = data.globalDiskon || { jenis: 'nominal', jumlah: 0 };
-                    this.globalCashback = data.globalCashback || { jenis: 'nominal', jumlah: 0 };
+                    this.globalDiskon = data.globalDiskon || {
+                        jenis: 'nominal',
+                        jumlah: 0
+                    };
+                    this.globalCashback = data.globalCashback || {
+                        jenis: 'nominal',
+                        jumlah: 0
+                    };
 
                     // Payment
                     this.jenisPembayaran = data.jenisPembayaran;
@@ -447,7 +473,7 @@
                     if (typeof val === 'number') return val;
                     if (!val) return 0;
                     let str = String(val).trim();
-                    
+
                     // Format Indonesia: . (titik) adalah ribuan, , (koma) adalah desimal
                     // Kita hapus semua titik, lalu ganti koma dengan titik agar bisa di-parseFloat
                     let clean = str.replace(/\./g, '').replace(/,/g, '.');
@@ -463,7 +489,8 @@
                         autoApply: true,
                         setup: (picker) => {
                             picker.on('selected', (date) => {
-                                product.tanggal_kadaluarsa = date.format('YYYY-MM-DD');
+                                product.tanggal_kadaluarsa = date.format(
+                                    'YYYY-MM-DD');
                             });
                         }
                     });
@@ -481,13 +508,17 @@
                         let rowSub = this.parseFormatted(p.subtotal || 0);
                         totalSub += rowSub;
                         totalQty += parseFloat(p.jumlah_beli) || 0;
-                        sumDiskon += this.parseFormatted((p.diskon && p.diskon.nominal) ? p.diskon.nominal : 0);
-                        sumProductCashback += this.parseFormatted((p.cashback && p.cashback.nominal) ? p.cashback.nominal : 0);
+                        sumDiskon += this.parseFormatted((p.diskon && p.diskon.nominal) ? p
+                            .diskon.nominal : 0);
+                        sumProductCashback += this.parseFormatted((p.cashback && p.cashback
+                            .nominal) ? p.cashback.nominal : 0);
                     });
 
                     // Global Discount
-                    let gDiskonVal = this.parseFormatted(this.globalDiskon ? this.globalDiskon.jumlah : 0);
-                    let gDiskonAmt = (this.globalDiskon && this.globalDiskon.jenis === 'nominal') ? gDiskonVal : (totalSub * gDiskonVal / 100);
+                    let gDiskonVal = this.parseFormatted(this.globalDiskon ? this.globalDiskon.jumlah :
+                        0);
+                    let gDiskonAmt = (this.globalDiskon && this.globalDiskon.jenis === 'nominal') ?
+                        gDiskonVal : (totalSub * gDiskonVal / 100);
 
                     // Tax
                     let taxable = Math.max(0, totalSub - gDiskonAmt);
@@ -495,8 +526,10 @@
                     let grand = taxable + taxAmt;
 
                     // Global Cashback
-                    let gCashbackVal = this.parseFormatted(this.globalCashback ? this.globalCashback.jumlah : 0);
-                    let gCashbackAmt = (this.globalCashback && this.globalCashback.jenis === 'nominal') ? gCashbackVal : (totalSub * gCashbackVal / 100);
+                    let gCashbackVal = this.parseFormatted(this.globalCashback ? this.globalCashback
+                        .jumlah : 0);
+                    let gCashbackAmt = (this.globalCashback && this.globalCashback.jenis ===
+                        'nominal') ? gCashbackVal : (totalSub * gCashbackVal / 100);
 
                     // Update Data Properties
                     this.totalProducts = {
@@ -576,7 +609,7 @@
                     let p = this.products[id];
                     let harga = this.parseFormatted(p.harga_beli);
                     let qty = parseFloat(p.jumlah_beli) || 0;
-                    
+
                     // Cek jika produk tidak boleh desimal tapi diinput desimal
                     if (!p.allow_decimal && qty % 1 !== 0) {
                         qty = Math.floor(qty);
