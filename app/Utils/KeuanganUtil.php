@@ -314,7 +314,6 @@ class KeuanganUtil
             $labaRugi[] = $group[$key];
         }
 
-        dd($labaRugi);
         return $labaRugi;
     }
 
