@@ -34,7 +34,18 @@ class Cetak extends Controller
             abort(404, 'Laporan tidak ditemukan');
         }
 
-        $business = Business::find(auth()->user()->business_id);
+        // Cek bisnis berdasarkan domain (Multi-tenant style)
+        $host = request()->getHost();
+        $owner = \App\Models\Owner::where('domain', $host)
+            ->orWhere('domain_alternatif', $host)
+            ->first();
+
+        if ($owner) {
+            $business = Business::where('owner_id', $owner->id)->first();
+        } else {
+            $business = Business::find(auth()->user()?->business_id) ?? Business::first();
+        }
+
         view()->share('business', $business);
 
         return $this->{$data['laporan']}($data);
