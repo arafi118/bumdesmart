@@ -1,20 +1,6 @@
 @extends('layouts.pdf')
 
 @section('content')
-    <div style="margin-bottom: 20px; border-bottom: 2px solid #000; padding-bottom: 10px;">
-        <table style="border: none; width: 100%;">
-            <tr>
-                <td style="border: none; width: 60%; vertical-align: top;">
-                    <h2 style="margin: 0; color: #1a5632;">FORM STOCK OPNAME</h2>
-                    <p style="margin: 5px 0; font-size: 11pt;">Lembar Kerja Fisik</p>
-                </td>
-                <td style="border: none; width: 40%; text-align: right; vertical-align: top;">
-                    <p style="margin: 0; font-size: 10pt;">Dicetak: {{ date('d F Y H:i') }}</p>
-                    <p style="margin: 5px 0; font-size: 10pt;">Oleh: {{ auth()->user()->nama_lengkap }}</p>
-                </td>
-            </tr>
-        </table>
-    </div>
 
     <div style="margin-bottom: 20px;">
         <table style="border: none; width: 100%; font-size: 10pt;">

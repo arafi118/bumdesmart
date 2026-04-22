@@ -168,13 +168,16 @@
         <table class="kop-table">
             <tr>
                 @php
-                    $owner = $business ? $business->owner : \App\Models\Owner::first();
-                    $logoPath = $owner && $owner->logo ? storage_path('app/public/' . $owner->logo) : null;
-                    if (!$logoPath && isset($logo) && $logo) {
-                        // Handle legacy static string fallback if it exists
-                        $logoPath = public_path($logo);
-                    }
+                    // Pastikan ambil data dari database secara aman
+                    $business = $business ?? \App\Models\Business::with('owner')->first();
+                    $owner = $business?->owner ?? \App\Models\Owner::first();
+                    
+                    $namaUsaha = $business?->nama_usaha ?? ($owner?->nama_usaha ?? env('APP_NAME', 'BUMDes Smart'));
+                    $alamatUsaha = $business?->alamat ?? '';
+                    $telpUsaha = $business?->no_telp ?? '';
+                    $emailUsaha = $business?->email ?? '';
 
+                    $logoPath = $owner && $owner->logo ? storage_path('app/public/' . $owner->logo) : null;
                     $base64Logo = null;
                     if ($logoPath && file_exists($logoPath)) {
                         $type = pathinfo($logoPath, PATHINFO_EXTENSION);
@@ -188,15 +191,14 @@
                     </td>
                 @endif
                 <td class="kop-text">
-                    <p class="kop-nama">
-                        {{ ($owner->nama_usaha ?? null) ?? ($business->nama_usaha ?? env('APP_NAME', 'BUMDes Smart')) }}</p>
+                    <p class="kop-nama">{{ $namaUsaha }}</p>
                     <p class="kop-alamat">
-                        {{ $business->alamat ?? '' }}
-                        @if (isset($business->no_telp) && $business->no_telp)
-                            <br>Telp: {{ $business->no_telp }}
+                        {{ $alamatUsaha }}
+                        @if ($telpUsaha)
+                            <br>Telp: {{ $telpUsaha }}
                         @endif
-                        @if (isset($business->email) && $business->email)
-                            | Email: {{ $business->email }}
+                        @if ($emailUsaha)
+                            | Email: {{ $emailUsaha }}
                         @endif
                     </p>
                 </td>
