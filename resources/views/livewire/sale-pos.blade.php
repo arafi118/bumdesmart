@@ -104,7 +104,7 @@
                                 <div class="card-text fw-bold text-primary" style="font-size: 0.75rem;">Rp
                                     {{ number_format($product->harga_jual, 0, ',', '.') }}</div>
                                 <span class="badge bg-dark-lt position-absolute top-0 end-0 m-1"
-                                    style="font-size: 0.6rem;">{{ $product->stok_aktual }}</span>
+                                    style="font-size: 0.6rem;">{{ number_format($product->stok_aktual, $product->stok_aktual == intval($product->stok_aktual) ? 0 : 1, ',', '.') }}</span>
                             </div>
                         </div>
                     </div>
@@ -1178,13 +1178,17 @@
                     },
                     render: {
                         option: function(data, escape) {
+                            let formattedStok = new Intl.NumberFormat('id-ID', {
+                                maximumFractionDigits: 2
+                            }).format(data.stok_aktual);
+
                             return `<div class="d-flex flex-column py-1">
                                 <div class="fw-bold text-dark">${escape(data.nama_produk)}</div>
                                 <div class="d-flex justify-content-between align-items-center mt-1">
                                     <small class="text-secondary">${escape(data.sku || '-')}</small>
                                     <span class="badge bg-primary-lt">Rp ${parseFloat(data.harga_jual).toLocaleString('id-ID')}</span>
                                 </div>
-                                <small class="text-muted mt-1">Stok: ${Math.round(data.stok_aktual)} ${data.unit ? data.unit.nama_satuan : ''}</small>
+                                <small class="text-muted mt-1">Stok: ${formattedStok} ${data.unit ? data.unit.nama_satuan : ''}</small>
                             </div>`;
                         },
                         item: function(data, escape) {
