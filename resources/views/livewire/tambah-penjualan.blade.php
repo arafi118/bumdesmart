@@ -39,11 +39,11 @@
                             <th width="5%">No</th>
                             <th width="30%">Nama Produk</th>
                             <th width="15%">Harga</th>
-                            <th width="10%">Qty</th>
-                            <th width="15%">Diskon</th>
-                            <th width="15%">Cashback</th>
-                            <th width="20%">Subtotal</th>
-                            <th width="5%"></th>
+                            <th width="15%">Qty</th>
+                            <th width="12%">Diskon</th>
+                            <th width="12%">Cashback</th>
+                            <th width="11%">Subtotal</th>
+                            <th width="4%"></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -56,7 +56,7 @@
                                 </td>
                                 <td>
                                     <input type="text" class="form-control" x-model="product.harga_jual" readonly
-                                        x-mask:dynamic="$money($input)">
+                                        x-mask:dynamic="$money($input, ',', '.', 0)">
                                 </td>
                                 <td>
                                     <input type="number" step="any" class="form-control" x-model="product.jumlah_jual"
@@ -152,7 +152,7 @@
                                             </div>
                                             <div class="col">
                                                 <input type="text" class="form-control"
-                                                    x-mask:dynamic="$money($input)" x-model="globalDiskon.jumlah">
+                                                    x-mask:dynamic="$money($input, ',', '.', 0)" x-model="globalDiskon.jumlah">
                                             </div>
                                         </div>
                                     </div>
@@ -177,7 +177,7 @@
                                             </div>
                                             <div class="col">
                                                 <input type="text" class="form-control"
-                                                    x-mask:dynamic="$money($input)" x-model="globalCashback.jumlah">
+                                                    x-mask:dynamic="$money($input, ',', '.', 0)" x-model="globalCashback.jumlah">
                                             </div>
                                         </div>
                                     </div>
@@ -233,7 +233,7 @@
                                 <div class="mb-3">
                                     <label class="form-label">Nominal Bayar</label>
                                     <input type="text" class="form-control fs-3" placeholder="Bayar"
-                                        x-mask:dynamic="$money($input)" x-model="bayar"
+                                        x-mask:dynamic="$money($input, ',', '.', 0)" x-model="bayar"
                                         x-on:keyup="calculateKembalian">
                                 </div>
 
@@ -448,26 +448,10 @@
                     if (!val) return 0;
                     let str = String(val).trim();
                     
-                    // Robust parsing: 
-                    // 1. Split by any potential separator (. or ,)
-                    // 2. If there are multiple parts, check if the last part looks like decimals
-                    // 3. Otherwise treat all parts as whole numbers
-                    let parts = str.split(/[.,]/);
-                    if (parts.length > 1) {
-                        let lastPart = parts.pop();
-                        let mainPart = parts.join('');
-                        
-                        // If it's a decimal candidate (1 or 2 digits at the end)
-                        if (lastPart.length > 0 && lastPart.length <= 2) {
-                            let whole = mainPart.replace(/[^0-9-]/g, '');
-                            return parseFloat(whole + '.' + lastPart) || 0;
-                        } else {
-                            // Treat as thousands separator
-                            return parseFloat((mainPart + lastPart).replace(/[^0-9-]/g, '')) || 0;
-                        }
-                    }
-                    
-                    return parseFloat(str.replace(/[^0-9-]/g, '')) || 0;
+                    // Format Indonesia: . (titik) adalah ribuan, , (koma) adalah desimal
+                    // Kita hapus semua titik, lalu ganti koma dengan titik agar bisa di-parseFloat
+                    let clean = str.replace(/\./g, '').replace(/,/g, '.');
+                    return parseFloat(clean) || 0;
                 },
 
                 // Update Totals (The brain of the calculation)
