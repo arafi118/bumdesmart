@@ -15,8 +15,8 @@ class KeuanganUtil
         if ($account->balance) {
             $bulan = intval($bulan);
             for ($i = 0; $i <= $bulan; $i++) {
-                $kolomDebit = 'debit_'.str_pad($i, 2, '0', STR_PAD_LEFT);
-                $kolomKredit = 'kredit_'.str_pad($i, 2, '0', STR_PAD_LEFT);
+                $kolomDebit = 'debit_' . str_pad($i, 2, '0', STR_PAD_LEFT);
+                $kolomKredit = 'kredit_' . str_pad($i, 2, '0', STR_PAD_LEFT);
 
                 $saldoAkun = $account->balance->$kolomDebit - $account->balance->$kolomKredit;
                 if ($account->jenis_mutasi == 'kredit') {
@@ -314,6 +314,7 @@ class KeuanganUtil
             $labaRugi[] = $group[$key];
         }
 
+        dd($labaRugi);
         return $labaRugi;
     }
 
@@ -321,8 +322,8 @@ class KeuanganUtil
     {
         $semuaArusKas = ArusKas::with('rekenings')->orderBy('id')->get()->keyBy('id');
 
-        $leafNodes = $semuaArusKas->filter(fn ($a) => $a->rekenings->isNotEmpty());
-        $semuaArusKas->each(fn ($a) => $a->total = 0);
+        $leafNodes = $semuaArusKas->filter(fn($a) => $a->rekenings->isNotEmpty());
+        $semuaArusKas->each(fn($a) => $a->total = 0);
 
         if ($leafNodes->isNotEmpty()) {
             $cases = 'CASE ';
@@ -364,7 +365,7 @@ class KeuanganUtil
             $visited[$node->id] = true;
 
             $children = $semuaArusKas->filter(
-                fn ($n) => $n->sub == $node->id || $n->super_sub == $node->id
+                fn($n) => $n->sub == $node->id || $n->super_sub == $node->id
             );
 
             foreach ($children as $child) {
@@ -373,7 +374,7 @@ class KeuanganUtil
             }
         };
 
-        $semuaArusKas->each(fn ($node) => $aggregate($node));
+        $semuaArusKas->each(fn($node) => $aggregate($node));
 
         $result = collect();
         $curSection = null;
@@ -393,7 +394,6 @@ class KeuanganUtil
                     $result->push($curSection);
                 }
                 $curSection = ['header' => $node, 'groups' => collect()];
-
             } elseif ($isSubHeader) {
                 if ($curGroup !== null && $curSection !== null) {
                     $curSection['groups']->push($curGroup);
@@ -402,7 +402,6 @@ class KeuanganUtil
                     $curSection = ['header' => null, 'groups' => collect()];
                 }
                 $curGroup = ['subheader' => $node, 'items' => collect()];
-
             } elseif ($isLeaf) {
                 if ($curGroup === null) {
                     $curGroup = ['subheader' => null, 'items' => collect()];

@@ -392,23 +392,22 @@ class SalePos extends Component
         $totalDiskonAll = $this->calculateRealValue($data['globalDiskon'] ?? [], $data['grandTotal']);
         $totalCashbackAll = $this->calculateRealValue($data['globalCashback'] ?? [], $data['grandTotal']);
 
-        $totalProfit = $pay - $totalHppAll;
-
         $payments = [];
         $timestamp = now();
 
-        if ($totalHppAll > 0) {
+        // 1. Revenue Entry (Gross Amount)
+        if ($pay > 0) {
             $payments[] = [
                 'business_id' => $this->businessId,
                 'user_id' => $user->id,
-                'no_pembayaran' => $nomorPenjualan.'-HPP',
+                'no_pembayaran' => $nomorPenjualan,
                 'tanggal_pembayaran' => $tgl,
                 'jenis_transaksi' => 'sale',
                 'transaction_id' => $sale->id,
-                'total_harga' => $totalHppAll,
+                'total_harga' => $pay,
                 'metode_pembayaran' => $metodeBayar,
                 'no_referensi' => $data['no_rekening'] ?? null,
-                'catatan' => 'HPP Penjualan POS',
+                'catatan' => 'Penjualan POS ' . $nomorPenjualan,
                 'rekening_debit' => $kodeRekening['sales']['rekening_debit'],
                 'rekening_kredit' => $kodeRekening['sales']['rekening_kredit'],
                 'created_at' => $timestamp,
@@ -416,20 +415,21 @@ class SalePos extends Component
             ];
         }
 
-        if ($totalProfit > 0) {
+        // 2. COGS Entry (HPP)
+        if ($totalHppAll > 0) {
             $payments[] = [
                 'business_id' => $this->businessId,
                 'user_id' => $user->id,
-                'no_pembayaran' => $nomorPenjualan.'-PROFIT',
+                'no_pembayaran' => $nomorPenjualan . '-HPP',
                 'tanggal_pembayaran' => $tgl,
                 'jenis_transaksi' => 'sale',
                 'transaction_id' => $sale->id,
-                'total_harga' => $totalProfit,
-                'metode_pembayaran' => $metodeBayar,
-                'no_referensi' => $data['no_rekening'] ?? null,
-                'catatan' => 'Laba Penjualan POS',
-                'rekening_debit' => $kodeRekening['laba']['rekening_debit'],
-                'rekening_kredit' => $kodeRekening['laba']['rekening_kredit'],
+                'total_harga' => $totalHppAll,
+                'metode_pembayaran' => 'system',
+                'no_referensi' => null,
+                'catatan' => 'HPP Penjualan POS ' . $nomorPenjualan,
+                'rekening_debit' => $kodeRekening['hpp']['rekening_debit'],
+                'rekening_kredit' => $kodeRekening['hpp']['rekening_kredit'],
                 'created_at' => $timestamp,
                 'updated_at' => $timestamp,
             ];

@@ -50,33 +50,34 @@ class PaymentUtil
         }
 
         if ($jenisTransaksi == 'sales') {
-            $rekeningKredit = '1.1.03.01';
-            $rekeningDebit = $rekeningKas;
-
+            // Revenue Entry (Gross)
+            $rekeningRevenue = '4.1.01.01'; // Penjualan
+            $rekeningAsset = $rekeningKas;  // Kas / Bank
             if ($jenisPembayaran == 'credit') {
-                $rekeningDebit = '1.1.04.01';
+                $rekeningAsset = '1.1.04.01'; // Piutang
             }
 
             $return['sales'] = [
-                'rekening_kredit' => $rekeningKredit,
-                'rekening_debit' => $rekeningDebit,
+                'rekening_kredit' => $rekeningRevenue,
+                'rekening_debit' => $rekeningAsset,
             ];
 
-            $return['laba'] = [
-                'rekening_kredit' => '4.1.01.01',
-                'rekening_debit' => $rekeningDebit,
+            // COGS Entry (HPP)
+            $return['hpp'] = [
+                'rekening_kredit' => '1.1.03.01', // Persediaan
+                'rekening_debit' => '5.1.01.01',  // Beban Pokok Pendapatan
             ];
 
-            $rekeningDebit = '5.1.01.02';
+            // Discount
             $return['sales-diskon'] = [
-                'rekening_kredit' => $rekeningKas,
-                'rekening_debit' => $rekeningDebit,
+                'rekening_kredit' => $rekeningAsset,
+                'rekening_debit' => '5.1.01.02', // Beban Diskon
             ];
 
-            $rekeningDebit = '4.1.01.02';
+            // Cashback
             $return['sales-cashback'] = [
-                'rekening_kredit' => $rekeningKas,
-                'rekening_debit' => $rekeningDebit,
+                'rekening_kredit' => $rekeningAsset,
+                'rekening_debit' => '4.1.01.02', // Pendapatan Cashback (or Expense if given to customer?)
             ];
         }
 
