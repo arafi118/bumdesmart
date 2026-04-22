@@ -565,10 +565,6 @@
                         qty = p.stok_tersedia;
                     }
 
-                    if (qty < 1) {
-                        p.jumlah_jual = 1;
-                        qty = 1;
-                    }
 
                     let diskon = this.parseFormatted(p.diskon.nominal);
                     let sub = (harga * qty) - diskon;
