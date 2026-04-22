@@ -705,12 +705,6 @@
 
                     let newQty = parseFloat(item.qty) + delta;
 
-                    // Samakan dengan perilaku Unit: ijinkan desimal jika unit.desimal == 1
-                    let allowDecimal = item.unit && (item.unit.desimal == 1 || item.unit.desimal === true);
-                    if (!allowDecimal && newQty % 1 !== 0) {
-                        newQty = Math.floor(newQty);
-                    }
-
                     if (newQty <= 0) {
                         this.removeFromCart(id);
                     } else {
@@ -723,12 +717,6 @@
                     if (!item) return;
 
                     let newQty = this.parseNumber(value);
-
-                    // Samakan dengan perilaku Unit: ijinkan desimal jika unit.desimal == 1
-                    let allowDecimal = item.unit && (item.unit.desimal == 1 || item.unit.desimal === true);
-                    if (!allowDecimal && newQty % 1 !== 0) {
-                        newQty = Math.floor(newQty);
-                    }
 
                     if (newQty <= 0) {
                         this.removeFromCart(id);
@@ -950,7 +938,7 @@
                     };
                 },
 
-                calculateItemDiscount(item) {
+                 calculateItemDiscount(item) {
                     if (!item || !item.diskon) return 0;
                     let price = parseFloat(item.price);
                     let qty = parseFloat(item.qty);
@@ -977,7 +965,7 @@
                 },
 
                 calculateGlobalDiscountValue() {
-                    let base = this.grossTotal - this.totalDiscount;
+                    let base = parseFloat(this.grossTotal) - parseFloat(this.totalDiscount);
 
                     if (this.globalDiskon.jenis === 'nominal') {
                         return parseFloat(this.globalDiskon.jumlah) || 0;
@@ -987,7 +975,7 @@
                 },
 
                 calculateGlobalCashbackValue() {
-                    let base = this.grossTotal - this.totalDiscount;
+                    let base = parseFloat(this.grossTotal) - parseFloat(this.totalDiscount);
 
                     if (this.globalCashback.jenis === 'nominal') {
                         return parseFloat(this.globalCashback.jumlah) || 0;
@@ -997,11 +985,11 @@
                 },
 
                 get grossTotal() {
-                    return this.cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+                    return this.cart.reduce((sum, item) => sum + (parseFloat(item.price) * parseFloat(item.qty)), 0);
                 },
 
                 get cartTotal() {
-                    return this.grossTotal - this.totalDiscount;
+                    return parseFloat(this.grossTotal) - parseFloat(this.totalDiscount);
                 },
 
                 get totalDiscount() {
@@ -1017,8 +1005,8 @@
                 },
 
                 get subtotal() {
-                    let val = this.grossTotal - this.totalDiscount - this
-                        .calculateGlobalDiscountValue();
+                    let val = parseFloat(this.grossTotal) - parseFloat(this.totalDiscount) - parseFloat(this
+                        .calculateGlobalDiscountValue());
                     return val > 0 ? val : 0;
                 },
 
