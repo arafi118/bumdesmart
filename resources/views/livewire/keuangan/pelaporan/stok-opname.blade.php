@@ -24,9 +24,9 @@
                 </tr>
             </thead>
             <tbody>
-                @foreach ($opname->details as $i => $detail)
+                @foreach ($opname->details as $detail)
                     <tr>
-                        <td class="text-center">{{ $i + 1 }}</td>
+                        <td class="text-center">{{ $loop->iteration }}</td>
                         <td>{{ $detail->product->nama_produk ?? '-' }}</td>
                         <td class="text-center">{{ $detail->stok_sistem }}</td>
                         <td class="text-center">{{ $detail->stok_fisik }}</td>

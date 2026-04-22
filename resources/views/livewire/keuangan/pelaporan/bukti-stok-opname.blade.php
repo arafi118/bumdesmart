@@ -43,9 +43,9 @@
             </tr>
         </thead>
         <tbody>
-            @foreach ($opname->details as $i => $detail)
+            @foreach ($opname->details as $detail)
                 <tr>
-                    <td class="text-center">{{ $i + 1 }}</td>
+                    <td class="text-center">{{ $loop->iteration }}</td>
                     <td>
                         <strong>{{ $detail->product->nama_produk ?? '-' }}</strong><br>
                         <small style="color: #666;">{{ $detail->product->kode_produk ?? '' }}</small>

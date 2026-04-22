@@ -363,8 +363,13 @@ class Cetak extends Controller
         $tahun = $data['tahun'] ?? date('Y');
         $bulan = $data['bulan'] ?? date('m');
 
-        $query = StockOpname::with(['details.product', 'user'])
-            ->whereYear('tanggal_opname', $tahun);
+        $query = StockOpname::whereYear('tanggal_opname', $tahun)
+            ->whereHas('details', function($q) {
+                $q->where('selisih', '!=', 0);
+            })
+            ->with(['details' => function($q) {
+                $q->where('selisih', '!=', 0)->with('product');
+            }, 'user']);
 
         if ($bulan != '-') {
             $query->whereMonth('tanggal_opname', $bulan);
@@ -392,7 +397,9 @@ class Cetak extends Controller
             abort(404, 'ID Stock Opname tidak ditemukan');
         }
 
-        $opname = StockOpname::with(['details.product', 'user', 'approvedBy'])
+        $opname = StockOpname::with(['details' => function($q) {
+                $q->where('selisih', '!=', 0)->with('product');
+            }, 'user', 'approvedBy'])
             ->where('business_id', auth()->user()->business_id)
             ->findOrFail($id);
 
