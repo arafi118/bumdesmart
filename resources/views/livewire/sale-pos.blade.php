@@ -722,6 +722,19 @@
 
                     let newQty = parseFloat(item.qty) + delta;
 
+                    // Cek ijin desimal dari satuan
+                    let allowDecimal = false;
+                    if (item.unit) {
+                        let d = item.unit.desimal;
+                        if (d == 1 || d == '1' || d === true || (typeof d === 'string' && d.toLowerCase() === 'ya')) {
+                            allowDecimal = true;
+                        }
+                    }
+
+                    if (!allowDecimal && newQty % 1 !== 0) {
+                        newQty = Math.floor(newQty);
+                    }
+
                     if (newQty <= 0) {
                         this.removeFromCart(id);
                     } else {
@@ -734,6 +747,19 @@
                     if (!item) return;
 
                     let newQty = this.parseNumber(value);
+
+                    // Cek ijin desimal dari satuan
+                    let allowDecimal = false;
+                    if (item.unit) {
+                        let d = item.unit.desimal;
+                        if (d == 1 || d == '1' || d === true || (typeof d === 'string' && d.toLowerCase() === 'ya')) {
+                            allowDecimal = true;
+                        }
+                    }
+
+                    if (!allowDecimal && newQty % 1 !== 0) {
+                        newQty = Math.floor(newQty);
+                    }
 
                     if (newQty <= 0) {
                         this.removeFromCart(id);
@@ -1050,13 +1076,21 @@
                     if (!val) return 0;
                     
                     let str = String(val).trim();
-                    // If it contains a comma and a dot, replace dot then comma
-                    if (str.includes(',') && str.includes('.')) {
+                    
+                    if (str.includes(',')) {
                         str = str.replace(/\./g, '').replace(/,/g, '.');
-                    } else if (str.includes(',')) {
-                        // If only comma, it's the decimal separator
-                        str = str.replace(/,/g, '.');
+                    } else {
+                        let dots = (str.match(/\./g) || []).length;
+                        if (dots > 1) {
+                            str = str.replace(/\./g, '');
+                        } else if (dots === 1) {
+                            let parts = str.split('.');
+                            if (parts[1].length === 3) {
+                                str = str.replace(/\./g, '');
+                            }
+                        }
                     }
+                    
                     return parseFloat(str) || 0;
                 },
 

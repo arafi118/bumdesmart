@@ -30,7 +30,13 @@
                             <label class="form-label">Jumlah (Qty)</label>
                             <input type="text" class="form-control" 
                                 x-model="selectedItem.qty"
-                                @blur="selectedItem.qty = parseNumber(selectedItem.qty)"
+                                @blur="
+                                    let val = parseNumber(selectedItem.qty);
+                                    let d = selectedItem.unit ? selectedItem.unit.desimal : null;
+                                    let allow = d == 1 || d == '1' || d === true || (typeof d === 'string' && d.toLowerCase() === 'ya');
+                                    if (!allow && val % 1 !== 0) val = Math.floor(val);
+                                    selectedItem.qty = val;
+                                "
                                 placeholder="Masukkan Jumlah">
                         </div>
 
