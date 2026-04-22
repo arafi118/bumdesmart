@@ -83,7 +83,7 @@
                                 name: '{{ addslashes($product->nama_produk) }}',
                                 price: {{ $product->harga_jual }},
                                 stock: {{ $product->stok_aktual }},
-                                allow_decimal: {{ $product->allow_decimal ? 'true' : 'false' }},
+                                unit: {{ $product->unit }},
                                 image: '{{ $product->gambar && $product->gambar !== 'products/no-image.png' ? asset('storage/' . $product->gambar) : 'https://placehold.co/400x400?text=No+Image' }}'
                             })">
                             <div
@@ -181,7 +181,7 @@
 
                                 <!-- Total Nominal -->
                                 <div class="col-2 text-end fw-bold text-dark fs-4"
-                                    x-text="formatRupiah((item.price * item.qty) - calculateItemDiscount(item))">
+                                    x-text="formatRupiah((parseFloat(item.price) * parseFloat(item.qty)) - calculateItemDiscount(item))">
                                 </div>
 
                                 <!-- Delete Button -->
@@ -705,8 +705,9 @@
 
                     let newQty = parseFloat(item.qty) + delta;
 
-                    // Samakan dengan Tambah Pembelian
-                    if (!item.allow_decimal && newQty % 1 !== 0) {
+                    // Samakan dengan perilaku Unit: ijinkan desimal jika unit.desimal == 1
+                    let allowDecimal = item.unit && (item.unit.desimal == 1 || item.unit.desimal === true);
+                    if (!allowDecimal && newQty % 1 !== 0) {
                         newQty = Math.floor(newQty);
                     }
 
@@ -723,8 +724,9 @@
 
                     let newQty = this.parseNumber(value);
 
-                    // Samakan dengan Tambah Pembelian
-                    if (!item.allow_decimal && newQty % 1 !== 0) {
+                    // Samakan dengan perilaku Unit: ijinkan desimal jika unit.desimal == 1
+                    let allowDecimal = item.unit && (item.unit.desimal == 1 || item.unit.desimal === true);
+                    if (!allowDecimal && newQty % 1 !== 0) {
                         newQty = Math.floor(newQty);
                     }
 
@@ -734,6 +736,7 @@
                         item.qty = newQty;
                     }
                 },
+
 
                 removeFromCart(id) {
                     Swal.fire({
@@ -1155,7 +1158,7 @@
                         name: raw.nama_produk,
                         price: raw.harga_jual,
                         stock: raw.stok_aktual,
-                        allow_decimal: raw.allow_decimal,
+                        unit: raw.unit,
                         image: (raw.gambar && raw.gambar !== 'products/no-image.png') ? ('/storage/' +
                             raw.gambar) : 'https://placehold.co/400x400?text=No+Image',
                     };
@@ -1246,7 +1249,7 @@
                                 name: raw.nama_produk,
                                 price: parseFloat(raw.harga_jual),
                                 stock: parseFloat(raw.stok_aktual),
-                                allow_decimal: raw.allow_decimal,
+                                unit: raw.unit,
                                 image: (raw.gambar && raw.gambar !== 'products/no-image.png') ? (
                                         '/storage/' + raw.gambar) :
                                     'https://placehold.co/400x400?text=No+Image',
