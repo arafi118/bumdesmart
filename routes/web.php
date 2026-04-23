@@ -50,70 +50,16 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', [AuthController::class, 'login']);
 Route::post('/auth', [AuthController::class, 'auth']);
 
+use App\Livewire\Master\MasterDashboard;
+
 // === MASTER ROUTES ===
 Route::group([
-    'middleware' => ['auth', 'is_master'],
+    'middleware' => ['auth:central', 'is_master'],
     'prefix' => 'master',
 ], function () {
-    Route::get('/dashboard', Dashboard::class);
+    Route::get('/dashboard', MasterDashboard::class);
     Route::get('/owner', MasterOwner::class);
     Route::get('/business', MasterBusiness::class);
-});
-
-// === BUSINESS OPERATIONAL ROUTES ===
-Route::group([
-    'middleware' => ['auth', 'is_not_master'],
-], function () {
-    Route::get('/dashboard', Dashboard::class);
-    Route::get('/profile', Profile::class);
-
-    Route::get('/master-data/role', Role::class);
-    Route::get('/master-data/user', User::class);
-    Route::get('/master-data/member', Member::class);
-    Route::get('/master-data/pelanggan', Pelanggan::class);
-    Route::get('/master-data/supplier', Supplier::class);
-
-    Route::get('/master-produk/satuan', Satuan::class);
-    Route::get('/master-produk/kategori', Kategori::class);
-    Route::get('/master-produk/merek', Merek::class);
-    Route::get('/master-produk/rak', Rak::class);
-    Route::get('/master-produk/produk', Produk::class);
-
-    Route::get('/pembelian/tambah', TambahPembelian::class);
-    Route::get('/pembelian/daftar', DaftarPembelian::class);
-    Route::get('/pembelian/edit/{id}', TambahPembelian::class);
-
-    Route::get('/pembelian/daftar-retur', DaftarReturPembelian::class);
-    Route::get('/pembelian/retur/{id}', TambahReturPembelian::class);
-
-    Route::get('/stock', function () {
-        return redirect('/stock/opname');
-    });
-
-    Route::get('/stock/opname', StockOpname::class);
-    Route::get('/stock/opname/tambah', TambahStockOpname::class);
-    Route::get('/stock/opname/daftar', StockOpname::class);
-    Route::get('/stock/opname/edit/{id}', TambahStockOpname::class);
-
-    Route::get('/stock/adjustment', StockAdjustment::class);
-    Route::get('/stock/adjustment/tambah', TambahStockAdjustment::class);
-    Route::get('/stock/adjustment/daftar', StockAdjustment::class);
-
-    Route::get('/penjualan/tambah', TambahPenjualan::class);
-    Route::get('/penjualan/daftar', DaftarPenjualan::class);
-    Route::get('/penjualan/edit/{id}', TambahPenjualan::class);
-
-    Route::get('/penjualan/retur/{id}', TambahReturPenjualan::class);
-    Route::get('/penjualan/daftar-retur', DaftarReturPenjualan::class);
-    Route::get('/penjualan/pos', SalePos::class);
-    Route::get('/penjualan/cetak-struk/{id}', CetakStruk::class);
-    Route::get('/penjualan/cetak-struk-kasir/{id}', CetakStrukKasir::class);
-
-    Route::get('/keuangan/pelaporan', Pelaporan::class);
-    Route::get('/keuangan/pelaporan/cetak', Cetak::class);
-
-    Route::get('/keuangan/jurnal-umum', JurnalUmum::class);
-    Route::get('/master-pengaturan', Pengaturan::class);
 });
 
 Route::group(['middleware' => 'auth'], function () {

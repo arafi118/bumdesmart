@@ -65,5 +65,6 @@ class Kernel extends HttpKernel
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
         'is_master'     => \App\Http\Middleware\IsMaster::class,
         'is_not_master' => \App\Http\Middleware\IsNotMaster::class,
+        'debug_tenancy' => \App\Http\Middleware\DebugTenancyMiddleware::class,
     ];
 }

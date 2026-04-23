@@ -8,6 +8,16 @@ use Illuminate\Database\Eloquent\Model;
 class Account extends Model
 {
     use HasFactory;
+    
+    protected $fillable = [
+        'business_id',
+        'kode',
+        'nama',
+        'parent_id',
+        'jenis_mutasi',
+        'no_rek_bank',
+        'atas_nama_rek',
+    ];
 
     public function paymentsDebit()
     {

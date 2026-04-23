@@ -16,6 +16,15 @@ class IsNotMaster
      */
     public function handle(Request $request, Closure $next): Response
     {
+        // If we are in tenant context, we don't care about the central guard check
+        if (tenant()) {
+            return $next($request);
+        }
+
+        if (auth()->guard('central')->check()) {
+            return redirect('/master/dashboard');
+        }
+
         if (auth()->check() && auth()->user()->is_master) {
             return redirect('/master/dashboard');
         }

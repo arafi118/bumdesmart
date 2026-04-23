@@ -11,11 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('owners', function (Blueprint $table) {
-            $table->string('id')->primary();
-            $table->string('nama_usaha');
-            $table->date('tanggal_penggunaan');
-            $table->string('logo');
+        Schema::create('central_users', function (Blueprint $table) {
+            $table->id();
+            $table->string('name');
+            $table->string('username')->unique();
+            $table->string('password');
+            $table->boolean('is_master')->default(true);
             $table->timestamps();
         });
     }
@@ -25,6 +26,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('owners');
+        Schema::dropIfExists('central_users');
     }
 };

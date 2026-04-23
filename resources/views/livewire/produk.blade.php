@@ -104,6 +104,14 @@
                                             @enderror
                                         </div>
                                         <div class="col-md-6 mb-3">
+                                            <label class="form-label">Barcode</label>
+                                            <input type="text" class="form-control" wire:model="barcode" name="barcode"
+                                                placeholder="Barcode" />
+                                            @error('barcode')
+                                                <small class="text-danger">{{ $message }}</small>
+                                            @enderror
+                                        </div>
+                                        <div class="col-md-6 mb-3">
                                             <label class="form-label">Nama Produk</label>
                                             <input type="text" class="form-control" wire:model="namaProduk"
                                                 name="namaProduk" placeholder="Nama Produk" />

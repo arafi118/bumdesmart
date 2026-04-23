@@ -31,19 +31,23 @@
                 @forelse ($businesses as $business)
                     <tr>
                         <td>{{ $loop->iteration + ($businesses->currentPage() - 1) * $businesses->perPage() }}</td>
-                        <td>{{ optional($business->owner)->nama_usaha }}</td>
+                        @if (!$isContextual)
+                            <td>{{ optional($business->owner)->nama_usaha }}</td>
+                        @endif
                         <td>{{ $business->nama_usaha }}</td>
                         <td>{{ $business->email }}</td>
                         <td>{{ $business->no_telp }}</td>
                         <td>{{ $business->alamat }}</td>
                         <td>
-                            <button class="btn btn-sm btn-primary" wire:click="edit({{ $business->id }})">
-                                <i class="fas fa-edit"></i> Edit
-                            </button>
-                            <button class="btn btn-sm btn-danger"
-                                wire:click="$dispatch('confirm-delete', {id: {{ $business->id }}})">
-                                <i class="fas fa-trash"></i> Hapus
-                            </button>
+                            <div class="btn-group">
+                                <button class="btn btn-sm btn-info" wire:click="openImport({{ $business->id }})">
+                                    <i class="fas fa-file-import"></i> Import
+                                </button>
+                                <button class="btn btn-sm btn-danger"
+                                    wire:click="$dispatch('confirm-delete', {id: {{ $business->id }}})">
+                                    <i class="fas fa-trash"></i> Hapus
+                                </button>
+                            </div>
                         </td>
                     </tr>
                 @empty
@@ -72,12 +76,18 @@
 
                             <div class="col-md-12 mb-3">
                                 <label class="form-label">Owner / Principal <span class="text-danger">*</span></label>
-                                <select class="form-select" wire:model="ownerId">
-                                    <option value="">-- Pilih Owner --</option>
-                                    @foreach ($ownersList as $owId => $owName)
-                                        <option value="{{ $owId }}">{{ $owName }}</option>
-                                    @endforeach
-                                </select>
+                                @if ($isContextual)
+                                    <div class="form-control bg-light">
+                                        <strong>{{ $ownersList[$ownerId] ?? 'Owner Tidak Ditemukan' }}</strong>
+                                    </div>
+                                @else
+                                    <select class="form-select" wire:model="ownerId">
+                                        <option value="">-- Pilih Owner --</option>
+                                        @foreach ($ownersList as $owId => $owName)
+                                            <option value="{{ $owId }}">{{ $owName }}</option>
+                                        @endforeach
+                                    </select>
+                                @endif
                                 @error('ownerId')
                                     <small class="text-danger">{{ $message }}</small>
                                 @enderror
@@ -153,4 +163,60 @@
             </div>
         </div>
     </div>
+
+    {{-- Modal Import --}}
+    <div wire:ignore.self class="modal fade" id="importModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Import Data Toko (Produk & Stok)</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Pilih File (Excel / CSV)</label>
+                        <input type="file" class="form-control" wire:model="importFile" accept=".csv,.xlsx,.xls">
+                        <div wire:loading wire:target="importFile" class="text-info small">Memproses file...</div>
+                        @error('importFile')
+                            <small class="text-danger">{{ $message }}</small>
+                        @enderror
+                    </div>
+
+                    <div class="alert alert-info small">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Pastikan file Anda mengikuti format yang benar. 
+                        <a href="javascript:void(0)" wire:click="downloadTemplate" class="fw-bold text-decoration-underline">Unduh Template Disini</a>
+                    </div>
+
+                    @if ($importStep === 'processing')
+                        <div class="text-center py-3">
+                            <div class="spinner-border text-primary mb-2"></div>
+                            <p>Sedang mengimport data... Mohon tunggu.</p>
+                        </div>
+                    @endif
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" class="btn btn-primary" wire:click="processImport"
+                        wire:loading.attr="disabled" {{ !$importFile ? 'disabled' : '' }}>
+                        Mulai Import
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @script
+        <script>
+            window.addEventListener('show-modal', event => {
+                var myModal = new bootstrap.Modal(document.getElementById(event.detail.modalId));
+                myModal.show();
+            });
+            window.addEventListener('hide-modal', event => {
+                var myModalEl = document.getElementById(event.detail.modalId);
+                var modal = bootstrap.Modal.getInstance(myModalEl);
+                if (modal) modal.hide();
+            });
+        </script>
+    @endscript
 </div>

@@ -4,7 +4,7 @@
             <div class="row justify-content-between mb-3">
                 <div class="col-md-3">
                     <input type="search" wire:model.live.debounce.300ms="search" class="form-control"
-                        placeholder="🔍 Cari owner...">
+                        placeholder="🔍 Cari usaha...">
                 </div>
                 <div class="col-md-3">
                     <button class="btn btn-primary w-100" wire:click="create">
@@ -19,17 +19,27 @@
                         <td>{{ $loop->iteration + ($owners->currentPage() - 1) * $owners->perPage() }}</td>
                         <td>{{ $owner->nama_usaha }}</td>
                         <td>{{ $owner->tanggal_penggunaan }}</td>
-                        <td>{{ $owner->domain ?? '-' }}</td>
-                        <td>{{ $owner->domain_alternatif ?? '-' }}</td>
+                        <td>
+                            @foreach ($owner->domains as $d)
+                                <a href="//{{ $d->domain }}" target="_blank" class="badge bg-green-lt mb-1 text-decoration-none">
+                                    <i class="fas fa-external-link-alt me-1" style="font-size: 10px;"></i>
+                                    {{ $d->domain }}
+                                </a>
+                            @endforeach
+                            @if ($owner->domains->isEmpty()) - @endif
+                        </td>
                         <td>
                             <span class="badge bg-blue-lt">{{ $owner->businesses_count }} business</span>
                         </td>
                         <td>
-                            <button class="btn btn-sm btn-primary" wire:click="edit({{ $owner->id }})">
+                            <a href="/master/business?owner_id={{ $owner->id }}" class="btn btn-sm btn-outline-info">
+                                <i class="fas fa-store"></i> Kelola Bisnis
+                            </a>
+                            <button class="btn btn-sm btn-primary" wire:click="edit('{{ $owner->id }}')">
                                 <i class="fas fa-edit"></i> Edit
                             </button>
                             <button class="btn btn-sm btn-danger"
-                                wire:click="$dispatch('confirm-delete', {id: {{ $owner->id }}})">
+                                wire:click="$dispatch('confirm-delete', {id: '{{ $owner->id }}'})">
                                 <i class="fas fa-trash"></i> Hapus
                             </button>
                         </td>
@@ -59,10 +69,10 @@
                         <div class="row">
 
                             <div class="col-md-6 mb-3">
-                                <label class="form-label">Nama Owner / Principal <span
+                                <label class="form-label">Nama Usaha <span
                                         class="text-danger">*</span></label>
                                 <input type="text" class="form-control" wire:model="namaUsaha"
-                                    placeholder="Nama owner atau penanggung jawab" />
+                                    placeholder="Masukkan nama usaha atau BUMDES" />
                                 @error('namaUsaha')
                                     <small class="text-danger">{{ $message }}</small>
                                 @enderror
@@ -71,14 +81,16 @@
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Tanggal Mulai Penggunaan <span
                                         class="text-danger">*</span></label>
-                                <input type="date" class="form-control" wire:model="tanggalPenggunaan" />
+                                <input type="text" id="tanggalPenggunaan" class="form-control litepicker"
+                                    wire:model="tanggalPenggunaan" autocomplete="off" />
                                 @error('tanggalPenggunaan')
                                     <small class="text-danger">{{ $message }}</small>
                                 @enderror
                             </div>
 
                             <div class="col-md-6 mb-3">
-                                <label class="form-label">Domain Utama</label>
+                                <label class="form-label">Domain Utama <span
+                                        class="text-danger">*</span></label>
                                 <input type="text" class="form-control" wire:model="domain"
                                     placeholder="contoh: toko-bumdes.com" />
                                 @error('domain')

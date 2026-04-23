@@ -11,12 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('owners', function (Blueprint $table) {
-            $table->string('id')->primary();
-            $table->string('nama_usaha');
-            $table->date('tanggal_penggunaan');
-            $table->string('logo');
-            $table->timestamps();
+        Schema::table('owners', function (Blueprint $table) {
+            $table->json('data')->nullable()->after('logo');
         });
     }
 
@@ -25,6 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('owners');
+        Schema::table('owners', function (Blueprint $table) {
+            $table->dropColumn('data');
+        });
     }
 };

@@ -5,6 +5,7 @@ namespace App\Livewire\Master;
 use App\Models\Owner;
 use App\Traits\WithTable;
 use App\Utils\TableUtil;
+use Illuminate\Support\Str;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\On;
 use Livewire\Attributes\Title;
@@ -27,7 +28,7 @@ class MasterOwner extends Component
         return [
             'namaUsaha'         => 'required|string|max:255',
             'tanggalPenggunaan' => 'required|date',
-            'domain'            => 'nullable|string|max:255',
+            'domain'            => 'required|string|max:255|unique:domains,domain,' . $this->id,
             'domainAlternatif'  => 'nullable|string|max:255',
         ];
     }
@@ -52,12 +53,15 @@ class MasterOwner extends Component
         $this->resetValidation();
         $this->titleModal = 'Ubah Owner';
 
-        $owner = Owner::findOrFail($id);
+        $owner = Owner::with('domains')->findOrFail($id);
         $this->id                 = $owner->id;
         $this->namaUsaha          = $owner->nama_usaha;
         $this->tanggalPenggunaan  = $owner->tanggal_penggunaan;
-        $this->domain             = $owner->domain;
-        $this->domainAlternatif   = $owner->domain_alternatif;
+        
+        // Load domains from relationship
+        $domains = $owner->domains->pluck('domain')->toArray();
+        $this->domain             = $domains[0] ?? null;
+        $this->domainAlternatif   = $domains[1] ?? null;
 
         $this->dispatch('show-modal', modalId: 'masterOwnerModal');
     }
@@ -69,17 +73,49 @@ class MasterOwner extends Component
         $data = [
             'nama_usaha'        => $this->namaUsaha,
             'tanggal_penggunaan'=> $this->tanggalPenggunaan,
-            'domain'            => $this->domain ?: null,
-            'domain_alternatif' => $this->domainAlternatif ?: null,
             'logo'              => 'logo.png',
         ];
 
+        if (!$this->id) {
+            $data['id'] = Str::slug($this->namaUsaha, '_');
+        }
+
         if ($this->id) {
-            Owner::findOrFail($this->id)->update($data);
+            $owner = Owner::findOrFail($this->id);
+            $owner->update($data);
+            
+            // Sync domains ONLY in the domains table
+            $owner->domains()->delete();
+            if ($this->domain) {
+                $owner->domains()->create(['domain' => $this->domain]);
+            }
+            if ($this->domainAlternatif) {
+                $owner->domains()->create(['domain' => $this->domainAlternatif]);
+            }
+
             $message = 'Owner berhasil diubah';
         } else {
-            Owner::create($data);
-            $message = 'Owner berhasil ditambahkan';
+            // 1. Create Owner (Tenant)
+            $owner = Owner::create($data);
+            
+            // 2. Create domains
+            if ($this->domain) {
+                $owner->domains()->create(['domain' => $this->domain]);
+            }
+            if ($this->domainAlternatif) {
+                $owner->domains()->create(['domain' => $this->domainAlternatif]);
+            }
+
+            // 3. Create Central Business Record (Agar Dashboard Pusat tidak 0)
+            \App\Models\Business::create([
+                'owner_id'   => $owner->id,
+                'nama_usaha' => $this->namaUsaha,
+                'alamat'     => '-',
+                'no_telp'    => '-',
+                'email'      => Str::slug($this->namaUsaha) . '@bumdes.com',
+            ]);
+
+            $message = "Owner & Bisnis Berhasil Dibuat.";
         }
 
         $this->dispatch('hide-modal', modalId: 'masterOwnerModal');
@@ -96,6 +132,8 @@ class MasterOwner extends Component
                 $this->dispatch('alert', type: 'error', message: 'Owner tidak bisa dihapus karena masih memiliki business terdaftar.');
                 return;
             }
+            // domains will be deleted automatically if cascade is set, or manually here
+            $owner->domains()->delete();
             $owner->delete();
             $this->dispatch('alert', type: 'success', message: 'Owner berhasil dihapus');
         }
@@ -105,14 +143,13 @@ class MasterOwner extends Component
     #[Title('Master Owner')]
     public function render()
     {
-        $query = Owner::withCount('businesses');
+        $query = Owner::withCount('businesses')->with('domains');
 
         $headers = [
             TableUtil::setTableHeader('id', '#', false, false),
-            TableUtil::setTableHeader('nama_usaha', 'Nama Owner', true, true),
+            TableUtil::setTableHeader('nama_usaha', 'Nama Usaha', true, true),
             TableUtil::setTableHeader('tanggal_penggunaan', 'Tgl. Penggunaan', true, true),
-            TableUtil::setTableHeader('domain', 'Domain', true, true),
-            TableUtil::setTableHeader('domain_alternatif', 'Domain Alternatif', true, true),
+            TableUtil::setTableHeader('domains_list', 'Domains (Primary & Alt)', false, false),
             TableUtil::setTableHeader('businesses_count', 'Jumlah Business', false, false),
             TableUtil::setTableHeader('aksi', 'Aksi', false, false),
         ];

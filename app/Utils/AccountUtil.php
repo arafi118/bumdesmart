@@ -990,8 +990,18 @@ class AccountUtil
             }
         }
 
-        if (!empty($accountData)) {
-            Account::insert($accountData);
+        foreach ($accountData as $data) {
+            \App\Models\Account::updateOrCreate(
+                ['business_id' => $data['business_id'], 'kode' => $data['kode']],
+                [
+                    'nama' => $data['nama'],
+                    'parent_id' => $data['parent_id'],
+                    'jenis_mutasi' => $data['jenis_mutasi'],
+                    'no_rek_bank' => $data['no_rek_bank'],
+                    'atas_nama_rek' => $data['atas_nama_rek'],
+                    'updated_at' => now(),
+                ]
+            );
         }
     }
 }

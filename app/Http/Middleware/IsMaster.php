@@ -15,10 +15,14 @@ class IsMaster
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if (!auth()->check() || !auth()->user()->is_master) {
-            abort(403, 'Unauthorized action.');
+        if (auth()->guard('central')->check()) {
+            return $next($request);
         }
 
-        return $next($request);
+        if (auth()->check() && auth()->user()->is_master) {
+            return $next($request);
+        }
+
+        abort(403, 'Unauthorized action.');
     }
 }

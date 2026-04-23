@@ -15,27 +15,11 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         \Illuminate\Support\Facades\DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+        Owner::all()->each->delete(); // This also deletes their databases
         Owner::truncate();
-        Business::truncate();
         \Illuminate\Support\Facades\DB::statement('SET FOREIGN_KEY_CHECKS=1;');
 
-        Owner::create([
-            'nama_usaha' => 'Bumdesmart',
-            'tanggal_penggunaan' => now(),
-            'logo' => 'logo.png',
-        ]);
-
-        Business::create([
-            'owner_id' => 1,
-            'nama_usaha' => 'Bumdesmart',
-            'alamat' => 'Jl. Bumdesmart',
-            'no_telp' => '08123456789',
-            'email' => 'bumdesmart@gmail.com',
-        ]);
-
-        $this->call([
-            AccountSeeder::class,
-            UserSeeder::class,
-        ]);
+        // Create initial Super Admin for Master Dashboard
+        $this->call(CentralUserSeeder::class);
     }
 }

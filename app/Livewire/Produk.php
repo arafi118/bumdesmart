@@ -18,7 +18,7 @@ class Produk extends Component
 
     public $titleModal;
 
-    public $id;
+    public $productId;
 
     public $businessId;
 
@@ -31,6 +31,8 @@ class Produk extends Component
     public $rakPenyimpanan;
 
     public $sku;
+
+    public $barcode;
 
     public $namaProduk;
 
@@ -56,13 +58,19 @@ class Produk extends Component
 
     public $tanggalAkhir = [];
 
+    public function mount()
+    {
+        $this->businessId = auth()->user()->business_id;
+    }
+
     protected function rules()
     {
         return [
             'sku' => [
                 'required',
-                Rule::unique('products', 'sku')->ignore($this->id),
+                Rule::unique('products', 'sku')->ignore($this->productId),
             ],
+            'barcode' => 'nullable|string',
             'namaProduk' => 'required',
             'kategori' => 'required',
             'merek' => 'required',
@@ -81,7 +89,7 @@ class Produk extends Component
 
     public function resetForm()
     {
-        $this->reset('id', 'sku', 'namaProduk', 'kategori', 'merek', 'satuan', 'rakPenyimpanan', 'hargaBeliDefault', 'hargaJualDefault', 'stokMinimal', 'gambar', 'aktif', 'displayGambar');
+        $this->reset('productId', 'sku', 'barcode', 'namaProduk', 'kategori', 'merek', 'satuan', 'rakPenyimpanan', 'hargaBeliDefault', 'hargaJualDefault', 'stokMinimal', 'gambar', 'aktif', 'displayGambar');
     }
 
     public function create()
@@ -102,6 +110,7 @@ class Produk extends Component
         $product = \App\Models\Product::find($id);
 
         $this->sku = $product->sku;
+        $this->barcode = $product->barcode;
         $this->namaProduk = $product->nama_produk;
         $this->kategori = $product->category_id;
         $this->merek = $product->brand_id;
@@ -111,7 +120,7 @@ class Produk extends Component
         $this->hargaJualDefault = number_format($product->harga_jual);
         $this->stokMinimal = $product->stok_minimal;
         $this->aktif = $product->is_active;
-        $this->id = $product->id;
+        $this->productId = $product->id;
 
         $this->displayGambar = $product->gambar;
         $this->activeTab = 'formProduk';
@@ -136,6 +145,7 @@ class Produk extends Component
             'unit_id' => $this->satuan,
             'shelf_id' => $this->rakPenyimpanan,
             'sku' => $this->sku,
+            'barcode' => $this->barcode,
             'nama_produk' => $this->namaProduk,
             'harga_beli' => floatval(str_replace(',', '', $this->hargaBeliDefault)),
             'harga_jual' => floatval(str_replace(',', '', $this->hargaJualDefault)),
@@ -147,8 +157,8 @@ class Produk extends Component
             'aktif' => $this->aktif,
         ];
 
-        if ($this->id) {
-            $produkLama = \App\Models\Product::find($this->id);
+        if ($this->productId) {
+            $produkLama = \App\Models\Product::find($this->productId);
 
             $data['gambar'] = $produkLama->gambar;
             if ($this->gambar) {
@@ -161,7 +171,7 @@ class Produk extends Component
             $data['stok_aktual'] = $produkLama->stok_aktual;
             $data['biaya_rata_rata'] = $produkLama->biaya_rata_rata;
 
-            \App\Models\Product::find($this->id)->update($data);
+            \App\Models\Product::find($this->productId)->update($data);
             $message = 'Produk berhasil diubah';
         } else {
             if ($this->gambar) {
@@ -203,7 +213,7 @@ class Produk extends Component
         ])->first();
 
         $this->titleModal = $this->detailProduk->nama_produk;
-        $this->id = $id;
+        $this->productId = $id;
 
         $this->dispatch('show-modal', modalId: 'detailProdukModal');
     }
@@ -226,7 +236,7 @@ class Produk extends Component
         }
 
         $this->titleModal = $this->detailProduk->nama_produk;
-        $this->id = $id;
+        $this->productId = $id;
 
         $this->dispatch('show-modal', modalId: 'hargaMemberModal');
     }
@@ -242,7 +252,7 @@ class Produk extends Component
                 $tanggalAkhir = $this->tanggalAkhir[$customerGroup->id] ?? null;
 
                 $productPrices[] = [
-                    'product_id' => $this->id,
+                    'product_id' => $this->productId,
                     'customer_group_id' => $customerGroup->id,
                     'harga_spesial' => floatval(str_replace(',', '', $hargaJualMember)),
                     'tanggal_mulai' => $tanggalMulai,
@@ -251,7 +261,7 @@ class Produk extends Component
             }
         }
 
-        \App\Models\ProductPrice::where('product_id', $this->id)->delete();
+        \App\Models\ProductPrice::where('product_id', $this->productId)->delete();
         \App\Models\ProductPrice::insert($productPrices);
 
         $this->dispatch('alert', type: 'success', message: 'Harga member berhasil disimpan');
@@ -292,7 +302,6 @@ class Produk extends Component
     public function render()
     {
         $this->title = 'Produk';
-        $this->businessId = auth()->user()->business_id;
 
         $query = \App\Models\Product::where('business_id', $this->businessId)->with([
             'category',

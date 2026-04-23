@@ -10,12 +10,9 @@
 
         <!-- BEGIN NAVBAR LOGO -->
         <div class="navbar-brand navbar-brand-autodark d-none-navbar-horizontal pe-0 pe-md-3">
-            <a href="/dashboard" aria-label="Tabler">
+            <a href="{{ tenancy()->initialized ? '/dashboard' : '/master/dashboard' }}" aria-label="Bumdesmart">
                 @php
-                    $owner =
-                        auth()->check() && auth()->user()->business
-                            ? auth()->user()->business->owner
-                            : \App\Models\Owner::first();
+                    $owner = tenancy()->initialized ? tenant() : null;
                     $logoUrl =
                         $owner && $owner->logo
                             ? asset('storage/' . $owner->logo)
@@ -27,25 +24,26 @@
         <!-- END NAVBAR LOGO -->
 
         <div class="navbar-nav flex-row order-md-last">
-            <div class="nav-item">
-                <a href="/penjualan/pos" class="nav-link px-0" title="Point of Sale" data-bs-toggle="tooltip"
-                    data-bs-placement="bottom">
-                    POS
-                </a>
-            </div>
-            <!-- BEGIN USER MENU -->
+            @if (tenancy()->initialized)
+                <div class="nav-item">
+                    <a href="/penjualan/pos" class="nav-link px-0" title="Point of Sale" data-bs-toggle="tooltip"
+                        data-bs-placement="bottom">
+                        POS
+                    </a>
+                </div>
+            @endif
             <div class="nav-item dropdown">
                 <a href="#" class="nav-link d-flex lh-1 p-0 px-2" data-bs-toggle="dropdown"
                     aria-label="Open user menu">
                     <span class="avatar avatar-sm"
-                        @if (auth()->user()->foto) style="background-image: url({{ asset('storage/' . auth()->user()->foto) }})" @endif>
-                        @if (!auth()->user()->foto)
-                            {{ strtoupper(substr(auth()->user()->nama_lengkap ?? 'U', 0, 2)) }}
+                        @if (auth()->user()->foto ?? false) style="background-image: url({{ asset('storage/' . auth()->user()->foto) }})" @endif>
+                        @if (!(auth()->user()->foto ?? false))
+                            {{ strtoupper(substr(auth()->user()->nama_lengkap ?? auth()->user()->name ?? 'U', 0, 2)) }}
                         @endif
                     </span>
                     <div class="d-none d-xl-block ps-2">
-                        <div>{{ auth()->user()->nama_lengkap }}</div>
-                        <div class="mt-1 small text-secondary">{{ auth()->user()->role->nama_role }}</div>
+                        <div>{{ auth()->user()->nama_lengkap ?? auth()->user()->name }}</div>
+                        <div class="mt-1 small text-secondary">{{ auth()->user()->role->nama_role ?? 'System Master' }}</div>
                     </div>
                 </a>
                 <div class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">

@@ -1,3 +1,8 @@
+@php
+    $owner = tenancy()->initialized ? tenant() : null;
+    $logoUrl = $owner && $owner->logo ? asset('storage/' . $owner->logo) : asset('assets/img/logo/logo-transparent.png');
+    $appName = $owner ? $owner->nama_usaha : 'Master Dashboard';
+@endphp
 <!doctype html>
 
 <html lang="en" data-bs-theme-primary="teal">
@@ -6,12 +11,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta http-equiv="X-UA-Compatible" content="ie=edge" />
-    <title>Login &mdash; {{ $owner->nama_usaha }} | {{ env('APP_TITLE') }}</title>
-    @php
-        $owner = \App\Models\Owner::first();
-        $logoUrl =
-            $owner && $owner->logo ? asset('storage/' . $owner->logo) : asset('assets/img/logo/logo-transparent.png');
-    @endphp
+    <title>Login &mdash; {{ $appName }} | {{ env('APP_TITLE', 'Bumdesmart') }}</title>
     <link rel="icon" href="{{ $logoUrl }}">
 
     <!-- BEGIN GLOBAL MANDATORY STYLES -->
@@ -39,13 +39,25 @@
         <div class="container container-tight py-4">
             <div class="text-center mb-4">
                 <a href="." aria-label="Tabler" class="navbar-brand navbar-brand-autodark">
-                    <img src="{{ $logoUrl }}" alt="{{ $owner->nama_usaha }}"
+                    <img src="{{ $logoUrl }}" alt="{{ $appName }}"
                         style="max-height: 128px; width: auto;" class="img-fluid">
                 </a>
             </div>
             <div class="card card-md">
                 <div class="card-body">
-                    <h2 class="h2 text-center mb-4">Login {{ $owner->nama_usaha }}</h2>
+                    <h2 class="h2 text-center mb-4">Login {{ $appName }}</h2>
+
+                    @if (session('error'))
+                        <div class="alert alert-danger">
+                            {{ session('error') }}
+                        </div>
+                    @endif
+
+                    @if (session('success'))
+                        <div class="alert alert-success">
+                            {{ session('success') }}
+                        </div>
+                    @endif
                     <form action="/auth" method="post" autocomplete="off" novalidate>
                         @csrf
 

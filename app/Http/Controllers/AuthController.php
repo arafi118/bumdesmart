@@ -10,15 +10,17 @@ class AuthController extends Controller
 {
     public function login()
     {
-        $owner = Owner::where('domain', request()->getHost())
-            ->orWhere('domain_alternatif', request()->getHost())
-            ->first();
-
-        if (! $owner) {
-            abort(404);
+        if (auth()->check()) {
+            return redirect('/dashboard');
         }
 
-        return view('auth.login', compact('owner'));
+        if (tenant()) {
+            $owner = tenant();
+            return view('auth.login', compact('owner'));
+        }
+
+        // Central Login (for Master Admins)
+        return view('auth.login');
     }
 
     public function auth(Request $request)
@@ -33,32 +35,27 @@ class AuthController extends Controller
             'password' => 'required',
         ]);
 
-        $owner = Owner::where('domain', request()->getHost())
-            ->orWhere('domain_alternatif', request()->getHost())
-            ->with('businesses')
-            ->first();
+        if (tenant()) {
+            // Tenant Login
+            if (Auth::attempt($data)) {
+                $user = Auth::user();
 
-        if (! $owner) {
-            abort(404);
-        }
+                // Ensure it's not a master user in tenant DB (unless you allow it)
+                if ($user->is_master) {
+                    return redirect('/master/dashboard')->with('success', 'Login berhasil!');
+                }
 
-        if (Auth::attempt($data)) {
-            $user = Auth::user();
-
-            // Master bisa login dari domain manapun, langsung ke master dashboard
-            if ($user->is_master) {
+                return redirect('/dashboard')->with('success', 'Login berhasil!');
+            }
+        } else {
+            // Central Login (using a different guard if needed, or manual check)
+            // For simplicity, let's assume central users are in 'central_users' table
+            // and we use a 'central' guard or just check the model.
+            
+            // Note: You should configure 'central' guard in config/auth.php
+            if (Auth::guard('central')->attempt($data)) {
                 return redirect('/master/dashboard')->with('success', 'Login berhasil!');
             }
-
-            foreach ($owner->businesses as $business) {
-                if ($business->id == $user->business_id) {
-                    return redirect('/dashboard')->with('success', 'Login berhasil!');
-                }
-            }
-
-            Auth::logout();
-
-            return redirect()->back()->with('error', 'Anda tidak memiliki akses ke bisnis ini!');
         }
 
         return redirect()->back()->with('error', 'Username atau password salah!');

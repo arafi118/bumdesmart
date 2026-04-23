@@ -1,7 +1,7 @@
 @php
-    $isMaster = auth()->user()->is_master;
+    $isCentral = !tenancy()->initialized;
 
-    if ($isMaster) {
+    if ($isCentral) {
         $listMenu = [
             [
                 'title' => 'Dashboard',
@@ -9,18 +9,13 @@
                 'icon' => 'home',
             ],
             [
-                'title' => 'Owner',
-                'url' => '/master/owner',
-                'icon' => 'person',
-            ],
-            [
-                'title' => 'Business',
-                'url' => '/master/business',
-                'icon' => 'business',
+                'title' => 'Owners',
+                'url'   => '/master/owner',
+                'icon'  => 'person',
             ],
         ];
     } else {
-        $userRole = auth()->user()->role;
+        $userRole = auth()->user()->role ?? null;
         if ($userRole) {
             $assignedMenuIds = $userRole->menus()->pluck('menus.id')->toArray();
             $menus = $userRole->menus()->whereNull('parent_id')->orderBy('order')->get();

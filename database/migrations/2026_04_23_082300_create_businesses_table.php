@@ -11,11 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('owners', function (Blueprint $table) {
-            $table->string('id')->primary();
+        Schema::create('businesses', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->string('owner_id'); // Matches the string/slug ID of tenants
             $table->string('nama_usaha');
-            $table->date('tanggal_penggunaan');
-            $table->string('logo');
+            $table->string('alamat');
+            $table->string('no_telp');
+            $table->string('email');
             $table->timestamps();
         });
     }
@@ -25,6 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('owners');
+        Schema::dropIfExists('businesses');
     }
 };

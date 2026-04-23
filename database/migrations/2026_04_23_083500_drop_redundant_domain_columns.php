@@ -11,12 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('owners', function (Blueprint $table) {
-            $table->string('id')->primary();
-            $table->string('nama_usaha');
-            $table->date('tanggal_penggunaan');
-            $table->string('logo');
-            $table->timestamps();
+        Schema::table('owners', function (Blueprint $table) {
+            $table->dropColumn(['domain', 'domain_alternatif']);
         });
     }
 
@@ -25,6 +21,9 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('owners');
+        Schema::table('owners', function (Blueprint $table) {
+            $table->string('domain')->nullable()->after('logo');
+            $table->string('domain_alternatif')->nullable()->after('domain');
+        });
     }
 };

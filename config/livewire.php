@@ -183,4 +183,8 @@ return [
     */
 
     'release_token' => 'a',
+
+    'update_route_middleware' => [
+        'web',
+    ],
 ];
