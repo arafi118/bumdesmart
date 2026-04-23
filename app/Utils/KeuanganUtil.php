@@ -62,266 +62,176 @@ class KeuanganUtil
 
     public static function labaRugi($tahun, $bulan = '00'): array
     {
-        $akunLevel1s = AkunLevel1::where([
-            ['id', '>=', '4'],
-        ])->with([
-            'akunLevel2.akunLevel3.accounts' => function ($query) {
-                $query->where('business_id', auth()->user()->business_id);
-            },
-            'akunLevel2.akunLevel3.accounts.balance' => function ($query) use ($tahun) {
-                $query->where('tahun', $tahun);
-            },
-        ])->get();
+        $business_id = auth()->user()->business_id;
+        $bulanInt = intval($bulan);
 
-        $akunPersediaan = Account::where([
-            ['business_id', auth()->user()->business_id],
-            ['kode', '1.1.03.01'],
-        ])->with([
-            'balance' => function ($query) use ($tahun) {
+        // Fetch all relevant accounts in one go
+        $accounts = Account::where('business_id', $business_id)
+            ->where(function ($q) {
+                $q->where('kode', 'LIKE', '4.%')
+                    ->orWhere('kode', 'LIKE', '5.%')
+                    ->orWhere('kode', 'LIKE', '6.%')
+                    ->orWhere('kode', 'LIKE', '7.%')
+                    ->orWhere('kode', '1.1.03.01');
+            })
+            ->with(['balance' => function ($query) use ($tahun) {
                 $query->where('tahun', $tahun);
-            },
-        ])->first();
+            }])
+            ->get()
+            ->keyBy('kode');
+
+        // Helper to get monthly movement
+        $getM = function ($kode) use ($accounts, $bulan) {
+            $acc = $accounts->get($kode);
+            if (!$acc || !$acc->balance) return ['debit' => 0, 'kredit' => 0];
+            $b = str_pad(intval($bulan), 2, '0', STR_PAD_LEFT);
+            return [
+                'debit' => (float)($acc->balance->{"debit_$b"} ?? 0),
+                'kredit' => (float)($acc->balance->{"kredit_$b"} ?? 0)
+            ];
+        };
+
+        // Helper to get balance at end of month
+        $getS = function ($kode, $bln) use ($accounts) {
+            $acc = $accounts->get($kode);
+            if (!$acc) return 0;
+            return (float)self::sumSaldo($acc, $bln);
+        };
+
+        // --- 1. LABA KOTOR SECTION ---
+        $mPenjualan = $getM('4.1.01.01');
+        $penjualanGross = $mPenjualan['kredit'] - $mPenjualan['debit'];
+        $diskonPenjualan = $getM('4.1.01.02')['debit'];
+        $returPenjualan = $getM('4.1.01.03')['debit'];
+        $cashbackPenjualan = $getM('4.1.01.06')['debit'];
+        $penjualanBersih = $penjualanGross - $diskonPenjualan - $returPenjualan - $cashbackPenjualan;
+
+        $persediaanAwal = $getS('1.1.03.01', $bulanInt - 1);
+        $pembelianGross = $getM('1.1.03.01')['debit'];
+        
+        $diskonPembelian = $getM('5.1.01.02')['kredit'];
+        $returPembelian = $getM('5.1.01.03')['kredit'];
+        $cashbackPembelian = $getM('5.1.01.06')['kredit'];
+        $bebanProduksi = $getM('5.1.01.04')['debit']; 
+        $bebanTransport = $getM('5.1.01.05')['debit'];
+
+        $pembelianBersih = $pembelianGross - ($diskonPembelian + $returPembelian + $cashbackPembelian) + $bebanProduksi + $bebanTransport;
+        $totalPersediaan = $persediaanAwal + $pembelianBersih;
+        
+        $persediaanAkhir = $getS('1.1.03.01', $bulan);
+        $hpp = $totalPersediaan - $persediaanAkhir;
+        $labaKotor = $penjualanBersih - $hpp;
+
+        $group1_kode = [
+            ['kode' => '4.1.01.01', 'nama' => 'Penjualan', 'saldo_bulan_ini' => $penjualanGross, 'saldo_bulan_lalu' => $getS('4.1.01.01', $bulanInt - 1), 'saldo_tahun_lalu' => $getS('4.1.01.01', '00')],
+            ['kode' => '4.1.01.02', 'nama' => 'Diskon Penjualan', 'saldo_bulan_ini' => $diskonPenjualan, 'saldo_bulan_lalu' => $getS('4.1.01.02', $bulanInt - 1), 'saldo_tahun_lalu' => $getS('4.1.01.02', '00')],
+            ['kode' => '4.1.01.03', 'nama' => 'Retur Penjualan', 'saldo_bulan_ini' => $returPenjualan, 'saldo_bulan_lalu' => $getS('4.1.01.03', $bulanInt - 1), 'saldo_tahun_lalu' => $getS('4.1.01.03', '00')],
+            ['kode' => '4.1.01.06', 'nama' => 'Cashback Penjualan', 'saldo_bulan_ini' => $cashbackPenjualan, 'saldo_bulan_lalu' => $getS('4.1.01.06', $bulanInt - 1), 'saldo_tahun_lalu' => $getS('4.1.01.06', '00')],
+            ['kode' => '', 'nama' => 'Penjualan Bersih', 'saldo_bulan_ini' => $penjualanBersih, 'saldo_bulan_lalu' => 0, 'saldo_tahun_lalu' => 0, 'is_bold' => true],
+            ['kode' => '', 'nama' => 'Persediaan Awal', 'saldo_bulan_ini' => $persediaanAwal, 'saldo_bulan_lalu' => 0, 'saldo_tahun_lalu' => 0, 'is_bold' => true],
+            ['kode' => '1.1.03.01', 'nama' => 'Pembelian', 'saldo_bulan_ini' => $pembelianGross, 'saldo_bulan_lalu' => $getS('1.1.03.01', $bulanInt - 1), 'saldo_tahun_lalu' => $getS('1.1.03.01', '00')],
+            ['kode' => '5.1.01.02', 'nama' => 'Diskon Pembelian', 'saldo_bulan_ini' => $diskonPembelian, 'saldo_bulan_lalu' => $getS('5.1.01.02', $bulanInt - 1), 'saldo_tahun_lalu' => $getS('5.1.01.02', '00')],
+            ['kode' => '5.1.01.03', 'nama' => 'Retur Pembelian', 'saldo_bulan_ini' => $returPembelian, 'saldo_bulan_lalu' => $getS('5.1.01.03', $bulanInt - 1), 'saldo_tahun_lalu' => $getS('5.1.01.03', '00')],
+            ['kode' => '5.1.01.04', 'nama' => 'Beban Produksi', 'saldo_bulan_ini' => $bebanProduksi, 'saldo_bulan_lalu' => $getS('5.1.01.04', $bulanInt - 1), 'saldo_tahun_lalu' => $getS('5.1.01.04', '00')],
+            ['kode' => '5.1.01.05', 'nama' => 'Beban Transport Produk', 'saldo_bulan_ini' => $bebanTransport, 'saldo_bulan_lalu' => $getS('5.1.01.05', $bulanInt - 1), 'saldo_tahun_lalu' => $getS('5.1.01.05', '00')],
+            ['kode' => '5.1.01.06', 'nama' => 'Cashback Pembelian', 'saldo_bulan_ini' => $cashbackPembelian, 'saldo_bulan_lalu' => $getS('5.1.01.06', $bulanInt - 1), 'saldo_tahun_lalu' => $getS('5.1.01.06', '00')],
+            ['kode' => '', 'nama' => 'Total Pembelian', 'saldo_bulan_ini' => $pembelianBersih, 'saldo_bulan_lalu' => 0, 'saldo_tahun_lalu' => 0, 'is_bold' => true],
+            ['kode' => '', 'nama' => 'Total Persediaan', 'saldo_bulan_ini' => $totalPersediaan, 'saldo_bulan_lalu' => 0, 'saldo_tahun_lalu' => 0, 'is_bold' => true],
+            ['kode' => '', 'nama' => 'Persediaan Akhir', 'saldo_bulan_ini' => $persediaanAkhir, 'saldo_bulan_lalu' => 0, 'saldo_tahun_lalu' => 0],
+            ['kode' => '', 'nama' => 'Harga Pokok Penjualan', 'saldo_bulan_ini' => $hpp, 'saldo_bulan_lalu' => $getS('5.1.01.01', $bulanInt - 1), 'saldo_tahun_lalu' => $getS('5.1.01.01', '00')],
+            ['kode' => '', 'nama' => 'Laba Kotor', 'saldo_bulan_ini' => $labaKotor, 'saldo_bulan_lalu' => 0, 'saldo_tahun_lalu' => 0, 'is_bold' => true],
+        ];
 
         $group = [
             '1' => [
                 'nama' => 'Laba Kotor',
-                'jumlah' => 0,
-                'total' => 0,
-                'kode' => [],
+                'jumlah' => $labaKotor,
+                'total' => $labaKotor,
+                'kode' => $group1_kode,
             ],
             '2' => [
                 'nama' => 'Pendapatan Lain Lain',
                 'jumlah' => 0,
-                'total' => 0,
+                'total' => $labaKotor,
                 'kode' => [],
             ],
             '3' => [
                 'nama' => 'Beban Operasional',
                 'jumlah' => 0,
-                'total' => 0,
+                'total' => $labaKotor,
                 'kode' => [],
             ],
             '4' => [
                 'nama' => 'Pendapatan Non Usaha',
                 'jumlah' => 0,
-                'total' => 0,
+                'total' => $labaKotor,
                 'kode' => [],
             ],
             '5' => [
                 'nama' => 'Beban Non Usaha',
                 'jumlah' => 0,
-                'total' => 0,
+                'total' => $labaKotor,
                 'kode' => [],
             ],
             '6' => [
                 'nama' => 'Beban Pajak',
                 'jumlah' => 0,
-                'total' => 0,
+                'total' => $labaKotor,
                 'kode' => [],
             ],
         ];
 
-        $group[$akunPersediaan->kode] = [
-            'kode' => $akunPersediaan->kode,
-            'nama' => $akunPersediaan->nama,
-            'saldo_bulan_ini' => self::sumSaldo($akunPersediaan, $bulan),
-            'saldo_bulan_lalu' => self::sumSaldo($akunPersediaan, $bulan - 1),
-            'saldo_tahun_lalu' => self::sumSaldo($akunPersediaan, '00'),
-        ];
+        // --- 2. OTHER SECTIONS (Level 4-7) ---
+        foreach ($accounts as $account) {
+            $kode = $account->kode;
+            $kode1 = explode('.', $kode)[0];
+            $kode2 = explode('.', $kode)[1];
+            
+            // Skip accounts already handled in Group 1
+            if ($kode == '4.1.01.01' || $kode == '4.1.01.02' || $kode == '4.1.01.03' || $kode == '4.1.01.06' ||
+                $kode == '5.1.01.01' || $kode == '5.1.01.02' || $kode == '5.1.01.03' || $kode == '5.1.01.04' ||
+                $kode == '5.1.01.05' || $kode == '5.1.01.06' || $kode == '1.1.03.01') {
+                continue;
+            }
 
-        foreach ($akunLevel1s as $akunLevel1) {
-            foreach ($akunLevel1->akunLevel2 as $akunLevel2) {
-                foreach ($akunLevel2->akunLevel3 as $akunLevel3) {
-                    foreach ($akunLevel3->accounts as $account) {
-                        $kode = $account->kode;
-                        $kode1 = explode('.', $account->kode)[0];
-                        $kode2 = explode('.', $account->kode)[1];
-                        $kode3 = explode('.', $account->kode)[2];
-                        $kode4 = explode('.', $account->kode)[3];
+            $saldo_bulan_ini = (float)self::sumSaldo($account, $bulan);
+            $saldo_bulan_lalu = (float)self::sumSaldo($account, $bulanInt - 1);
+            $saldo_tahun_lalu = (float)self::sumSaldo($account, '00');
 
-                        $saldo_bulan_ini = self::sumSaldo($account, $bulan);
-                        $saldo_bulan_lalu = self::sumSaldo($account, $bulan - 1);
-                        $saldo_tahun_lalu = self::sumSaldo($account, '00');
+            $saldoData = [
+                'kode' => $kode,
+                'nama' => $account->nama,
+                'saldo_bulan_ini' => $saldo_bulan_ini,
+                'saldo_bulan_lalu' => $saldo_bulan_lalu,
+                'saldo_tahun_lalu' => $saldo_tahun_lalu,
+            ];
 
-                        $saldo = [
-                            'kode' => $account->kode,
-                            'nama' => $account->nama,
-                            'saldo_bulan_ini' => $saldo_bulan_ini,
-                            'saldo_bulan_lalu' => $saldo_bulan_lalu,
-                            'saldo_tahun_lalu' => $saldo_tahun_lalu,
-                        ];
-
-                        if ($kode1 <= '5' && $kode != '4.1.01.05') {
-                            if ($kode == '4.1.01.04' || $kode == '5.1.01.01') {
-                                continue;
-                            }
-
-                            if ($kode == '5.1.01.02') {
-                                $group['1']['kode'][] = $group['1.1.03.01'];
-                                unset($group['1.1.03.01']);
-                            }
-
-                            $group['1']['kode'][] = $saldo;
-                        }
-
-                        if ($kode1 == '6') {
-                            $group['3']['kode'][] = $saldo;
-                        }
-
-                        if ($kode1 == '7' && $kode2 <= '2') {
-                            $group['4']['kode'][] = $saldo;
-                        }
-
-                        if ($kode1 == '7' && $kode2 == '3') {
-                            $group['5']['kode'][] = $saldo;
-                        }
-
-                        if ($kode1 == '7' && $kode2 == '4') {
-                            $group['6']['kode'][] = $saldo;
-                        }
-
-                        if ($kode == '4.1.01.05') {
-                            $group['2']['kode'][] = $saldo;
-                        }
-                    }
-                }
+            if ($kode1 == '4') { // Other Revenue
+                 $group['2']['kode'][] = $saldoData;
+                 $group['2']['jumlah'] += $saldo_bulan_ini;
+            } elseif ($kode1 == '5' || $kode1 == '6') { // Other COGS or Operational Expenses
+                 $group['3']['kode'][] = $saldoData;
+                 $group['3']['jumlah'] -= $saldo_bulan_ini; 
+            } elseif ($kode1 == '7' && $kode2 <= '2') {
+                 $group['4']['kode'][] = $saldoData;
+                 $group['4']['jumlah'] += $saldo_bulan_ini;
+            } elseif ($kode1 == '7' && $kode2 == '3') {
+                 $group['5']['kode'][] = $saldoData;
+                 $group['5']['jumlah'] -= $saldo_bulan_ini;
+            } elseif ($kode1 == '7' && $kode2 == '4') {
+                 $group['6']['kode'][] = $saldoData;
+                 $group['6']['jumlah'] -= $saldo_bulan_ini;
             }
         }
 
-        $labaRugi = [];
-        foreach ($group as $key => $value) {
-
-            $child = [];
-            $kelompokAkun = [];
-            $penjualanBersihBulanIni = 0;
-            $totalSaldo = 0;
-            foreach ($value['kode'] as $index => $kode) {
-                if ($kode['kode'] == '1.1.03.01') {
-                    $saldoPenjualanBersih = [
-                        'saldo_bulan_ini' => '0',
-                        'saldo_bulan_lalu' => '0',
-                        'saldo_tahun_lalu' => '0',
-                    ];
-                    foreach ($child as $ch) {
-                        $saldoPenjualanBersih['saldo_bulan_ini'] += $ch['saldo_bulan_ini'];
-                        $saldoPenjualanBersih['saldo_bulan_lalu'] += $ch['saldo_bulan_lalu'];
-                        $saldoPenjualanBersih['saldo_tahun_lalu'] += $ch['saldo_tahun_lalu'];
-                    }
-
-                    $penjualanBersihBulanIni = $saldoPenjualanBersih['saldo_bulan_ini'];
-                    $child[] = [
-                        'kode' => '',
-                        'nama' => 'Penjualan Bersih',
-                        'saldo_bulan_ini' => $saldoPenjualanBersih['saldo_bulan_ini'],
-                        'saldo_bulan_lalu' => $saldoPenjualanBersih['saldo_bulan_lalu'],
-                        'saldo_tahun_lalu' => $saldoPenjualanBersih['saldo_tahun_lalu'],
-                    ];
-
-                    $kelompokAkun = [];
-                    $persediaanAwal = [
-                        'kode' => '',
-                        'nama' => 'Persediaan Awal',
-                        'saldo_bulan_ini' => $kode['saldo_bulan_lalu'],
-                        'saldo_bulan_lalu' => '0',
-                        'saldo_tahun_lalu' => '0',
-                    ];
-
-                    $kode['saldo_bulan_ini'] -= $kode['saldo_bulan_lalu'];
-
-                    $child[] = $persediaanAwal;
-                    $kelompokAkun[] = $persediaanAwal;
-                }
-
-                $child[] = $kode;
-                $kelompokAkun[] = $kode;
-
-                if ($kode['kode'] == '5.1.01.06') {
-
-                    $persediaanAwalBulanIni = 0;
-                    $returPembelian = 0;
-                    $totalPembelian = 0;
-                    $persediaan = 0;
-                    foreach ($kelompokAkun as $kelompok) {
-                        if ($kelompok['kode'] == '' || $kelompok['kode'] == '5.1.01.03') {
-                            if ($kelompok['kode'] == '') {
-                                $persediaanAwalBulanIni += $kelompok['saldo_bulan_ini'];
-                            }
-
-                            if ($kelompok['kode'] == '5.1.01.03') {
-                                $returPembelian += $kelompok['saldo_bulan_ini'];
-                            }
-
-                            continue;
-                        }
-
-                        if ($kelompok['kode'] == '1.1.03.01') {
-                            $persediaan += $kelompok['saldo_bulan_ini'];
-                            continue; // FIX: Don't add inventory change to "Total Pembelian"
-                        }
-
-                        $totalPembelian += $kelompok['saldo_bulan_ini'];
-                    }
-
-                    $child[] = [
-                        'kode' => '',
-                        'nama' => 'Total Pembelian',
-                        'saldo_bulan_ini' => $totalPembelian,
-                        'saldo_bulan_lalu' => '0',
-                        'saldo_tahun_lalu' => '0',
-                    ];
-
-                    $child[] = [
-                        'kode' => '',
-                        'nama' => 'Total Persediaan',
-                        'saldo_bulan_ini' => $totalPembelian + $persediaanAwalBulanIni,
-                        'saldo_bulan_lalu' => '0',
-                        'saldo_tahun_lalu' => '0',
-                    ];
-
-                    $child[] = [
-                        'kode' => '',
-                        'nama' => 'Persediaan Akhir',
-                        'saldo_bulan_ini' => $persediaanAwalBulanIni + $persediaan + $returPembelian,
-                        'saldo_bulan_lalu' => '0',
-                        'saldo_tahun_lalu' => '0',
-                    ];
-
-                    $hpp = (($totalPembelian + $persediaanAwalBulanIni) - ($persediaanAwalBulanIni + $persediaan + $returPembelian));
-                    $child[] = [
-                        'kode' => '',
-                        'nama' => 'Harga Pokok Penjualan',
-                        'saldo_bulan_ini' => $hpp,
-                        'saldo_bulan_lalu' => '0',
-                        'saldo_tahun_lalu' => '0',
-                    ];
-
-                    $child[] = [
-                        'kode' => '',
-                        'nama' => 'Laba Kotor',
-                        'saldo_bulan_ini' => $penjualanBersihBulanIni - $hpp,
-                        'saldo_bulan_lalu' => '0',
-                        'saldo_tahun_lalu' => '0',
-                    ];
-
-                    $totalSaldo += ($penjualanBersihBulanIni - $hpp);
-                }
-
-                if ($key > 1) {
-                    $totalSaldo += $kode['saldo_bulan_ini'];
-                }
-            }
-
-            $group[$key]['jumlah'] = $totalSaldo;
-            $group[$key]['total'] = $totalSaldo;
-            if ($key > 1) {
-                $group[$key]['total'] += $group[$key - 1]['total'];
-            }
-
-            $group[$key]['kode'] = $child;
-            $labaRugi[] = $group[$key];
+        // Final Totals
+        $currentTotal = $group['1']['jumlah']; // Start from Laba Kotor
+        for ($i = 2; $i <= 6; $i++) {
+            $currentTotal += $group[$i]['jumlah'];
+            $group[$i]['total'] = $currentTotal;
         }
 
-        return $labaRugi;
+        return array_values($group);
     }
 
     public static function arusKas(string $tanggalMulai, string $tanggalAkhir)

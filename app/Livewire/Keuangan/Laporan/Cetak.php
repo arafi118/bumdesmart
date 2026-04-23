@@ -35,10 +35,7 @@ class Cetak extends Controller
         }
 
         // Cek bisnis berdasarkan domain (Multi-tenant style)
-        $host = request()->getHost();
-        $owner = \App\Models\Owner::where('domain', $host)
-            ->orWhere('domain_alternatif', $host)
-            ->first();
+        $owner = tenant();
 
         if ($owner) {
             $business = Business::where('owner_id', $owner->id)->first();
@@ -146,7 +143,7 @@ class Cetak extends Controller
         $bulan = $data['bulan'] ?? date('m');
 
         $akun = Account::where('kode', $kodeAkun)->with([
-            'balance' => function ($query) use ($tahun) {
+            'balance' => function ($query) use ($business, $tahun) {
                 $query->where('business_id', $business->id)->where('tahun', $tahun);
             },
         ])->first();
@@ -181,10 +178,10 @@ class Cetak extends Controller
         $bulan = $data['bulan'] ?? date('m');
 
         $akunLevel1s = AkunLevel1::with([
-            'akunLevel2.akunLevel3.accounts' => function ($query) {
+            'akunLevel2.akunLevel3.accounts' => function ($query) use ($business) {
                 $query->where('business_id', $business->id);
             },
-            'akunLevel2.akunLevel3.accounts.balance' => function ($query) use ($tahun) {
+            'akunLevel2.akunLevel3.accounts.balance' => function ($query) use ($business, $tahun) {
                 $query->where('business_id', $business->id)->where('tahun', $tahun);
             },
         ])->where('id', '<=', '3')->get();

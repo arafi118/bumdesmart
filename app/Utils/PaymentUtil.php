@@ -38,7 +38,7 @@ class PaymentUtil
                 'rekening_debit' => $rekeningKredit,
             ];
 
-            $rekeningDebit = '4.1.01.02';
+            $rekeningDebit = '4.1.01.06';
             $return['purchase-cashback'] = [
                 'rekening_kredit' => $rekeningKredit,
                 'rekening_debit' => $rekeningDebit,
@@ -67,13 +67,13 @@ class PaymentUtil
             // Discount
             $return['sales-diskon'] = [
                 'rekening_kredit' => $rekeningAsset,
-                'rekening_debit' => '5.1.01.02', // Beban Diskon
+                'rekening_debit' => '4.1.01.02', // Diskon Penjualan
             ];
 
             // Cashback
             $return['sales-cashback'] = [
                 'rekening_kredit' => $rekeningAsset,
-                'rekening_debit' => '4.1.01.02', // Pendapatan Cashback (or Expense if given to customer?)
+                'rekening_debit' => '4.1.01.06', // Cashback Penjualan
             ];
         }
 

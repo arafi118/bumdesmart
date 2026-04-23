@@ -16,9 +16,8 @@ class CetakStruk extends Component
     {
         $this->sale = Sale::with(['saleDetails.product', 'customer', 'user'])->findOrFail($id);
 
-        // Cek domain untuk mengambil data Owner (opsional, karena aplikasi mungkin multi-tenant/domain)
-        $domain = request()->getHost();
-        $this->owner = Owner::where('domain', $domain)->orWhere('domain_alternatif', $domain)->first();
+        $this->owner = tenant();
+        
 
         // Jika tidak ada owner sesuai domain, ambil owner pertama sebagai fallback
         if (! $this->owner) {

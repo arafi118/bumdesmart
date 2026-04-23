@@ -1,6 +1,6 @@
 @php
-    $saldoAwalDebit = $akun->balance->debit_00;
-    $saldoAwalKredit = $akun->balance->kredit_00;
+    $saldoAwalDebit = $akun->balance->debit_00 ?? 0;
+    $saldoAwalKredit = $akun->balance->kredit_00 ?? 0;
     $saldoAwal = $saldoAwalDebit - $saldoAwalKredit;
 
     $bulanLalu = $bulan - 1;
@@ -11,8 +11,8 @@
     $saldoBulanLaluKredit = 0;
     $saldoBulanLalu = 0;
     if ($bulanLalu > 0) {
-        $saldoBulanLaluDebit = $akun->balance->$debitBulanLalu;
-        $saldoBulanLaluKredit = $akun->balance->$kreditBulanLalu;
+        $saldoBulanLaluDebit = $akun->balance->$debitBulanLalu ?? 0;
+        $saldoBulanLaluKredit = $akun->balance->$kreditBulanLalu ?? 0;
         $saldoBulanLalu = $saldoBulanLaluDebit - $saldoBulanLaluKredit;
     }
 

@@ -378,42 +378,47 @@ class SalePos extends Component
 
         $jenisPembayaran = ($pay < $grandTotal) ? 'credit' : 'cash';
 
-        if ($pay > $grandTotal) {
-            $pay -= $this->parseNumber($data['kembalian']);
-        }
-
         $kodeRekening = PaymentUtil::ambilRekening('sales', $jenisPembayaran, $metodeBayar, $data['no_rekening'] ?? null);
 
         $details = $sale->saleDetails;
-        $totalHppAll = $details->sum(function ($d) {
-            return $d->hpp * $d->jumlah;
-        });
+        
+        // Calculate totals for accounting
+        $totalHppAll = 0;
+        $totalGrossAll = 0;
+        $totalDiskonAll = 0;
+        $totalCashbackAll = 0;
 
-        $totalDiskonAll = $this->calculateRealValue($data['globalDiskon'] ?? [], $data['grandTotal']);
-        $totalCashbackAll = $this->calculateRealValue($data['globalCashback'] ?? [], $data['grandTotal']);
+        foreach ($details as $detail) {
+            $totalHppAll += $detail->hpp * $detail->jumlah;
+            $totalGrossAll += $detail->harga_satuan * $detail->jumlah;
+            $totalDiskonAll += $detail->jumlah_diskon;
+            $totalCashbackAll += $detail->jumlah_cashback;
+        }
+
+        // Add global discounts/cashback
+        $totalDiskonAll += $this->calculateRealValue($data['globalDiskon'] ?? [], $data['grandTotal']);
+        $totalCashbackAll += $this->calculateRealValue($data['globalCashback'] ?? [], $data['grandTotal']);
 
         $payments = [];
         $timestamp = now();
 
         // 1. Revenue Entry (Gross Amount)
-        if ($pay > 0) {
-            $payments[] = [
-                'business_id' => $this->businessId,
-                'user_id' => $user->id,
-                'no_pembayaran' => $nomorPenjualan,
-                'tanggal_pembayaran' => $tgl,
-                'jenis_transaksi' => 'sale',
-                'transaction_id' => $sale->id,
-                'total_harga' => $pay,
-                'metode_pembayaran' => $metodeBayar,
-                'no_referensi' => $data['no_rekening'] ?? null,
-                'catatan' => 'Penjualan POS ' . $nomorPenjualan,
-                'rekening_debit' => $kodeRekening['sales']['rekening_debit'],
-                'rekening_kredit' => $kodeRekening['sales']['rekening_kredit'],
-                'created_at' => $timestamp,
-                'updated_at' => $timestamp,
-            ];
-        }
+        $payments[] = [
+            'business_id' => $this->businessId,
+            'user_id' => $user->id,
+            'no_pembayaran' => $nomorPenjualan,
+            'tanggal_pembayaran' => $tgl,
+            'jenis_transaksi' => 'sale',
+            'transaction_id' => $sale->id,
+            'total_harga' => $totalGrossAll,
+            'metode_pembayaran' => $metodeBayar,
+            'no_referensi' => $data['no_rekening'] ?? null,
+            'catatan' => 'Penjualan POS ' . $nomorPenjualan,
+            'rekening_debit' => $kodeRekening['sales']['rekening_debit'],
+            'rekening_kredit' => $kodeRekening['sales']['rekening_kredit'],
+            'created_at' => $timestamp,
+            'updated_at' => $timestamp,
+        ];
 
         // 2. COGS Entry (HPP)
         if ($totalHppAll > 0) {
@@ -435,6 +440,7 @@ class SalePos extends Component
             ];
         }
 
+        // 3. Discount Entry
         if ($totalDiskonAll > 0) {
             $payments[] = [
                 'business_id' => $this->businessId,
@@ -445,7 +451,7 @@ class SalePos extends Component
                 'transaction_id' => $sale->id,
                 'total_harga' => $totalDiskonAll,
                 'metode_pembayaran' => 'internal',
-                'catatan' => 'Diskon Global POS',
+                'catatan' => 'Diskon Penjualan POS',
                 'rekening_debit' => $kodeRekening['sales-diskon']['rekening_debit'] ?? '',
                 'rekening_kredit' => $kodeRekening['sales-diskon']['rekening_kredit'] ?? '',
                 'created_at' => $timestamp,
@@ -453,6 +459,7 @@ class SalePos extends Component
             ];
         }
 
+        // 4. Cashback Entry
         if ($totalCashbackAll > 0) {
             $payments[] = [
                 'business_id' => $this->businessId,
@@ -463,7 +470,7 @@ class SalePos extends Component
                 'transaction_id' => $sale->id,
                 'total_harga' => $totalCashbackAll,
                 'metode_pembayaran' => 'internal',
-                'catatan' => 'Cashback Global POS',
+                'catatan' => 'Cashback Penjualan POS',
                 'rekening_debit' => $kodeRekening['sales-cashback']['rekening_debit'] ?? '',
                 'rekening_kredit' => $kodeRekening['sales-cashback']['rekening_kredit'] ?? '',
                 'created_at' => $timestamp,

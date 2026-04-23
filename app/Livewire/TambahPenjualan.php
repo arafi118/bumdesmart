@@ -627,51 +627,52 @@ class TambahPenjualan extends Component
             $jenisPembayaran = 'credit';
         }
 
-        if ($pay > $grandTotal) {
-            $pay -= $data['kembalian'];
-        }
-
         $kodeRekening = PaymentUtil::ambilRekening('sales', $jenisPembayaran, $metodeBayar, $data['noRekening']);
 
         // Fetch all SaleDetails in one query (OPTIMIZATION)
         $details = \App\Models\SaleDetail::where('sale_id', $sale->id)
-            ->get()
-            ->keyBy('product_id');
+            ->get();
 
-        // Calculate totals for accounting (GLOBAL ONLY)
+        // Calculate totals for accounting
         $totalHppAll = 0;
-        $totalDiskonAll = $this->parseNumber($data['globalDiskon']['jumlah']);
-        $totalCashbackAll = $this->parseNumber($data['globalCashback']['jumlah']);
+        $totalGrossAll = 0;
+        $totalDiskonAll = 0;
+        $totalCashbackAll = 0;
 
-        foreach ($data['products'] as $item) {
-            $detail = $details[$item['id']] ?? null;
-            if ($detail) {
-                $totalHppAll += $detail->hpp * $detail->jumlah;
-            }
+        foreach ($details as $detail) {
+            $totalHppAll += $detail->hpp * $detail->jumlah;
+            // Gross per item = harga_satuan * jumlah
+            $totalGrossAll += $detail->harga_satuan * $detail->jumlah;
+            // Item discounts and cashback are already calculated in details
+            $totalDiskonAll += $detail->jumlah_diskon;
+            $totalCashbackAll += $detail->jumlah_cashback;
         }
+
+        // Add global discounts/cashback
+        $totalDiskonAll += $this->parseNumber($data['globalDiskon']['jumlah'] ?? 0);
+        $totalCashbackAll += $this->parseNumber($data['globalCashback']['jumlah'] ?? 0);
 
         $payments = [];
         $timestamp = now();
 
         // 1. Revenue Entry (Gross Amount)
-        if ($pay > 0) {
-            $payments[] = [
-                'business_id' => $this->businessId,
-                'user_id' => $user->id,
-                'no_pembayaran' => $nomorPenjualan,
-                'tanggal_pembayaran' => $tgl,
-                'jenis_transaksi' => 'sale',
-                'transaction_id' => $sale->id,
-                'total_harga' => $pay,
-                'metode_pembayaran' => $metodeBayar,
-                'no_referensi' => $data['noRekening'] ?? null,
-                'catatan' => 'Penjualan ' . $nomorPenjualan,
-                'rekening_debit' => $kodeRekening['sales']['rekening_debit'],
-                'rekening_kredit' => $kodeRekening['sales']['rekening_kredit'],
-                'created_at' => $timestamp,
-                'updated_at' => $timestamp,
-            ];
-        }
+        // Record the full gross revenue regardless of the amount paid
+        $payments[] = [
+            'business_id' => $this->businessId,
+            'user_id' => $user->id,
+            'no_pembayaran' => $nomorPenjualan,
+            'tanggal_pembayaran' => $tgl,
+            'jenis_transaksi' => 'sale',
+            'transaction_id' => $sale->id,
+            'total_harga' => $totalGrossAll,
+            'metode_pembayaran' => $metodeBayar,
+            'no_referensi' => $data['noRekening'] ?? null,
+            'catatan' => 'Penjualan ' . $nomorPenjualan,
+            'rekening_debit' => $kodeRekening['sales']['rekening_debit'],
+            'rekening_kredit' => $kodeRekening['sales']['rekening_kredit'],
+            'created_at' => $timestamp,
+            'updated_at' => $timestamp,
+        ];
 
         // 2. COGS Entry (HPP)
         if ($totalHppAll > 0) {
@@ -693,7 +694,7 @@ class TambahPenjualan extends Component
             ];
         }
 
-        // 6c. Sales Discount Entry
+        // 3. Sales Discount Entry
         if ($totalDiskonAll > 0) {
             $payments[] = [
                 'business_id' => $this->businessId,
@@ -712,7 +713,7 @@ class TambahPenjualan extends Component
             ];
         }
 
-        // 6d. Cashback Entry (Marketing Expense)
+        // 4. Cashback Entry (Marketing Expense / Sales Deduction)
         if ($totalCashbackAll > 0) {
             $payments[] = [
                 'business_id' => $this->businessId,
@@ -731,7 +732,7 @@ class TambahPenjualan extends Component
             ];
         }
 
-        // Bulk insert all payments (OPTIMIZATION: 4 queries → 1 query)
+        // Bulk insert all payments
         if (! empty($payments)) {
             \App\Models\Payment::insert($payments);
         }
