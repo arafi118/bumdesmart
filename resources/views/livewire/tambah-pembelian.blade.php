@@ -26,9 +26,16 @@
             <!-- Product Search -->
             <div class="mb-3" wire:ignore>
                 <label class="form-label">Cari Produk</label>
-                <select class="form-select" id="searchProduct">
-                    <option value=""></option>
-                </select>
+                <div class="input-group">
+                    <div class="flex-fill">
+                        <select class="form-select" id="searchProduct">
+                            <option value=""></option>
+                        </select>
+                    </div>
+                    <button class="btn btn-icon btn-primary" title="Scan Barcode" @click="openScanner()">
+                        <span class="material-symbols-outlined">qr_code_scanner</span>
+                    </button>
+                </div>
             </div>
 
             <!-- Product Table -->
@@ -307,6 +314,87 @@
         <!-- Includes for Modals -->
         @include('livewire.tambah-pembelian-component.modal-diskon')
         @include('livewire.tambah-pembelian-component.modal-cashback')
+
+        <!-- Scanner Modal -->
+        <div class="modal modal-blur fade" id="scannerModal" tabindex="-1" role="dialog" aria-hidden="true" data-bs-backdrop="static">
+            <div class="modal-dialog modal-dialog-centered" role="document">
+                <div class="modal-content border-0 shadow-lg bg-dark text-white overflow-hidden">
+                    <div class="modal-header border-0 pb-0">
+                        <h5 class="modal-title">Scan Barcode / QR</h5>
+                        <button type="button" class="btn-close btn-close-white" @click="closeScanner()"></button>
+                    </div>
+                    <div class="modal-body p-0 position-relative">
+                        <!-- Scanner Viewport -->
+                        <div id="reader" style="width: 100%; min-height: 300px; background: #000;"></div>
+                        
+                        <!-- Custom Overlay -->
+                        <div class="scanner-overlay">
+                            <div class="scanner-laser"></div>
+                            <div class="scanner-frame"></div>
+                        </div>
+
+                        <!-- Last Scanned Info -->
+                        <div x-show="lastScannedName" x-transition 
+                            class="position-absolute bottom-0 start-0 end-0 p-3 text-center"
+                            style="background: rgba(0,0,0,0.7); z-index: 10;">
+                            <div class="fw-bold text-success">Berhasil Scan!</div>
+                            <div x-text="lastScannedName" class="small"></div>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-0 d-flex justify-content-between">
+                        <button type="button" class="btn btn-outline-light" @click="toggleCamera()">
+                            <span class="material-symbols-outlined me-2">cached</span> Ganti Kamera
+                        </button>
+                        <button type="button" class="btn btn-success px-4" @click="closeScanner()">
+                            <span class="material-symbols-outlined me-2">done_all</span> Selesai
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <style>
+            /* Custom Scanner Styles */
+            .scanner-overlay {
+                position: absolute;
+                top: 0; left: 0; right: 0; bottom: 0;
+                pointer-events: none;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 5;
+            }
+            .scanner-frame {
+                width: 250px;
+                height: 250px;
+                border: 2px solid rgba(255, 255, 255, 0.3);
+                border-radius: 20px;
+                box-shadow: 0 0 0 1000px rgba(0, 0, 0, 0.5);
+                position: relative;
+            }
+            .scanner-laser {
+                position: absolute;
+                width: 230px;
+                height: 2px;
+                background: #2fb344;
+                box-shadow: 0 0 15px #2fb344;
+                animation: scan 2s linear infinite;
+                z-index: 6;
+            }
+            @keyframes scan {
+                0% { top: 25%; }
+                50% { top: 75%; }
+                100% { top: 25%; }
+            }
+            .scanner-success-flash {
+                animation: success-flash 0.5s ease-out;
+            }
+            @keyframes success-flash {
+                0% { background: rgba(47, 179, 68, 0); }
+                50% { background: rgba(47, 179, 68, 0.3); }
+                100% { background: rgba(47, 179, 68, 0); }
+            }
+        </style>
     </div>
 </div>
 
@@ -334,6 +422,14 @@
                     jumlah: 0
                 },
 
+                // Scanner State
+                html5QrCode: null,
+                lastScannedCode: null,
+                lastScannedTime: 0,
+                lastScannedName: '',
+                currentCameraId: null,
+                cameras: [],
+
                 // Payment State
                 jenisPembayaran: 'cash',
                 metodeBayar: 'tunai',
@@ -348,6 +444,88 @@
                     subtotal: '0',
                     orderDiscount: '0',
                     orderTax: '0',
+                },
+
+                // Scanner Methods
+                async openScanner() {
+                    $('#scannerModal').modal('show');
+
+                    this.lastScannedCode = null;
+                    this.lastScannedName = '';
+
+                    setTimeout(async () => {
+                        try {
+                            this.html5QrCode = new Html5Qrcode("reader");
+                            const devices = await Html5Qrcode.getCameras();
+                            if (devices && devices.length > 0) {
+                                this.cameras = devices;
+                                let backCamera = devices.find(d => d.label.toLowerCase().includes('back'));
+                                this.currentCameraId = backCamera ? backCamera.id : devices[0].id;
+                                this.startScanning();
+                            } else {
+                                Toast.fire({ icon: 'error', title: 'Kamera tidak ditemukan' });
+                            }
+                        } catch (err) {
+                            console.error(err);
+                            Toast.fire({ icon: 'error', title: 'Gagal mengakses kamera' });
+                        }
+                    }, 500);
+                },
+
+                async startScanning() {
+                    const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+                    await this.html5QrCode.start(
+                        this.currentCameraId, 
+                        config, 
+                        (decodedText) => this.onScanSuccess(decodedText)
+                    );
+                },
+
+                async toggleCamera() {
+                    if (this.cameras.length < 2) return;
+                    await this.html5QrCode.stop();
+                    let currentIndex = this.cameras.findIndex(c => c.id === this.currentCameraId);
+                    let nextIndex = (currentIndex + 1) % this.cameras.length;
+                    this.currentCameraId = this.cameras[nextIndex].id;
+                    this.startScanning();
+                },
+
+                onScanSuccess(decodedText) {
+                    const now = Date.now();
+                    if (decodedText === this.lastScannedCode && (now - this.lastScannedTime) < 2000) {
+                        return;
+                    }
+
+                    this.lastScannedCode = decodedText;
+                    this.lastScannedTime = now;
+
+                    const reader = document.getElementById('reader');
+                    reader.classList.add('scanner-success-flash');
+                    setTimeout(() => reader.classList.remove('scanner-success-flash'), 500);
+
+                    const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3');
+                    audio.play().catch(() => {});
+
+                    this.$wire.scanProduct(decodedText).then(res => {
+                        if (res.success) {
+                            this.addProduct(res.product);
+                            this.lastScannedName = res.product.nama_produk;
+                            setTimeout(() => { if(this.lastScannedCode === decodedText) this.lastScannedName = '' }, 3000);
+                        } else {
+                            Toast.fire({ icon: 'warning', title: res.message });
+                        }
+                    });
+                },
+
+                async closeScanner() {
+                    if (this.html5QrCode) {
+                        try {
+                            await this.html5QrCode.stop();
+                        } catch (e) {}
+                        this.html5QrCode = null;
+                    }
+                    $('#scannerModal').modal('hide');
+                },
                     grandTotal: '0',
                     orderCashback: '0'
                 },

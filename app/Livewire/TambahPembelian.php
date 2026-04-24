@@ -43,6 +43,36 @@ class TambahPembelian extends Component
 
     public $existingData = null;
 
+    public function scanProduct($barcode)
+    {
+        $product = Product::where('business_id', $this->businessId)
+            ->where(function($q) use ($barcode) {
+                $q->where('sku', $barcode)
+                  ->orWhere('barcode', $barcode);
+            })
+            ->with(['unit', 'category', 'brand'])
+            ->first();
+
+        if ($product) {
+            return [
+                'success' => true,
+                'product' => [
+                    'id' => $product->id,
+                    'nama_produk' => $product->nama_produk,
+                    'sku' => $product->sku,
+                    'harga_beli' => $product->harga_beli,
+                    'gambar' => $product->gambar,
+                    'unit' => $product->unit ? $product->unit->nama_satuan : '-',
+                    'category' => $product->category ? $product->category->nama_kategori : '-',
+                    'brand' => $product->brand ? $product->brand->nama_merek : '-',
+                    'allow_decimal' => $product->unit ? (bool)$product->unit->desimal : false,
+                ]
+            ];
+        }
+
+        return ['success' => false, 'message' => 'Produk tidak ditemukan'];
+    }
+
     public function mount($id = null)
     {
         $this->title = $id ? 'Edit Pembelian' : 'Tambah Pembelian';

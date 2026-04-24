@@ -16,6 +16,7 @@ class Product extends Model
         'unit_id',
         'shelf_id',
         'sku',
+        'barcode',
         'nama_produk',
         'harga_beli',
         'harga_jual',

@@ -197,6 +197,7 @@
 
     <script src="{{ asset('assets/libs/tom-select/dist/js/tom-select.complete.min.js') }}"></script>
     <script src="{{ asset('assets/libs/litepicker/dist/litepicker.js') }}"></script>
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <!-- END PAGE LIBRARIES -->
 
     <!-- BEGIN GLOBAL MANDATORY SCRIPTS -->

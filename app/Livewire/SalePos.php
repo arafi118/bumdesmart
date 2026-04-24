@@ -130,6 +130,34 @@ class SalePos extends Component
         $this->dispatch('close-modal', id: 'closeCashierModal');
     }
 
+    public function scanProduct($barcode)
+    {
+        $product = Product::where('business_id', $this->businessId)
+            ->where('is_active', true)
+            ->where(function($q) use ($barcode) {
+                $q->where('sku', $barcode)
+                  ->orWhere('barcode', $barcode);
+            })
+            ->with(['unit', 'category', 'brand'])
+            ->first();
+
+        if ($product) {
+            return [
+                'success' => true,
+                'product' => [
+                    'id' => $product->id,
+                    'name' => $product->nama_produk,
+                    'price' => (float)$product->harga_jual,
+                    'stock' => (float)$product->stok_aktual,
+                    'unit' => $product->unit,
+                    'image' => ($product->gambar && $product->gambar !== 'products/no-image.png') ? ('/storage/' . $product->gambar) : 'https://placehold.co/400x400?text=No+Image',
+                ]
+            ];
+        }
+
+        return ['success' => false, 'message' => 'Produk tidak ditemukan'];
+    }
+
     public function loadCustomers($query, $offset = 0)
     {
         $perPage = 5;
