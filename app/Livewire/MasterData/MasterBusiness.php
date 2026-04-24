@@ -99,6 +99,14 @@ class MasterBusiness extends Component
             // Initialize tenant context
             tenancy()->initialize($owner);
 
+            // Fetch the business record from the tenant database to get the correct local ID
+            $tenantBusiness = \App\Models\Business::where('owner_id', $owner->id)->first();
+            if (!$tenantBusiness) {
+                // Fallback to central business if not found, but this shouldn't happen
+                $tenantBusiness = $business;
+            }
+            $activeBusinessId = $tenantBusiness->id;
+
             $path = $this->importFile->getRealPath();
             $file = fopen($path, 'r');
             
@@ -131,20 +139,20 @@ class MasterBusiness extends Component
 
                 // Find/Create Master Data from Cache
                 if (!isset($categories[$kategori])) {
-                    $cat = \App\Models\Category::create(['nama_kategori' => $kategori, 'business_id' => $business->id, 'icon' => 'box']);
+                    $cat = \App\Models\Category::create(['nama_kategori' => $kategori, 'business_id' => $activeBusinessId, 'icon' => 'box']);
                     $categories[$kategori] = $cat->id;
                 }
                 if (!isset($brands[$brand])) {
-                    $brd = \App\Models\Brand::create(['nama_brand' => $brand, 'business_id' => $business->id]);
+                    $brd = \App\Models\Brand::create(['nama_brand' => $brand, 'business_id' => $activeBusinessId]);
                     $brands[$brand] = $brd->id;
                 }
                 if (!isset($units[$satuan])) {
-                    $unt = \App\Models\Unit::create(['nama_satuan' => $satuan, 'business_id' => $business->id, 'inisial_satuan' => $satuan]);
+                    $unt = \App\Models\Unit::create(['nama_satuan' => $satuan, 'business_id' => $activeBusinessId, 'inisial_satuan' => $satuan]);
                     $units[$satuan] = $unt->id;
                 }
 
                 $productUpserts[] = [
-                    'business_id'     => $business->id,
+                    'business_id'     => $activeBusinessId,
                     'sku'             => $sku,
                     'barcode'         => $barcode,
                     'category_id'     => $categories[$kategori],
@@ -175,7 +183,7 @@ class MasterBusiness extends Component
             }
 
             // Re-fetch product IDs to link Batches and Movements
-            $allProducts = \App\Models\Product::where('business_id', $business->id)
+            $allProducts = \App\Models\Product::where('business_id', $activeBusinessId)
                 ->whereIn('sku', array_column($productUpserts, 'sku'))
                 ->pluck('id', 'sku');
 
@@ -189,7 +197,7 @@ class MasterBusiness extends Component
                     $pId = $allProducts[$sku];
                     
                     $batchInserts[] = [
-                        'business_id'        => $business->id,
+                        'business_id'        => $activeBusinessId,
                         'product_id'         => $pId,
                         'no_batch'           => 'MIGRATION-' . date('Ymd'),
                         'tanggal_pembelian'  => $now,
@@ -202,7 +210,7 @@ class MasterBusiness extends Component
                     ];
 
                     $movementInserts[] = [
-                        'business_id'            => $business->id,
+                        'business_id'            => $activeBusinessId,
                         'product_id'             => $pId,
                         'tanggal_perubahan_stok' => $now,
                         'jenis_perubahan'        => 'adjustment',
