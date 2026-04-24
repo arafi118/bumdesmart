@@ -22,6 +22,9 @@ class AccountSeeder extends Seeder
         Account::truncate();
         \Illuminate\Support\Facades\DB::statement('SET FOREIGN_KEY_CHECKS=1;');
 
+        // Fetch the local business ID once to ensure consistency and performance
+        $businessId = \App\Models\Business::first()->id ?? 1;
+
         $akunLevel1 = [];
         $akunLevel2 = [];
         $akunLevel3 = [];
@@ -60,8 +63,8 @@ class AccountSeeder extends Seeder
                 $rek['id'] = $idRekening;
                 $rek['parent_id'] = $kodeLevel1.$kodeLevel2.$kodeLevel3;
                 
-                // Use default business id if not provided (for older migrations)
-                $rek['business_id'] = \App\Models\Business::first()->id ?? 1;
+                // Use the pre-fetched business ID
+                $rek['business_id'] = $businessId;
                 
                 $akunLevel4[] = $rek;
 
