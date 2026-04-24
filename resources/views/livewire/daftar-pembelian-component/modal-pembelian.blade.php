@@ -45,7 +45,8 @@
                             <div>{{ $detailPurchase->business->alamat }}</div>
                         </div>
                     </div>
-                    <table class="table table-bordered mt-2">
+                    <div class="table-responsive">
+                        <table class="table table-bordered mt-2">
                         <thead>
                             <tr>
                                 <th width="5%">No.</th>
@@ -123,7 +124,8 @@
                                 </td>
                             </tr>
                         </tfoot>
-                    </table>
+                        </table>
+                    </div>
 
                     <div class="mt-3 fw-bold">Catatan :</div>
                     <div class="px-3 py-2 border rounded">

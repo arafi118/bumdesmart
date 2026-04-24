@@ -14,33 +14,35 @@
 
 <div>
     {{-- Period Filter --}}
-    <div class="d-flex align-items-center mb-4">
-        <div class="btn-group" role="group">
-            <button type="button" wire:click="setPeriod('today')"
-                class="btn {{ $period === 'today' ? 'btn-primary' : 'btn-outline-primary' }}">
-                Hari ini
-            </button>
-            <button type="button" wire:click="setPeriod('week')"
-                class="btn {{ $period === 'week' ? 'btn-primary' : 'btn-outline-primary' }}">
-                Minggu ini
-            </button>
-            <button type="button" wire:click="setPeriod('month')"
-                class="btn {{ $period === 'month' ? 'btn-primary' : 'btn-outline-primary' }}">
-                Bulan ini
-            </button>
-            <button type="button" wire:click="setPeriod('year')"
-                class="btn {{ $period === 'year' ? 'btn-primary' : 'btn-outline-primary' }}">
-                Tahun ini
-            </button>
+    <div class="row align-items-center mb-4">
+        <div class="col-12 col-md-auto mb-3 mb-md-0">
+            <div class="btn-group w-100" role="group">
+                <button type="button" wire:click="setPeriod('today')"
+                    class="btn {{ $period === 'today' ? 'btn-primary' : 'btn-outline-primary' }}">
+                    Hari ini
+                </button>
+                <button type="button" wire:click="setPeriod('week')"
+                    class="btn {{ $period === 'week' ? 'btn-primary' : 'btn-outline-primary' }}">
+                    Minggu ini
+                </button>
+                <button type="button" wire:click="setPeriod('month')"
+                    class="btn {{ $period === 'month' ? 'btn-primary' : 'btn-outline-primary' }}">
+                    Bulan ini
+                </button>
+                <button type="button" wire:click="setPeriod('year')"
+                    class="btn {{ $period === 'year' ? 'btn-primary' : 'btn-outline-primary' }}">
+                    Tahun ini
+                </button>
+            </div>
         </div>
-        <div class="ms-auto text-muted">
+        <div class="col text-end text-muted">
             <small>{{ now()->translatedFormat('l, d F Y') }}</small>
         </div>
     </div>
 
     {{-- Main KPIs Row --}}
     <div class="row row-deck row-cards mb-4">
-        <div class="col-sm-6 col-lg-3">
+        <div class="col-6 col-lg-3">
             <div class="card">
                 <div class="card-body">
                     <div class="d-flex align-items-center">
@@ -76,7 +78,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-sm-6 col-lg-3">
+        <div class="col-6 col-lg-3">
             <div class="card">
                 <div class="card-body">
                     <div class="d-flex align-items-center">
@@ -91,7 +93,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-sm-6 col-lg-3">
+        <div class="col-6 col-lg-3">
             <div class="card">
                 <div class="card-body">
                     <div class="d-flex align-items-center">
@@ -104,7 +106,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-sm-6 col-lg-3">
+        <div class="col-6 col-lg-3">
             <div class="card">
                 <div class="card-body">
                     <div class="subheader mb-2">Alert</div>

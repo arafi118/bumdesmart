@@ -284,14 +284,18 @@
     <!-- Scanner Modal -->
     <div class="modal modal-blur fade" id="scannerModal" tabindex="-1" role="dialog" aria-hidden="true" data-bs-backdrop="static">
         <div class="modal-dialog modal-dialog-centered" role="document">
-            <div class="modal-content border-0 shadow-lg bg-dark text-white overflow-hidden">
-                <div class="modal-header border-0 pb-0">
-                    <h5 class="modal-title">Scan Barcode / QR</h5>
-                    <button type="button" class="btn-close btn-close-white" @click="closeScanner()"></button>
+            <div class="modal-content shadow-lg overflow-hidden">
+                <div class="modal-status-top bg-primary"></div>
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <span class="material-symbols-outlined me-2 text-primary">qr_code_scanner</span>
+                        Scan Barcode / QR
+                    </h5>
+                    <button type="button" class="btn-close" @click="closeScanner()"></button>
                 </div>
-                <div class="modal-body p-0 position-relative">
+                <div class="modal-body p-0 position-relative border-top border-bottom">
                     <!-- Scanner Viewport -->
-                    <div id="reader" style="width: 100%; min-height: 300px; background: #000;"></div>
+                    <div id="reader" style="width: 100%; min-height: 350px; background: #1d273b;"></div>
                     
                     <!-- Custom Overlay -->
                     <div class="scanner-overlay">
@@ -299,19 +303,24 @@
                         <div class="scanner-frame"></div>
                     </div>
 
-                    <!-- Last Scanned Info -->
-                    <div x-show="lastScannedName" x-transition 
+                    <!-- Last Scanned Info Overlay (Premium Look) -->
+                    <div x-show="lastScannedName" x-transition:enter="transition ease-out duration-300"
+                         x-transition:enter-start="opacity-0 transform translate-y-4"
+                         x-transition:enter-end="opacity-100 transform translate-y-0"
                          class="position-absolute bottom-0 start-0 end-0 p-3 text-center"
-                         style="background: rgba(0,0,0,0.7); z-index: 10;">
-                        <div class="fw-bold text-success">Berhasil Scan!</div>
-                        <div x-text="lastScannedName" class="small"></div>
+                         style="background: linear-gradient(to top, rgba(0,0,0,0.8), transparent); z-index: 10; color: white;">
+                        <div class="d-flex align-items-center justify-content-center gap-2 mb-1">
+                            <span class="material-symbols-outlined text-success">check_circle</span>
+                            <span class="fw-bold">Produk Ditemukan!</span>
+                        </div>
+                        <div x-text="lastScannedName" class="small opacity-75"></div>
                     </div>
                 </div>
-                <div class="modal-footer border-0 d-flex justify-content-between">
-                    <button type="button" class="btn btn-outline-light" @click="toggleCamera()">
+                <div class="modal-footer bg-light d-flex justify-content-between py-2">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" @click="toggleCamera()">
                         <span class="material-symbols-outlined me-2">cached</span> Ganti Kamera
                     </button>
-                    <button type="button" class="btn btn-success px-4" @click="closeScanner()">
+                    <button type="button" class="btn btn-primary px-4 shadow-sm" @click="closeScanner()">
                         <span class="material-symbols-outlined me-2">done_all</span> Selesai
                     </button>
                 </div>
