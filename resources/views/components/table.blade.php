@@ -5,8 +5,11 @@
         <thead>
             <tr>
                 @foreach ($headers as $header)
-                    <th wire:click="setSortBy('{{ $header['key'] }}')" style="cursor: pointer;">
-                        @if ($header['sortable'] ?? true)
+                    @php
+                        $isSortable = $header['sortable'] ?? true;
+                    @endphp
+                    <th @if($isSortable) wire:click="setSortBy('{{ $header['key'] }}')" style="cursor: pointer;" @endif>
+                        @if ($isSortable)
                             <div class="d-flex align-items-center">
                                 <span>
                                     {!! $header['label'] !!}

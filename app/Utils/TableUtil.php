@@ -37,7 +37,18 @@ class TableUtil
             });
         });
 
-        $query->when($sortColumn, function ($q) use ($sortColumn, $sortDirection) {
+        // Only sort if column exists in headers and is sortable
+        $canSort = false;
+        if ($sortColumn) {
+            foreach ($headers as $header) {
+                if ($header['key'] === $sortColumn && ($header['sortable'] ?? true)) {
+                    $canSort = true;
+                    break;
+                }
+            }
+        }
+
+        $query->when($canSort, function ($q) use ($sortColumn, $sortDirection) {
             $q->orderBy($sortColumn, $sortDirection);
         });
 
