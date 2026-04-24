@@ -75,6 +75,13 @@
                                                 wire:click="modalHargaMember({{ $product->id }})">
                                                 Harga Member
                                             </a>
+                                            @if($product->stok_aktual > 0 && !$product->parent_id)
+                                                <a class="dropdown-item text-primary" href="#"
+                                                    wire:click="modalPecahProduk({{ $product->id }})">
+                                                    <span class="material-symbols-outlined me-1">content_cut</span>
+                                                    Pecah Produk
+                                                </a>
+                                            @endif
                                             <div class="dropdown-divider"></div>
                                             <a class="dropdown-item" href="#"
                                                 wire:click="modalCetakLabel({{ $product->id }})">
@@ -292,6 +299,7 @@
 
     @include('livewire.product-component.modal-detail-produk')
     @include('livewire.product-component.modal-harga-member')
+    @include('livewire.product-component.modal-pecah-produk')
     
     <!-- Modal Cetak Label -->
     <div class="modal modal-blur fade" id="cetakLabelModal" tabindex="-1" role="dialog" aria-hidden="true">

@@ -58,6 +58,15 @@ class Produk extends Component
 
     public $tanggalAkhir = [];
     
+    // Pecah Produk Properties
+    public $retailNamaProduk;
+    public $retailSatuanId;
+    public $retailHasilPecah = 0; // Multiplier (e.g., 10 ecer per 1 bulk)
+    public $retailJumlahPecahBulk = 0; // Amount of bulk to break (e.g., 1 sak)
+    public $retailHargaJual = 0;
+    public $retailSku;
+    public $retailBarcode;
+    
     // Label Printing
     public $selectedForLabels = []; // Array of Product IDs
     public $selectedProducts = []; // Checkbox selection
@@ -229,14 +238,51 @@ class Produk extends Component
     public function destroy($id)
     {
         $product = \App\Models\Product::find($id);
-        if ($product->gambar && $product->gambar != 'products/no-image.png') {
-            Storage::delete($product->gambar);
+
+        if (!$product) {
+            $this->dispatch('alert', type: 'error', message: 'Produk tidak ditemukan');
+            return;
         }
 
-        \App\Models\ProductPrice::where('product_id', $id)->delete();
-        $product->delete();
+        // 1. Cek apakah sudah ada transaksi nyata (Penjualan atau Pembelian)
+        $hasSales = \DB::table('sale_details')->where('product_id', $id)->exists();
+        $hasPurchases = \DB::table('purchase_details')->where('product_id', $id)->exists();
 
-        $this->dispatch('alert', type: 'success', message: 'Produk berhasil dihapus');
+        if ($hasSales || $hasPurchases) {
+            $this->dispatch('alert', type: 'error', message: 'Produk tidak bisa dihapus karena sudah memiliki riwayat transaksi penjualan atau pembelian. Silakan nonaktifkan saja produk ini.');
+            return;
+        }
+
+        \DB::beginTransaction();
+        try {
+            // 2. Hapus data pendukung
+            // Hapus Batch Movements terkait batch produk ini
+            $batchIds = \App\Models\ProductBatch::where('product_id', $id)->pluck('id');
+            \App\Models\BatchMovement::whereIn('batch_id', $batchIds)->delete();
+            
+            // Hapus Batch
+            \App\Models\ProductBatch::where('product_id', $id)->delete();
+            
+            // Hapus Stock Movements
+            \App\Models\StockMovement::where('product_id', $id)->delete();
+            
+            // Hapus Harga Spesial/Member
+            \App\Models\ProductPrice::where('product_id', $id)->delete();
+
+            // 3. Hapus Gambar jika ada
+            if ($product->gambar && $product->gambar != 'products/no-image.png') {
+                \Storage::delete($product->gambar);
+            }
+
+            // 4. Hapus Produk utama
+            $product->delete();
+
+            \DB::commit();
+            $this->dispatch('alert', type: 'success', message: 'Produk dan data terkait berhasil dihapus');
+        } catch (\Exception $e) {
+            \DB::rollBack();
+            $this->dispatch('alert', type: 'error', message: 'Gagal menghapus produk: ' . $e->getMessage());
+        }
     }
 
     public function modalDetailProduk($id)
@@ -276,6 +322,204 @@ class Produk extends Component
         $this->productId = $id;
 
         $this->dispatch('show-modal', modalId: 'hargaMemberModal');
+    }
+
+    public function modalPecahProduk($id)
+    {
+        $this->reset('retailNamaProduk', 'retailSatuanId', 'retailHasilPecah', 'retailJumlahPecahBulk', 'retailHargaJual', 'retailSku', 'retailBarcode');
+        
+        $this->detailProduk = \App\Models\Product::find($id);
+        
+        if (!$this->detailProduk || $this->detailProduk->stok_aktual <= 0) {
+            $this->dispatch('alert', type: 'error', message: 'Produk tidak ditemukan atau stok kosong');
+            return;
+        }
+
+        if ($this->detailProduk->parent_id) {
+            $this->dispatch('alert', type: 'error', message: 'Produk eceran tidak dapat dipecah lagi');
+            return;
+        }
+
+        $this->productId = $id;
+        
+        // Cek apakah sudah ada produk eceran yang terhubung
+        $existingRetail = \App\Models\Product::where('parent_id', $id)->first();
+        if ($existingRetail) {
+            $this->retailNamaProduk = $existingRetail->nama_produk;
+            $this->retailSatuanId = $existingRetail->unit_id;
+            $this->retailSku = $existingRetail->sku;
+            $this->retailBarcode = $existingRetail->barcode;
+            $this->retailHargaJual = number_format($existingRetail->harga_jual);
+            // Hint for Hasil Pecah (can be recalculated from previous)
+            $this->retailHasilPecah = $existingRetail->harga_beli > 0 ? ($this->detailProduk->harga_beli / $existingRetail->harga_beli) : 0;
+        } else {
+            $this->retailNamaProduk = $this->detailProduk->nama_produk . ' (Eceran)';
+        }
+
+        $this->retailJumlahPecahBulk = 1;
+        $this->titleModal = 'Pecah Produk: ' . $this->detailProduk->nama_produk;
+        
+        $this->dispatch('show-modal', modalId: 'pecahProdukModal');
+    }
+
+    public function simpanPecahProduk()
+    {
+        $this->validate([
+            'retailNamaProduk' => 'required',
+            'retailSatuanId' => 'required',
+            'retailHasilPecah' => 'required|numeric|min:0.01',
+            'retailJumlahPecahBulk' => 'required|numeric|min:0.01|max:' . $this->detailProduk->stok_aktual,
+            'retailHargaJual' => 'required',
+        ]);
+
+        \DB::beginTransaction();
+        try {
+            $bulkProduct = \App\Models\Product::find($this->productId);
+            $hargaBeliEceran = $bulkProduct->harga_beli / $this->retailHasilPecah;
+            $totalStokEceranBaru = $this->retailHasilPecah * $this->retailJumlahPecahBulk;
+
+            // Cari produk eceran eksis
+            $retailProduct = \App\Models\Product::where('parent_id', $this->productId)->first();
+
+            if ($retailProduct) {
+                // Update produk eceran yang sudah ada
+                $retailProduct->stok_aktual += $totalStokEceranBaru;
+                $retailProduct->harga_beli = $hargaBeliEceran; // Update harga beli jika bulk berubah
+                $retailProduct->harga_jual = floatval(str_replace(',', '', $this->retailHargaJual));
+                $retailProduct->save();
+                $message = 'Stok produk eceran berhasil ditambahkan';
+            } else {
+                // Buat produk eceran baru
+                if (empty($this->retailSku)) {
+                    $prefix = 'BM';
+                    $uniqueId = substr(time(), -6) . mt_rand(10, 99);
+                    $this->retailSku = $prefix . $uniqueId;
+                    while (\App\Models\Product::where('sku', $this->retailSku)->exists()) {
+                        $uniqueId = substr(time(), -6) . mt_rand(10, 99);
+                        $this->retailSku = $prefix . $uniqueId;
+                    }
+                }
+
+                $retailProduct = \App\Models\Product::create([
+                    'business_id' => $this->businessId,
+                    'parent_id' => $bulkProduct->id, // Set relationship
+                    'category_id' => $bulkProduct->category_id,
+                    'brand_id' => $bulkProduct->brand_id,
+                    'unit_id' => $this->retailSatuanId,
+                    'shelf_id' => $bulkProduct->shelf_id,
+                    'sku' => $this->retailSku,
+                    'barcode' => $this->retailBarcode,
+                    'nama_produk' => $this->retailNamaProduk,
+                    'harga_beli' => $hargaBeliEceran,
+                    'harga_jual' => floatval(str_replace(',', '', $this->retailHargaJual)),
+                    'stok_minimal' => 0,
+                    'stok_aktual' => $totalStokEceranBaru,
+                    'metode_biaya' => 'FIFO',
+                    'biaya_rata_rata' => $hargaBeliEceran,
+                    'gambar' => 'products/no-image.png',
+                    'is_active' => 1,
+                ]);
+                $message = 'Produk eceran baru berhasil dibuat';
+            }
+
+            // 3. Kurangi stok bulk
+            $bulkProduct->stok_aktual -= $this->retailJumlahPecahBulk;
+            $bulkProduct->save();
+
+            // 4. Catat Stock Movement Utama
+            $smBulk = \App\Models\StockMovement::create([
+                'business_id' => $this->businessId,
+                'product_id' => $bulkProduct->id,
+                'tanggal_perubahan_stok' => now(),
+                'jenis_perubahan' => 'Pecah (Bulk)',
+                'jumlah_perubahan' => -$this->retailJumlahPecahBulk,
+                'reference_id' => $retailProduct->id,
+                'reference_type' => 'conversion_to_retail',
+                'catatan' => 'Pecah ke produk: ' . $retailProduct->nama_produk,
+            ]);
+
+            $smRetail = \App\Models\StockMovement::create([
+                'business_id' => $this->businessId,
+                'product_id' => $retailProduct->id,
+                'tanggal_perubahan_stok' => now(),
+                'jenis_perubahan' => 'Pecah (Retail)',
+                'jumlah_perubahan' => $totalStokEceranBaru,
+                'reference_id' => $bulkProduct->id,
+                'reference_type' => 'conversion_from_bulk',
+                'catatan' => 'Pecahan dari produk: ' . $bulkProduct->nama_produk,
+            ]);
+
+            // 5. Kelola Batch (FIFO)
+            $remainingToBreak = $this->retailJumlahPecahBulk;
+            $bulkBatches = \App\Models\ProductBatch::where('product_id', $bulkProduct->id)
+                ->where('jumlah_saat_ini', '>', 0)
+                ->where('status', 'ACTIVE')
+                ->orderBy('id', 'asc') // FIFO
+                ->get();
+
+            foreach ($bulkBatches as $bBatch) {
+                if ($remainingToBreak <= 0) break;
+
+                $takeFromThisBatch = min($bBatch->jumlah_saat_ini, $remainingToBreak);
+                
+                // Update Batch Bulk
+                $bBatch->jumlah_saat_ini -= $takeFromThisBatch;
+                if ($bBatch->jumlah_saat_ini == 0) $bBatch->status = 'EMPTY';
+                $bBatch->save();
+
+                // Catat Batch Movement Bulk
+                \App\Models\BatchMovement::create([
+                    'business_id' => $this->businessId,
+                    'batch_id' => $bBatch->id,
+                    'stock_movement_id' => $smBulk->id,
+                    'tanggal_perubahan' => now(),
+                    'jenis_transaksi' => 'CONVERSION_OUT',
+                    'jumlah' => -$takeFromThisBatch,
+                    'harga_satuan' => $bBatch->harga_satuan,
+                ]);
+
+                // Buat Batch Baru untuk Retail
+                $retailBatchQty = $takeFromThisBatch * $this->retailHasilPecah;
+                // Gunakan hargaBeliEceran yang sudah dihitung di awal (misal 30.000 / 12 = 2.500)
+                $retailBatchHargaSatuan = $hargaBeliEceran;
+
+                $rBatch = \App\Models\ProductBatch::create([
+                    'business_id' => $this->businessId,
+                    'product_id' => $retailProduct->id,
+                    'purchase_detail_id' => $bBatch->purchase_detail_id,
+                    'no_batch' => $bBatch->no_batch . '-R',
+                    'tanggal_pembelian' => $bBatch->tanggal_pembelian,
+                    'harga_satuan' => $retailBatchHargaSatuan,
+                    'jumlah_awal' => $retailBatchQty,
+                    'jumlah_saat_ini' => $retailBatchQty,
+                    'tanggal_kadaluarsa' => $bBatch->tanggal_kadaluarsa,
+                    'status' => 'ACTIVE',
+                ]);
+
+                // Catat Batch Movement Retail
+                \App\Models\BatchMovement::create([
+                    'business_id' => $this->businessId,
+                    'batch_id' => $rBatch->id,
+                    'stock_movement_id' => $smRetail->id,
+                    'tanggal_perubahan' => now(),
+                    'jenis_transaksi' => 'CONVERSION_IN',
+                    'jumlah' => $retailBatchQty,
+                    'harga_satuan' => $retailBatchHargaSatuan,
+                ]);
+
+                $remainingToBreak -= $takeFromThisBatch;
+            }
+
+            \DB::commit();
+            
+            $this->dispatch('alert', type: 'success', message: $message);
+            $this->dispatch('hide-modal', modalId: 'pecahProdukModal');
+            $this->activeTab = 'daftarProduk';
+            
+        } catch (\Exception $e) {
+            \DB::rollBack();
+            $this->dispatch('alert', type: 'error', message: 'Gagal memecah produk: ' . $e->getMessage());
+        }
     }
 
     public function simpanHargaMember()
