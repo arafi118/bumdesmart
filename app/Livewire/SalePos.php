@@ -153,7 +153,7 @@ class SalePos extends Component
                 $q->where('nama_produk', 'LIKE', "%{$query}%")
                     ->orWhere('sku', 'LIKE', "%{$query}%");
             })
-            ->with(['unit'])
+            ->with(['unit', 'category', 'brand'])
             ->offset($offset)
             ->limit($perPage)
             ->get();

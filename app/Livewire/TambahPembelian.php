@@ -173,7 +173,7 @@ class TambahPembelian extends Component
     {
         $perPage = 20;
 
-        $productsQuery = Product::with('unit')
+        $productsQuery = Product::with(['unit', 'category', 'brand'])
             ->where('business_id', $this->businessId)
             ->where(function ($q) use ($query) {
                 $q->where('nama_produk', 'LIKE', "%{$query}%")
@@ -201,6 +201,8 @@ class TambahPembelian extends Component
                 'harga_beli' => $product->harga_beli,
                 'gambar' => $product->gambar,
                 'unit' => $product->unit ? $product->unit->nama_satuan : '-',
+                'category' => $product->category ? $product->category->nama_kategori : '-',
+                'brand' => $product->brand ? $product->brand->nama_merek : '-',
                 'allow_decimal' => $product->unit ? (bool)$product->unit->desimal : false,
             ];
         }

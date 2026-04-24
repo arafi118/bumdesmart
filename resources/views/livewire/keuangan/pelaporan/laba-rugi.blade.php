@@ -4,7 +4,8 @@
     <table style="width: 100%; border: 0; border-collapse: collapse;">
         @foreach ($labaRugi as $index => $lr)
             <tr style="background-color: #b0b0b0;">
-                <td colspan="3" style="padding: 5px; text-align: center; font-weight: bold; text-transform: uppercase; border: 0;">
+                <td colspan="3"
+                    style="padding: 5px; text-align: center; font-weight: bold; text-transform: uppercase; border: 0;">
                     {{ $lr['nama'] }}
                 </td>
             </tr>
@@ -13,7 +14,9 @@
                 @php
                     $isHeader = !empty($kode['is_bold']);
                     $bgColor = $index2 % 2 == 0 ? '#f0f0f0' : '#fefefe';
-                    if ($isHeader) $bgColor = '#d0d0d0';
+                    if ($isHeader) {
+                        $bgColor = '#d0d0d0';
+                    }
                 @endphp
                 <tr style="background-color: {{ $bgColor }};">
                     <td style="width: 15%; padding: 4px; text-align: left; border: 0;">
@@ -22,7 +25,8 @@
                     <td style="width: 55%; padding: 4px; {{ $isHeader ? 'font-weight: bold;' : '' }} border: 0;">
                         {{ $kode['nama'] }}
                     </td>
-                    <td style="width: 30%; padding: 4px; text-align: right; {{ $isHeader ? 'font-weight: bold;' : '' }} border: 0;">
+                    <td
+                        style="width: 30%; padding: 4px; text-align: right; {{ $isHeader ? 'font-weight: bold;' : '' }} border: 0;">
                         {{ number_format($kode['saldo_bulan_ini'], 2) }}
                     </td>
                 </tr>
@@ -30,7 +34,8 @@
 
             @if ($index > 0)
                 <tr style="background-color: #d0d0d0;">
-                    <td colspan="2" style="padding: 5px; font-weight: bold; text-align: left; border: 0;">Total {{ $lr['nama'] }}</td>
+                    <td colspan="2" style="padding: 5px; font-weight: bold; text-align: left; border: 0;">Total
+                        {{ $lr['nama'] }}</td>
                     <td style="padding: 5px; text-align: right; font-weight: bold; border: 0;">
                         {{ number_format($lr['jumlah'], 2) }}
                     </td>
@@ -40,13 +45,17 @@
             @php
                 $footerLabel = null;
                 // No footer for Group 1 because Laba Kotor row is the footer
-                if ($index == 4) $footerLabel = 'Laba Rugi Sebelum Pajak';
-                elseif ($index == 5) $footerLabel = 'Laba Rugi Bersih';
+                if ($index == 4) {
+                    $footerLabel = 'Laba Rugi Sebelum Pajak';
+                } elseif ($index == 5) {
+                    $footerLabel = 'Laba Rugi Bersih';
+                }
             @endphp
 
             @if ($footerLabel)
                 <tr style="background-color: #b0b0b0;">
-                    <td colspan="2" style="padding: 5px; font-weight: bold; text-align: left; text-transform: uppercase; border: 0;">
+                    <td colspan="2"
+                        style="padding: 5px; font-weight: bold; text-align: left; text-transform: uppercase; border: 0;">
                         {{ $footerLabel }}
                     </td>
                     <td style="padding: 5px; text-align: right; font-weight: bold; border: 0;">

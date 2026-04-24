@@ -151,7 +151,7 @@
 
             <!-- BEGIN PAGE BODY -->
             <main id="content" class="page-body flex-1 full-height-content">
-                <div class="container-xl">
+                <div class="{{ str_contains($url, 'pos') ? 'container-fluid' : 'container-xl' }}">
                     {{ $slot }}
                 </div>
             </main>

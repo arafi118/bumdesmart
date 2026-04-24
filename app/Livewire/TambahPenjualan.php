@@ -165,7 +165,7 @@ class TambahPenjualan extends Component
         }
 
         // 2. Search Products (Only with stock > 0)
-        $products = Product::with('unit')->where('business_id', $this->businessId)
+        $products = Product::with(['unit', 'category', 'brand'])->where('business_id', $this->businessId)
             ->where('is_active', true)
             ->where('stok_aktual', '>', 0) // Only products with stock
             ->where(function ($q) use ($query) {
@@ -215,6 +215,8 @@ class TambahPenjualan extends Component
                 'original_price' => $p->harga_jual,
                 'stok_tersedia' => $p->stok_aktual, // For validation
                 'unit' => $p->unit ? $p->unit->nama_satuan : '-',
+                'category' => $p->category ? $p->category->nama_kategori : '-',
+                'brand' => $p->brand ? $p->brand->nama_merek : '-',
                 'allow_decimal' => $p->unit ? (bool)$p->unit->desimal : false,
             ];
         }

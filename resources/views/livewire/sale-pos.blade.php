@@ -1,4 +1,4 @@
-<div class="row main-row" x-data="posSystem()" @sale-stored.window="cart = []">
+<div class="row main-row" x-data="posSystem()" @sale-stored.window="cart = []" @keydown.window="handleShortcuts($event)">
     @if (!$cashDrawer)
         <div class="position-absolute d-flex flex-column align-items-center justify-content-center"
             style="z-index: 100; background: rgba(255,255,255,0.7); backdrop-filter: blur(5px); top: 0; left: 0; right: 0; bottom: 0;">
@@ -17,7 +17,7 @@
             </div>
         </div>
     @endif
-    <div class="col-6 col-md-5 col-lg-4 d-flex flex-column h-100">
+    <div class="col-12 col-md-5 col-lg-4 d-flex flex-column h-100 mb-3 mb-md-0">
         <div class="mb-3">
             <div class="card">
                 <div class="card-body">
@@ -116,7 +116,7 @@
         {{ $products->links('components.pos-pagination') }}
     </div>
 
-    <div class="col-6 col-md-7 col-lg-8 overflow-hidden" wire:ignore>
+    <div class="col-12 col-md-7 col-lg-8 overflow-hidden d-flex flex-column" wire:ignore>
         <div class="card h-100">
 
             <div class="card-body p-0 px-3 overflow-x-hidden overflow-y-auto">
@@ -180,7 +180,7 @@
                                 </div>
 
                                 <!-- Total Nominal -->
-                                <div class="col-2 text-end fw-bold text-dark fs-4"
+                                <div class="col-auto text-end fw-bold text-dark fs-4" style="min-width: 80px;"
                                     x-text="formatRupiah((parseFloat(item.price) * parseFloat(item.qty)) - calculateItemDiscount(item))">
                                 </div>
 
@@ -197,32 +197,32 @@
                 </div>
             </div>
             <div class="card-footer mt-0 p-2">
-                <div class="d-flex gap-1">
-                    <button class="btn btn-outline-info flex-fill p-1" title="Diskon Global"
+                <div class="d-flex flex-wrap gap-1 justify-content-center">
+                    <button class="btn btn-outline-info flex-fill p-1" style="min-width: 45px;" title="Diskon Global"
                         @click="openGlobalDiscountModal()">
                         <span class="material-symbols-outlined fs-3">percent_discount</span>
                     </button>
-                    <button class="btn btn-outline-info flex-fill p-1" title="Cashback Global"
+                    <button class="btn btn-outline-info flex-fill p-1" style="min-width: 45px;" title="Cashback Global"
                         @click="openGlobalCashbackModal()">
                         <span class="material-symbols-outlined fs-3">currency_exchange</span>
                     </button>
-                    <button class="btn btn-outline-warning flex-fill p-1" title="Tunda Transaksi"
+                    <button class="btn btn-outline-warning flex-fill p-1" style="min-width: 45px;" title="Tunda Transaksi"
                         @click="pauseSale()">
                         <span class="material-symbols-outlined fs-3">inactive_order</span>
                     </button>
-                    <button class="btn btn-outline-secondary flex-fill p-1 position-relative"
+                    <button class="btn btn-outline-secondary flex-fill p-1 position-relative" style="min-width: 45px;"
                         title="Transaksi Tertunda" x-show="heldSales.length > 0" @click="openHeldSalesModal()">
                         <span class="material-symbols-outlined fs-3">restore_page</span>
                         <span class="badge bg-info text-light badge-notification"
                             style="position: absolute; top: -5px; right: -5px; min-width: 1rem; height: 1rem; padding: 0; display: flex; align-items: center; justify-content: center; font-size: 0.6rem;"
                             x-text="heldSales.length"></span>
                     </button>
-                    <button class="btn btn-outline-danger flex-fill p-1" title="Reset Keranjang"
+                    <button class="btn btn-outline-danger flex-fill p-1" style="min-width: 45px;" title="Reset Keranjang"
                         @click="clearCart()">
                         <span class="material-symbols-outlined fs-3">delete_sweep</span>
                     </button>
                     @if ($cashDrawer)
-                        <button class="btn btn-outline-dark flex-fill p-1" title="Tutup Kasir" data-bs-toggle="modal"
+                        <button class="btn btn-outline-dark flex-fill p-1" style="min-width: 45px;" title="Tutup Kasir" data-bs-toggle="modal"
                             data-bs-target="#closeCashierModal">
                             <span class="material-symbols-outlined fs-3">logout</span>
                         </button>
@@ -252,6 +252,18 @@
                 <div class="d-grid mt-2">
                     <button type="button" class="btn btn-primary" @click="processPayment"
                         :disabled="cart.length === 0">Bayar</button>
+                </div>
+
+                <div class="mt-3 pt-2 border-top">
+                    <div class="d-flex flex-wrap gap-2 justify-content-center">
+                        <span class="badge bg-light text-dark border p-1" style="font-size: 0.65rem;"><kbd>F1</kbd> Cari Produk</span>
+                        <span class="badge bg-light text-dark border p-1" style="font-size: 0.65rem;"><kbd>F2</kbd> Pelanggan</span>
+                        <span class="badge bg-light text-dark border p-1" style="font-size: 0.65rem;"><kbd>F3</kbd> Tunda</span>
+                        <span class="badge bg-light text-dark border p-1" style="font-size: 0.65rem;"><kbd>F4</kbd> Tertunda</span>
+                        <span class="badge bg-light text-dark border p-1" style="font-size: 0.65rem;"><kbd>F8</kbd> Bayar</span>
+                        <span class="badge bg-light text-dark border p-1" style="font-size: 0.65rem;"><kbd>F9</kbd> Reset</span>
+                        <span class="badge bg-light text-dark border p-1" style="font-size: 0.65rem;"><kbd>F10</kbd> Tutup Kasir</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -421,6 +433,23 @@
             flex-direction: column;
         }
 
+        @media (max-width: 767.98px) {
+            .page {
+                height: auto;
+                min-height: 100vh;
+            }
+            .main-row {
+                height: auto;
+                overflow: visible;
+            }
+            .h-100 {
+                height: auto !important;
+            }
+            .overflow-y-auto {
+                max-height: 500px;
+            }
+        }
+
         .page-wrapper {
             flex: 1;
             display: flex;
@@ -444,11 +473,18 @@
 
         .main-row {
             flex: 1;
-            overflow: hidden;
+            overflow: auto;
             margin: 0 !important;
             display: flex;
-            flex-wrap: nowrap;
+            flex-wrap: wrap;
             position: relative;
+        }
+
+        @media (min-width: 768px) {
+            .main-row {
+                flex-wrap: nowrap;
+                overflow: hidden;
+            }
         }
 
         .overflow-y-auto::-webkit-scrollbar {
@@ -1168,6 +1204,44 @@
                         no_rekening: '',
                         note: ''
                     };
+                },
+
+                handleShortcuts(e) {
+                    const shortcuts = ['F1', 'F2', 'F3', 'F4', 'F8', 'F9', 'F10'];
+                    if (!shortcuts.includes(e.key)) return;
+
+                    e.preventDefault();
+
+                    switch(e.key) {
+                        case 'F1':
+                            if (productSearchTomSelect) {
+                                productSearchTomSelect.focus();
+                                productSearchTomSelect.open();
+                            }
+                            break;
+                        case 'F2':
+                            if (customerTomSelect) {
+                                customerTomSelect.focus();
+                                customerTomSelect.open();
+                            }
+                            break;
+                        case 'F3':
+                            this.pauseSale();
+                            break;
+                        case 'F4':
+                            this.openHeldSalesModal();
+                            break;
+                        case 'F8':
+                            this.processPayment();
+                            break;
+                        case 'F9':
+                            this.clearCart();
+                            break;
+                        case 'F10':
+                            const closeBtn = document.querySelector('[title="Tutup Kasir"]');
+                            if (closeBtn) closeBtn.click();
+                            break;
+                    }
                 }
             }));
         });
@@ -1267,6 +1341,9 @@
 
                             return `<div class="d-flex flex-column py-1">
                                 <div class="fw-bold text-dark">${escape(data.nama_produk)}</div>
+                                <div class="text-muted small">
+                                    ${escape(data.category ? data.category.nama_kategori : '-')} | ${escape(data.brand ? data.brand.nama_merek : '-')}
+                                </div>
                                 <div class="d-flex justify-content-between align-items-center mt-1">
                                     <small class="text-secondary">${escape(data.sku || '-')}</small>
                                     <span class="badge bg-primary-lt">Rp ${parseFloat(data.harga_jual).toLocaleString('id-ID')}</span>

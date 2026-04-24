@@ -853,6 +853,9 @@
                                     </div>
                                   <div class="flex-grow-1 ps-2">
                                     <div class="fw-bold">${escape(data.nama_produk)}</div>
+                                    <div class="text-muted small">
+                                        ${escape(data.category)} | ${escape(data.brand)}
+                                    </div>
                                     <div class="d-flex justify-content-between small text-muted">
                                         <span>${escape(data.sku)}</span>
                                         <div class="text-end">
