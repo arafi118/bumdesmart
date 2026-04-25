@@ -137,7 +137,7 @@ class Pelanggan extends Component
             TableUtil::setTableHeader('kode_pelanggan', 'Kode Pelanggan', true, true),
             TableUtil::setTableHeader('nama_pelanggan', 'Nama Pelanggan', true, true),
             TableUtil::setTableHeader('no_hp', 'No HP', true, true),
-            TableUtil::setTableHeader('customer_group.nama_group', 'Nama Group', true, true),
+            TableUtil::setTableHeader('customerGroup.nama_group', 'Nama Group', true, true),
             TableUtil::setTableHeader('limit_hutang', 'Limit Hutang', true, true),
             TableUtil::setTableHeader('aksi', 'Aksi', false, false),
         ];
