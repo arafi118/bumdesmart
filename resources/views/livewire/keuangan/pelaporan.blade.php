@@ -60,6 +60,7 @@
                                 <option value="jurnalTransaksi">Jurnal Transaksi</option>
                                 <option value="bukuBesar">Laporan Buku Besar</option>
                                 <option value="neraca">Laporan Neraca</option>
+                                <option value="calk">Laporan CALK (Catatan Atas Laporan Keuangan)</option>
                                 <option value="labaRugi">Laporan Laba Rugi</option>
                                 <option value="arusKas">Laporan Arus Kas</option>
                                 <option value="asetTetapInventaris">Aset Tetap dan Inventaris</option>

@@ -199,6 +199,34 @@ class Cetak extends Controller
         return $this->streamPdf($html, 'laporan-neraca.pdf');
     }
 
+    public function calk(array $data)
+    {
+        $business = view()->shared('business');
+        $tahun = $data['tahun'] ?? date('Y');
+        $bulan = $data['bulan'] ?? date('m');
+
+        $akunLevel1s = AkunLevel1::with([
+            'akunLevel2.akunLevel3.accounts' => function ($query) use ($business) {
+                $query->where('business_id', $business->id);
+            },
+            'akunLevel2.akunLevel3.accounts.balance' => function ($query) use ($business, $tahun) {
+                $query->where('business_id', $business->id)->where('tahun', $tahun);
+            },
+        ])->where('id', '<=', '3')->get();
+
+        $title = 'Catatan Atas Laporan Keuangan (CALK)';
+        $periodeParts = [];
+        if ($bulan != '-') {
+            $periodeParts[] = Carbon::createFromDate($tahun, $bulan, 1)->isoFormat('MMMM');
+        }
+        $periodeParts[] = $tahun;
+        $subtitle = 'Periode: '.implode(' ', $periodeParts);
+
+        $html = view('livewire.keuangan.pelaporan.calk', compact('title', 'subtitle', 'akunLevel1s', 'tahun', 'bulan'))->render();
+
+        return $this->streamPdf($html, 'laporan-calk.pdf');
+    }
+
     public function labaRugi(array $data)
     {
         $business = view()->shared('business');
