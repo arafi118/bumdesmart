@@ -98,7 +98,7 @@
         .size-107 { 
             grid-template-columns: repeat(3, 50mm); 
             column-gap: 2.5mm;
-            row-gap: 3mm;
+            row-gap: 8mm;
             padding: 5mm 3mm;
             width: 165mm; 
         }
@@ -109,7 +109,7 @@
         .size-108 { 
             grid-template-columns: repeat(4, 38mm); 
             column-gap: 2.5mm;
-            row-gap: 3mm;
+            row-gap: 8mm;
             padding: 5mm 3mm;
             width: 165mm; 
         }
@@ -121,7 +121,7 @@
         .size-103 { 
             grid-template-columns: repeat(2, 64mm); 
             column-gap: 3.5mm;
-            row-gap: 3mm;
+            row-gap: 8mm;
             padding: 8mm 4mm;
             width: 165mm; 
         }
@@ -134,7 +134,7 @@
         .size-121 { 
             grid-template-columns: repeat(2, 75mm); 
             column-gap: 3.5mm;
-            row-gap: 3mm;
+            row-gap: 8mm;
             padding: 8mm 4mm;
             width: 165mm; 
         }
