@@ -23,7 +23,6 @@ class SalePos extends Component
 
     public $businessId;
 
-    public $searchProduct = '';
 
     public $cashDrawer = null;
 
@@ -35,30 +34,6 @@ class SalePos extends Component
 
     public $cashDrawerNote = '';
 
-    public function updatedSearchProduct($value)
-    {
-        if (empty($value)) {
-            return;
-        }
-
-        // Perform the same query as render, but get count
-        $query = Product::where('business_id', $this->businessId)
-            ->where('is_active', true)
-            ->where('stok_aktual', '>', 0)
-            ->where(function ($q) use ($value) {
-                $q->where('nama_produk', 'LIKE', "%{$value}%")
-                    ->orWhere('sku', 'LIKE', "%{$value}%");
-            })
-            ->when($this->selectedCategory, function ($q) {
-                $q->where('category_id', $this->selectedCategory);
-            });
-
-        if ($query->count() === 1) {
-            $product = $query->first();
-            $this->dispatch('add-to-cart', product: $product);
-            $this->searchProduct = '';
-        }
-    }
 
     public $selectedCategory = '';
 
@@ -595,12 +570,6 @@ class SalePos extends Component
     {
         $products = Product::where('business_id', $this->businessId)
             ->where('is_active', true)
-            ->when($this->searchProduct, function ($q) {
-                $q->where(function ($sq) {
-                    $sq->where('nama_produk', 'LIKE', "%{$this->searchProduct}%")
-                        ->orWhere('sku', 'LIKE', "%{$this->searchProduct}%");
-                });
-            })
             ->when($this->selectedCategory, function ($q) {
                 $q->where('category_id', $this->selectedCategory);
             })

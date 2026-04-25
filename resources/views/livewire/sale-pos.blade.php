@@ -1363,6 +1363,7 @@
 
                     this.lastScannedCode = null;
                     this.lastScannedName = '';
+                    window.posLastScanned = { code: null, time: 0 };
 
                     setTimeout(async () => {
                         try {
@@ -1410,12 +1411,27 @@
                     if (!this.isScanningEnabled) return;
 
                     const now = Date.now();
-                    // 2 second cooldown for same barcode
-                    if (decodedText === this.lastScannedCode && (now - this.lastScannedTime) < 2000) {
+                    
+                    // Use window object to persist state across Livewire re-renders
+                    if (!window.posLastScanned) {
+                        window.posLastScanned = { code: null, time: 0 };
+                    }
+
+                    // 1. Same-item loop protection (5 seconds)
+                    if (decodedText === window.posLastScanned.code && (now - window.posLastScanned.time) < 5000) {
                         return;
                     }
 
-                    this.isScanningEnabled = false; // Pause while processing or during cooldown
+                    // 2. General cooldown (1.5 seconds)
+                    if ((now - window.posLastScanned.time) < 1500) {
+                        return;
+                    }
+
+                    this.isScanningEnabled = false; 
+                    window.posLastScanned.code = decodedText;
+                    window.posLastScanned.time = now;
+                    
+                    // Also update Alpine state for UI consistency
                     this.lastScannedCode = decodedText;
                     this.lastScannedTime = now;
 
@@ -1428,17 +1444,29 @@
                     const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3');
                     audio.play().catch(() => {});
 
+                    // Haptic feedback (vibration) for mobile
+                    if (navigator.vibrate) {
+                        navigator.vibrate(200);
+                    }
+
                     // Process Scan
                     this.$wire.scanProduct(decodedText).then(res => {
                         if (res.success) {
                             this.addToCart(res.product);
                             this.lastScannedName = res.product.name;
-                            setTimeout(() => { if(this.lastScannedCode === decodedText) this.lastScannedName = '' }, 3000);
+                            
+                            // Explicitly clear main TomSelect search box if it exists
+                            if (typeof productSearchTomSelect !== 'undefined') {
+                                productSearchTomSelect.clear(true);
+                                productSearchTomSelect.setTextboxValue('');
+                            }
+
+                            setTimeout(() => { if(window.posLastScanned && window.posLastScanned.code === decodedText) this.lastScannedName = '' }, 3000);
                         } else {
                             Toast.fire({ icon: 'warning', title: res.message });
                         }
                         
-                        // Re-enable scanning after a short delay to prevent double scans
+                        // Re-enable scanning after the general cooldown
                         setTimeout(() => { this.isScanningEnabled = true; }, 1500);
                     }).catch(() => {
                         this.isScanningEnabled = true;
