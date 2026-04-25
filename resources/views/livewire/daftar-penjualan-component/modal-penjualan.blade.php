@@ -134,6 +134,14 @@
                 @endif
             </div>
             <div class="modal-footer">
+                @if (!empty($detailSale))
+                    <a href="/penjualan/cetak-struk/{{ $detailSale->id }}" target="_blank" class="btn btn-info me-2">
+                        <span class="material-symbols-outlined me-1">print</span> Cetak Struk
+                    </a>
+                    <a href="/penjualan/cetak-surat-jalan/{{ $detailSale->id }}" target="_blank" class="btn btn-primary me-2">
+                        <span class="material-symbols-outlined me-1">local_shipping</span> Cetak Surat Jalan
+                    </a>
+                @endif
                 <button type="button" class="btn ms-auto" data-bs-dismiss="modal">
                     Tutup
                 </button>

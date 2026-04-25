@@ -51,6 +51,10 @@
                                         target="_blank">
                                         Cetak Struk
                                     </a>
+                                    <a class="dropdown-item" href="/penjualan/cetak-surat-jalan/{{ $sale->id }}"
+                                        target="_blank">
+                                        Cetak Surat Jalan
+                                    </a>
                                     <a class="dropdown-item" href="/penjualan/edit/{{ $sale->id }}">
                                         Edit
                                     </a>

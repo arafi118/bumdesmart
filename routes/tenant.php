@@ -106,6 +106,7 @@ Route::middleware([
             Route::get('/penjualan/pos', SalePos::class);
             Route::get('/penjualan/cetak-struk/{id}', CetakStruk::class);
             Route::get('/penjualan/cetak-struk-kasir/{id}', CetakStrukKasir::class);
+            Route::get('/penjualan/cetak-surat-jalan/{id}', \App\Livewire\Penjualan\CetakSuratJalan::class);
 
             Route::get('/keuangan/pelaporan', Pelaporan::class);
             Route::get('/keuangan/pelaporan/cetak', Cetak::class);
