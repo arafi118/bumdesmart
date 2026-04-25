@@ -471,6 +471,8 @@
                     subtotal: '0',
                     orderDiscount: '0',
                     orderTax: '0',
+                    grandTotal: '0',
+                    orderCashback: '0'
                 },
 
                 // Scanner Methods
@@ -552,9 +554,6 @@
                         this.html5QrCode = null;
                     }
                     $('#scannerModal').modal('hide');
-                },
-                    grandTotal: '0',
-                    orderCashback: '0'
                 },
                 totalProducts: {
                     subtotal: '0',
