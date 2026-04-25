@@ -212,15 +212,30 @@
                     }
                 },
                 formatRupiah(num) {
-                    return new Intl.NumberFormat('en-US').format(num || 0);
+                    if (num === null || num === undefined || num === '') return '';
+                    let val = (typeof num === 'string') ? this.parseFormatted(num) : num;
+                    return new Intl.NumberFormat('id-ID', {
+                        maximumFractionDigits: 2,
+                        minimumFractionDigits: 0
+                    }).format(val);
                 },
-                parseMoney(str) {
-                    if (!str) return 0;
-                    return parseFloat(String(str).replace(/,/g, '')) || 0;
-                },
+
                 parseFormatted(val) {
                     if (typeof val === 'number') return val;
-                    return parseFloat(String(val).replace(/,/g, '')) || 0;
+                    if (!val) return 0;
+                    let str = String(val).trim();
+                    if (str.includes(',')) {
+                        let clean = str.replace(/\./g, '').replace(/,/g, '.');
+                        return parseFloat(clean) || 0;
+                    }
+                    if (str.includes('.')) {
+                        let parts = str.split('.');
+                        if (parts[parts.length - 1].length === 3 || parts.length > 2) {
+                            return parseFloat(str.replace(/\./g, '')) || 0;
+                        }
+                        return parseFloat(str) || 0;
+                    }
+                    return parseFloat(str) || 0;
                 },
             }))
         })

@@ -376,7 +376,7 @@
     </div>
 
     <!-- Scanner Modal -->
-    <div class="modal modal-blur fade" id="scannerModal" tabindex="-1" role="dialog" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal modal-blur fade" id="scannerModal" tabindex="-1" role="dialog" aria-hidden="true" data-bs-backdrop="static" wire:ignore.self>
         <div class="modal-dialog modal-dialog-centered" role="document">
             <div class="modal-content shadow-lg overflow-hidden">
                 <div class="modal-status-top bg-primary"></div>

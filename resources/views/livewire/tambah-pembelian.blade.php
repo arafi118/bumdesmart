@@ -93,8 +93,7 @@
                                     </div>
                                 </td>
                                 <td>
-                                    <input type="text" class="form-control bg-light" readonly
-                                        x-bind:value="product.subtotal">
+                                    <div class="text-end fw-bold py-2" x-text="product.subtotal"></div>
                                 </td>
                                 <td>
                                     <a href="#" class="text-danger"
@@ -316,7 +315,7 @@
         @include('livewire.tambah-pembelian-component.modal-cashback')
 
         <!-- Scanner Modal -->
-        <div class="modal modal-blur fade" id="scannerModal" tabindex="-1" role="dialog" aria-hidden="true" data-bs-backdrop="static">
+        <div class="modal modal-blur fade" id="scannerModal" tabindex="-1" role="dialog" aria-hidden="true" data-bs-backdrop="static" wire:ignore.self>
             <div class="modal-dialog modal-dialog-centered" role="document">
                 <div class="modal-content shadow-lg overflow-hidden">
                     <div class="modal-status-top bg-primary"></div>
@@ -649,22 +648,31 @@
 
                 // --- Helpers ---
                 formatRupiah(num) {
-                    if (num === null || num === undefined) return '';
-                    return Number(num).toLocaleString('id-ID', {
+                    if (num === null || num === undefined || num === '') return '';
+                    let val = (typeof num === 'string') ? this.parseFormatted(num) : num;
+                    return new Intl.NumberFormat('id-ID', {
                         maximumFractionDigits: 2,
                         minimumFractionDigits: 0
-                    });
+                    }).format(val);
                 },
 
                 parseFormatted(val) {
                     if (typeof val === 'number') return val;
                     if (!val) return 0;
                     let str = String(val).trim();
-
-                    // Format Indonesia: . (titik) adalah ribuan, , (koma) adalah desimal
-                    // Kita hapus semua titik, lalu ganti koma dengan titik agar bisa di-parseFloat
-                    let clean = str.replace(/\./g, '').replace(/,/g, '.');
-                    return parseFloat(clean) || 0;
+                    // Indonesia: . (titik) ribuan, , (koma) desimal. 
+                    if (str.includes(',')) {
+                        let clean = str.replace(/\./g, '').replace(/,/g, '.');
+                        return parseFloat(clean) || 0;
+                    }
+                    if (str.includes('.')) {
+                        let parts = str.split('.');
+                        if (parts[parts.length - 1].length === 3 || parts.length > 2) {
+                            return parseFloat(str.replace(/\./g, '')) || 0;
+                        }
+                        return parseFloat(str) || 0;
+                    }
+                    return parseFloat(str) || 0;
                 },
 
                 initExpDatePicker(el, product) {
@@ -754,7 +762,7 @@
                             nama_produk: product.nama_produk,
                             gambar: product.gambar,
                             sku: product.sku,
-                            harga_beli: this.formatRupiah(parseInt(product.harga_beli)),
+                            harga_beli: this.formatRupiah(product.harga_beli),
                             jumlah_beli: 1,
                             unit: product.unit,
                             allow_decimal: product.allow_decimal,
@@ -769,7 +777,7 @@
                                 jumlah: 0,
                                 nominal: 0
                             },
-                            subtotal: this.formatRupiah(parseInt(product.harga_beli))
+                            subtotal: this.formatRupiah(product.harga_beli)
                         };
                     }
                     this.updateRow(id);
@@ -1025,6 +1033,7 @@
             // Product Search
             if (document.getElementById('searchProduct')) {
                 new TomSelect('#searchProduct', {
+                    closeAfterSelect: false,
                     valueField: 'id',
                     labelField: 'nama_produk',
                     searchField: ['nama_produk', 'sku'],
@@ -1049,8 +1058,17 @@
                     },
                     load: function(query, callback) {
                         if (query.length < 2) return callback();
-                        @this.call('loadSearchProducts', query, 0).then(res => callback(res.data))
-                            .catch(() => callback());
+                        @this.call('loadSearchProducts', query, 0).then(res => {
+                            callback(res.data);
+                            // Autoselect if exactly 1 match (barcode support)
+                            if (res.data.length === 1) {
+                                let item = res.data[0];
+                                if (query === item.sku || query === item.barcode) {
+                                    this.addItem(item.id);
+                                    this.blur();
+                                }
+                            }
+                        }).catch(() => callback());
                     },
                     onChange: function(value) {
                         if (!value) return;

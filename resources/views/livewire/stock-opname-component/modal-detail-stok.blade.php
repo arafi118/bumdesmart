@@ -92,7 +92,7 @@
                                         <tr>
                                             <td class="fw-bold">Harga Beli</td>
                                             <td>:</td>
-                                            <td>Rp {{ number_format($product->harga_beli) }}</td>
+                                            <td>Rp {{ number_format($product->harga_beli, 0, ',', '.') }}</td>
                                         </tr>
                                         <tr>
                                             <td class="fw-bold">Stok Saat Ini</td>

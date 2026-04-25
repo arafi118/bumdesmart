@@ -80,8 +80,7 @@
                                     </div>
                                 </td>
                                 <td>
-                                    <input type="text" class="form-control bg-light" readonly
-                                        x-bind:value="product.subtotal">
+                                    <div class="text-end fw-bold py-2" x-text="product.subtotal"></div>
                                 </td>
                                 <td>
                                     <a href="#" class="text-danger"
@@ -461,11 +460,12 @@
 
                 // --- Helpers ---
                 formatDecimal(num) {
-                    if (num === null || num === undefined) return '';
-                    return Number(num).toLocaleString('id-ID', {
+                    if (num === null || num === undefined || num === '') return '';
+                    let val = (typeof num === 'string') ? this.parseFormatted(num) : num;
+                    return new Intl.NumberFormat('id-ID', {
                         maximumFractionDigits: 2,
                         minimumFractionDigits: 0
-                    });
+                    }).format(val);
                 },
 
                 formatRupiah(num) {
@@ -476,11 +476,19 @@
                     if (typeof val === 'number') return val;
                     if (!val) return 0;
                     let str = String(val).trim();
-
-                    // Format Indonesia: . (titik) adalah ribuan, , (koma) adalah desimal
-                    // Kita hapus semua titik, lalu ganti koma dengan titik agar bisa di-parseFloat
-                    let clean = str.replace(/\./g, '').replace(/,/g, '.');
-                    return parseFloat(clean) || 0;
+                    // Indonesia: . (titik) ribuan, , (koma) desimal. 
+                    if (str.includes(',')) {
+                        let clean = str.replace(/\./g, '').replace(/,/g, '.');
+                        return parseFloat(clean) || 0;
+                    }
+                    if (str.includes('.')) {
+                        let parts = str.split('.');
+                        if (parts[parts.length - 1].length === 3 || parts.length > 2) {
+                            return parseFloat(str.replace(/\./g, '')) || 0;
+                        }
+                        return parseFloat(str) || 0;
+                    }
+                    return parseFloat(str) || 0;
                 },
 
                 // Update Totals (The brain of the calculation)
@@ -842,6 +850,7 @@
             // Product Search (with Barcode support via type detection)
             if (document.getElementById('searchProduct')) {
                 let tsProduct = new TomSelect('#searchProduct', {
+                    closeAfterSelect: false,
                     valueField: 'id',
                     labelField: 'nama_produk',
                     searchField: ['nama_produk', 'sku'], // Added barcode field if logical
@@ -874,6 +883,14 @@
 
                         @this.call('loadSearchProducts', query, customerId).then(res => {
                             callback(res.data);
+                            // Autoselect if exactly 1 match (barcode support)
+                            if (res.data.length === 1) {
+                                let item = res.data[0];
+                                if (query === item.sku || query === item.barcode) {
+                                    this.addItem(item.id);
+                                    this.blur();
+                                }
+                            }
                         }).catch(() => callback());
                     },
                     onChange: function(value) {

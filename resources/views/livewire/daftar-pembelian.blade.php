@@ -46,9 +46,9 @@
                                 <span class="badge text-light bg-danger">Pending</span>
                             @endif
                         </td>
-                        <td>{{ number_format($purchase->total) }}</td>
-                        <td>{{ number_format($totalDibayar) }}</td>
-                        <td>{{ number_format($purchase->total - $totalDibayar) }}</td>
+                        <td>{{ number_format($purchase->total, 0, ',', '.') }}</td>
+                        <td>{{ number_format($totalDibayar, 0, ',', '.') }}</td>
+                        <td>{{ number_format($purchase->total - $totalDibayar, 0, ',', '.') }}</td>
                         <td>
                             <div class="dropdown">
                                 <button class="btn btn-sm btn-info dropdown-toggle" type="button"

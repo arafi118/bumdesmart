@@ -218,7 +218,8 @@ class TambahPembelian extends Component
             ->where('business_id', $this->businessId)
             ->where(function ($q) use ($query) {
                 $q->where('nama_produk', 'LIKE', "%{$query}%")
-                    ->orWhere('sku', 'LIKE', "%{$query}%");
+                    ->orWhere('sku', 'LIKE', "%{$query}%")
+                    ->orWhere('barcode', 'LIKE', "%{$query}%");
             })
             ->offset($offset)
             ->limit($perPage)
@@ -227,7 +228,8 @@ class TambahPembelian extends Component
         $total = Product::where('business_id', $this->businessId)
             ->where(function ($q) use ($query) {
                 $q->where('nama_produk', 'LIKE', "%{$query}%")
-                    ->orWhere('sku', 'LIKE', "%{$query}%");
+                    ->orWhere('sku', 'LIKE', "%{$query}%")
+                    ->orWhere('barcode', 'LIKE', "%{$query}%");
             })
             ->count();
 
@@ -239,6 +241,7 @@ class TambahPembelian extends Component
                 'id' => $product->id,
                 'nama_produk' => $product->nama_produk,
                 'sku' => $product->sku,
+                'barcode' => $product->barcode,
                 'harga_beli' => $product->harga_beli,
                 'gambar' => $product->gambar,
                 'unit' => $product->unit ? $product->unit->nama_satuan : '-',

@@ -6,204 +6,260 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Surat Jalan {{ $sale->no_invoice }}</title>
     <style>
+        @page {
+            size: A5 landscape;
+            margin: 5mm;
+        }
+
         body {
-            font-family: 'Arial', sans-serif;
-            font-size: 14px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 11px;
             color: #000;
             margin: 0;
-            padding: 20px;
+            padding: 0;
+            background-color: #fff;
         }
 
         .container {
             width: 100%;
-            margin: 0 auto;
+            padding: 10px;
         }
 
-        .header {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 20px;
-            border-bottom: 2px solid #000;
-            padding-bottom: 10px;
-        }
-
-        .business-info {
-            width: 60%;
-        }
-
-        .business-info h2 {
-            margin: 0;
-            font-size: 20px;
-        }
-
-        .business-info p {
-            margin: 2px 0;
-            font-size: 12px;
-        }
-
-        .document-title {
-            width: 35%;
-            text-align: right;
-        }
-
-        .document-title h1 {
-            margin: 0;
-            font-size: 24px;
-            color: #333;
-        }
-
-        .info-section {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 20px;
-        }
-
-        .info-box {
-            width: 45%;
-        }
-
-        .info-box h4 {
-            margin: 0 0 5px 0;
-            border-bottom: 1px solid #ccc;
-            padding-bottom: 3px;
-        }
-
-        .info-box p {
-            margin: 2px 0;
-        }
-
-        table {
+        .header-table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 30px;
+            margin-bottom: 10px;
         }
 
-        th {
-            background-color: #f2f2f2;
-            border: 1px solid #000;
-            padding: 8px;
-            text-align: left;
-        }
-
-        td {
-            border: 1px solid #000;
-            padding: 8px;
+        .header-table td {
+            border: none;
+            padding: 1px;
             vertical-align: top;
         }
 
-        .signature-section {
+        .business-logo {
+            max-width: 60px;
+            max-height: 40px;
+            margin-bottom: 2px;
+        }
+
+        .doc-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin: 0;
+            line-height: 1;
+        }
+
+        .label-col {
+            width: 100px;
+        }
+
+        .value-col {
+            width: 10px;
+            text-align: center;
+        }
+
+        table.main-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 10px;
+        }
+
+        table.main-table th {
+            border-top: 1px solid #000;
+            border-bottom: 1px solid #000;
+            padding: 5px;
+            text-align: left;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        table.main-table td {
+            padding: 4px 5px;
+            border-bottom: 0.5px solid #eee;
+        }
+
+        .text-right { text-align: right; }
+        .text-center { text-align: center; }
+        .fw-bold { font-weight: bold; }
+
+        .footer-section {
             display: flex;
             justify-content: space-between;
-            margin-top: 50px;
+            margin-top: 5px;
+        }
+
+        .signature-section {
+            width: 60%;
+            display: flex;
+            justify-content: space-between;
         }
 
         .signature-box {
-            width: 200px;
+            width: 45%;
             text-align: center;
         }
 
         .signature-space {
-            height: 80px;
+            height: 40px;
         }
 
-        .text-center {
-            text-align: center;
+        .total-box {
+            width: 35%;
+            text-align: right;
+            border-top: 1px solid #000;
+            padding-top: 5px;
+        }
+
+        .notes {
+            font-size: 9px;
+            margin-top: 10px;
+            border-top: 1px dotted #000;
+            padding-top: 5px;
         }
 
         @media print {
-            body {
-                padding: 0;
-            }
-
-            .d-print-none {
-                display: none;
-            }
+            .d-print-none { display: none; }
+            body { padding: 0; }
         }
     </style>
 </head>
 
 <body onload="window.print()">
     <div class="container">
-        <div class="d-print-none" style="margin-bottom: 20px; text-align: center;">
-            <button onclick="window.print()" style="padding: 10px 20px; cursor: pointer; background: #007bff; color: white; border: none; border-radius: 4px;">Cetak Surat Jalan</button>
-            <button onclick="window.close()" style="padding: 10px 20px; cursor: pointer; background: #6c757d; color: white; border: none; border-radius: 4px;">Tutup</button>
+        <!-- Control Buttons -->
+        <div class="d-print-none" style="margin-bottom: 20px; text-align: center; padding: 10px; background: #f0f0f0;">
+            <button onclick="window.print()" style="padding: 8px 16px; cursor: pointer; background: #28a745; color: white; border: none; border-radius: 4px; font-weight: bold;">🖨️ CETAK</button>
+            <button onclick="window.close()" style="padding: 8px 16px; cursor: pointer; background: #6c757d; color: white; border: none; border-radius: 4px; font-weight: bold; margin-left: 10px;">❌ TUTUP</button>
         </div>
 
         @php
             $logoUrl = $owner && $owner->logo ? asset('storage/' . $owner->logo) : null;
+            $totalQty = $sale->saleDetails->sum('jumlah');
+            $tanggal = date('d-m-Y', strtotime($sale->tanggal_transaksi));
+            $tempo = $sale->jumlah_utang > 0 ? date('d-m-Y', strtotime($sale->tanggal_transaksi . ' + 30 days')) : '-';
         @endphp
 
-        <div class="header">
-            <div class="business-info">
-                <div style="display: flex; align-items: center;">
+        <!-- Header -->
+        <table class="header-table">
+            <tr>
+                <!-- Left Side: Business Info -->
+                <td style="width: 50%;">
                     @if ($logoUrl)
-                        <img src="{{ $logoUrl }}" alt="Logo" style="max-width: 80px; max-height: 80px; margin-right: 15px;">
+                        <img src="{{ $logoUrl }}" alt="Logo" class="business-logo">
+                    @else
+                        <div style="font-size: 18px; font-weight: bold;">{{ $business->nama_usaha ?? '' }}</div>
                     @endif
-                    <div>
-                        <h2>{{ $business->nama_usaha ?? $owner->nama_usaha ?? '' }}</h2>
-                        <p>{{ $business->alamat ?? 'Alamat Toko Belum Diatur' }}</p>
-                        <p>Telp: {{ $business->no_telp ?? '-' }}</p>
+                    <div class="doc-title">SURAT JALAN</div>
+                    <div style="margin-top: 5px;">
+                        <table>
+                            <tr>
+                                <td class="label-col">Phone</td>
+                                <td class="value-col">:</td>
+                                <td>{{ $business->no_telp ?? '-' }}</td>
+                            </tr>
+                            <tr>
+                                <td class="label-col">No. Transaksi</td>
+                                <td class="value-col">:</td>
+                                <td>{{ $sale->no_invoice }}</td>
+                            </tr>
+                            <tr>
+                                <td class="label-col">Admin/Marketing</td>
+                                <td class="value-col">:</td>
+                                <td>{{ strtoupper($sale->user->nama_lengkap ?? 'Admin') }}</td>
+                            </tr>
+                        </table>
                     </div>
-                </div>
-            </div>
-            <div class="document-title">
-                <h1>SURAT JALAN</h1>
-                <p>No: {{ $sale->no_invoice }}</p>
-                <p>Tanggal: {{ date('d/m/Y', strtotime($sale->tanggal_transaksi)) }}</p>
-            </div>
-        </div>
+                </td>
+                <!-- Right Side: Customer Info -->
+                <td style="width: 50%;">
+                    <div style="margin-top: 25px;">
+                        <table>
+                            <tr>
+                                <td class="label-col">Kepada</td>
+                                <td class="value-col">:</td>
+                                <td class="fw-bold">{{ $sale->customer->nama_pelanggan ?? 'Umum' }}</td>
+                            </tr>
+                            <tr>
+                                <td class="label-col">Alamat</td>
+                                <td class="value-col">:</td>
+                                <td>{{ $sale->customer->alamat ?? '-' }}</td>
+                            </tr>
+                            <tr>
+                                <td style="height: 10px;"></td>
+                            </tr>
+                            <tr>
+                                <td class="label-col">Tanggal</td>
+                                <td class="value-col">:</td>
+                                <td>{{ $tanggal }}</td>
+                            </tr>
+                            <tr>
+                                <td class="label-col">Tempo</td>
+                                <td class="value-col">:</td>
+                                <td>{{ $tempo }}</td>
+                            </tr>
+                            <tr>
+                                <td class="label-col">Kode Toko</td>
+                                <td class="value-col">:</td>
+                                <td>{{ $sale->customer->kode_pelanggan ?? '-' }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                </td>
+            </tr>
+        </table>
 
-        <div class="info-section">
-            <div class="info-box">
-                <h4>Kepada Yth:</h4>
-                <p><strong>{{ $sale->customer->nama_pelanggan ?? 'Umum' }}</strong></p>
-                <p>{{ $sale->customer->alamat ?? '-' }}</p>
-                <p>{{ $sale->customer->no_hp ?? '-' }}</p>
-            </div>
-            <div class="info-box">
-                <h4>Keterangan:</h4>
-                <p>{{ $sale->keterangan ?: 'Delivery of items' }}</p>
-            </div>
-        </div>
-
-        <table>
+        <!-- Items Table -->
+        <table class="main-table">
             <thead>
                 <tr>
-                    <th style="width: 50px;" class="text-center">No</th>
+                    <th style="width: 150px;">Barcode</th>
                     <th>Nama Barang</th>
-                    <th style="width: 100px;" class="text-center">Jumlah</th>
-                    <th style="width: 100px;">Satuan</th>
+                    <th style="width: 120px;" class="text-center">Isi Per Dus</th>
+                    <th style="width: 80px;" class="text-right">Qty</th>
                 </tr>
             </thead>
             <tbody>
-                @foreach ($sale->saleDetails as $index => $item)
+                @foreach ($sale->saleDetails as $item)
                     <tr>
-                        <td class="text-center">{{ $index + 1 }}</td>
+                        <td>{{ $item->product->barcode ?? $item->product->sku ?? '-' }}</td>
                         <td>{{ $item->product->nama_produk ?? 'Produk' }}</td>
-                        <td class="text-center">{{ $item->jumlah }}</td>
-                        <td>{{ $item->product->unit->nama_satuan ?? '-' }}</td>
+                        <td class="text-center">@1 {{ $item->product->unit->nama_satuan ?? 'PCS' }}</td>
+                        <td class="text-right">{{ number_format($item->jumlah, 0, ',', '.') }} {{ $item->product->unit->nama_satuan ?? 'PCS' }}</td>
                     </tr>
                 @endforeach
             </tbody>
         </table>
 
-        <p>Barang-barang tersebut di atas telah diterima dalam keadaan baik dan cukup.</p>
+        <div class="fw-bold" style="text-align: right; margin-right: 5px;">
+            Total Qty {{ number_format($totalQty, 0, ',', '.') }}
+        </div>
 
-        <div class="signature-section">
-            <div class="signature-box">
-                <p>Penerima,</p>
-                <div class="signature-space"></div>
-                <p>( ................................ )</p>
-            </div>
-            <div class="signature-box">
-                <p>Hormat Kami,</p>
-                <div class="signature-space"></div>
-                <p>( {{ $sale->user->nama_lengkap ?? 'Admin' }} )</p>
+        <!-- Footer -->
+        <div style="text-align: center; margin-top: 10px; font-weight: bold; text-transform: uppercase;">
+            HARGA SUDAH TERMASUK PPN 11%
+        </div>
+        <div style="text-align: center; font-size: 9px; margin-top: 5px;">
+            Komplain barang dan harga, diterima paling lambat 7 (tujuh) hari dari tanggal terima. Selebihnya dianggap setuju.
+        </div>
+
+        <div class="footer-section">
+            <div class="signature-section">
+                <div class="signature-box">
+                    <p>Diterima Oleh,</p>
+                    <div class="signature-space"></div>
+                    <p>( ................................ )</p>
+                </div>
+                <div class="signature-box">
+                    <p>Hormat Kami,</p>
+                    <div class="signature-space"></div>
+                    <p>( {{ strtoupper($sale->user->nama_lengkap ?? 'Admin') }} )</p>
+                </div>
             </div>
         </div>
 
-        <div style="margin-top: 30px; font-size: 10px; color: #666; text-align: center;">
-            <p>Printed on: {{ date('d/m/Y H:i:s') }}</p>
+        <div class="notes">
+            Printed on: {{ date('d/m/Y H:i:s') }}
         </div>
     </div>
 </body>

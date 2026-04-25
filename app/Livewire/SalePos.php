@@ -147,6 +147,8 @@ class SalePos extends Component
                 'product' => [
                     'id' => $product->id,
                     'name' => $product->nama_produk,
+                    'sku' => $product->sku,
+                    'barcode' => $product->barcode,
                     'price' => (float)$product->harga_jual,
                     'stock' => (float)$product->stok_aktual,
                     'unit' => $product->unit,
@@ -179,7 +181,8 @@ class SalePos extends Component
             ->where('is_active', true)
             ->where(function ($q) use ($query) {
                 $q->where('nama_produk', 'LIKE', "%{$query}%")
-                    ->orWhere('sku', 'LIKE', "%{$query}%");
+                    ->orWhere('sku', 'LIKE', "%{$query}%")
+                    ->orWhere('barcode', 'LIKE', "%{$query}%");
             })
             ->with(['unit', 'category', 'brand'])
             ->offset($offset)

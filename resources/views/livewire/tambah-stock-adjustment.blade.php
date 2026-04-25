@@ -266,19 +266,40 @@
                 },
 
                 hitung(item) {
-                    item.selisih = item.stok_fisik - item.stok_sistem
+                    let fisik = this.parseFormatted(item.stok_fisik);
+                    let sistem = this.parseFormatted(item.stok_sistem);
+                    item.selisih = fisik - sistem;
                 },
 
                 formatDecimal(val) {
-                    if (val === null || val === undefined) return '';
-                    return Number(val).toLocaleString('id-ID', {
+                    if (val === null || val === undefined || val === '') return '';
+                    let number = (typeof val === 'string') ? this.parseFormatted(val) : val;
+                    return new Intl.NumberFormat('id-ID', {
                         maximumFractionDigits: 2,
                         minimumFractionDigits: 0
-                    });
+                    }).format(number);
                 },
 
                 formatRupiah(val) {
                     return this.formatDecimal(val);
+                },
+
+                parseFormatted(val) {
+                    if (typeof val === 'number') return val;
+                    if (!val) return 0;
+                    let str = String(val).trim();
+                    if (str.includes(',')) {
+                        let clean = str.replace(/\./g, '').replace(/,/g, '.');
+                        return parseFloat(clean) || 0;
+                    }
+                    if (str.includes('.')) {
+                        let parts = str.split('.');
+                        if (parts[parts.length - 1].length === 3 || parts.length > 2) {
+                            return parseFloat(str.replace(/\./g, '')) || 0;
+                        }
+                        return parseFloat(str) || 0;
+                    }
+                    return parseFloat(str) || 0;
                 },
 
                 simpan(status) {

@@ -170,30 +170,27 @@ class TambahPenjualan extends Component
             ->where('stok_aktual', '>', 0) // Only products with stock
             ->where(function ($q) use ($query) {
                 $q->where('nama_produk', 'LIKE', "%{$query}%")
-                    ->orWhere('sku', 'LIKE', "%{$query}%");
+                    ->orWhere('sku', 'LIKE', "%{$query}%")
+                    ->orWhere('barcode', 'LIKE', "%{$query}%");
             })
             ->take(20)
             ->get();
 
         $results = [];
         foreach ($products as $p) {
-            // Default Price
+            // ... (pricing logic kept same) ...
             $finalPrice = $p->harga_jual;
             $promoLabel = null;
 
-            // 3. Apply Pricing Logic
             if ($customerGroup) {
-                // A. Check ProductPrice (Special Price)
                 $specialPrice = ProductPrice::where('product_id', $p->id)
                     ->where('customer_group_id', $customerGroup->id)
-                    // ->whereDate('start_date', '<=', now()) ... (if dates implemented)
                     ->first();
 
                 if ($specialPrice) {
                     $finalPrice = $specialPrice->harga_spesial;
                     $promoLabel = 'Harga Spesial Member';
                 }
-                // B. Check Group Discount %
                 elseif ($customerGroup->diskon_persen > 0) {
                     $discAmount = ($p->harga_jual * $customerGroup->diskon_persen) / 100;
                     $finalPrice = max(0, $p->harga_jual - $discAmount);
@@ -201,19 +198,19 @@ class TambahPenjualan extends Component
                 }
             }
 
-            // Check Stock status (Simple check)
             $stockInfo = 'Stok: '.\App\Utils\NumberUtil::format($p->stok_aktual);
 
             $results[] = [
                 'id' => $p->id,
                 'nama_produk' => $p->nama_produk,
                 'sku' => $p->sku,
+                'barcode' => $p->barcode,
                 'gambar' => $p->gambar,
-                'harga_jual' => $finalPrice, // This is the 'System Price'
+                'harga_jual' => $finalPrice,
                 'promo_label' => $promoLabel,
                 'batch_info' => $stockInfo,
                 'original_price' => $p->harga_jual,
-                'stok_tersedia' => $p->stok_aktual, // For validation
+                'stok_tersedia' => $p->stok_aktual,
                 'unit' => $p->unit ? $p->unit->nama_satuan : '-',
                 'category' => $p->category ? $p->category->nama_kategori : '-',
                 'brand' => $p->brand ? $p->brand->nama_merek : '-',
