@@ -1385,12 +1385,15 @@
                 },
 
                 async startScanning() {
+                    this.isScanningEnabled = false;
                     const config = { fps: 10, qrbox: { width: 250, height: 250 } };
                     await this.html5QrCode.start(
                         this.currentCameraId, 
                         config, 
                         (decodedText) => this.onScanSuccess(decodedText)
                     );
+                    // Wait 1 second before allowing scans to process (camera warm up / focus)
+                    setTimeout(() => { this.isScanningEnabled = true; }, 1000);
                 },
 
                 async toggleCamera() {
@@ -1402,13 +1405,17 @@
                     this.startScanning();
                 },
 
+                isScanningEnabled: false,
                 onScanSuccess(decodedText) {
+                    if (!this.isScanningEnabled) return;
+
                     const now = Date.now();
                     // 2 second cooldown for same barcode
                     if (decodedText === this.lastScannedCode && (now - this.lastScannedTime) < 2000) {
                         return;
                     }
 
+                    this.isScanningEnabled = false; // Pause while processing or during cooldown
                     this.lastScannedCode = decodedText;
                     this.lastScannedTime = now;
 
@@ -1430,6 +1437,11 @@
                         } else {
                             Toast.fire({ icon: 'warning', title: res.message });
                         }
+                        
+                        // Re-enable scanning after a short delay to prevent double scans
+                        setTimeout(() => { this.isScanningEnabled = true; }, 1500);
+                    }).catch(() => {
+                        this.isScanningEnabled = true;
                     });
                 },
 
