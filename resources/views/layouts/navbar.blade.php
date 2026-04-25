@@ -10,7 +10,7 @@
 
         <!-- BEGIN NAVBAR LOGO -->
         <div class="navbar-brand navbar-brand-autodark d-none-navbar-horizontal pe-0 pe-md-3">
-            <a href="{{ tenancy()->initialized ? '/dashboard' : '/master/dashboard' }}" aria-label="Bumdesmart">
+            <a href="{{ tenancy()->initialized ? '/dashboard' : '/master/dashboard' }}" aria-label="Logo">
                 @php
                     $owner = tenancy()->initialized ? tenant() : null;
                     $logoUrl =

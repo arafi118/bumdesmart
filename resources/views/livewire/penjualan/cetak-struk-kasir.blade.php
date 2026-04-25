@@ -95,8 +95,8 @@
 
         <div class="receipt-header text-center">
             <h3>LAPORAN TUTUP KASIR</h3>
-            <p>{{ env('APP_NAME', 'BUMDESMART') }}</p>
-            <p>{{ $owner->alamat ?? '' }}</p>
+            <p>{{ $business->nama_usaha ?? $owner->nama_usaha ?? '' }}</p>
+            <p>{{ $business->alamat ?? '' }}</p>
         </div>
 
         <div class="divider"></div>

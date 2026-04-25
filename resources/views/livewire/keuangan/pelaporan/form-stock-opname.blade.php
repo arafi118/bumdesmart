@@ -74,6 +74,6 @@
     </div>
 
     <div style="position: fixed; bottom: 0; width: 100%; font-size: 8pt; color: #777; text-align: center; border-top: 1px solid #ddd; padding-top: 5px;">
-        Form Stock Opname - BumdesMart - Dicetak pada {{ date('d/m/Y H:i:s') }}
+        Form Stock Opname - Dicetak pada {{ date('d/m/Y H:i:s') }}
     </div>
 @endsection

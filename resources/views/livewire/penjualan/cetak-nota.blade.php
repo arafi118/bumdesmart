@@ -196,9 +196,9 @@
                         <img src="{{ $logoUrl }}" alt="Logo" style="max-width: 60px; max-height: 60px; margin-right: 12px;">
                     @endif
                     <div>
-                        <h2>{{ $owner->nama_usaha ?? env('APP_NAME', 'BUMDESMART') }}</h2>
-                        <p>{{ $owner->alamat ?? 'Alamat Toko Belum Diatur' }}</p>
-                        <p>Telp: {{ $owner->telepon ?? '-' }} | Email: {{ $owner->email ?? '-' }}</p>
+                        <h2>{{ $business->nama_usaha ?? $owner->nama_usaha ?? '' }}</h2>
+                        <p>{{ $business->alamat ?? 'Alamat Toko Belum Diatur' }}</p>
+                        <p>Telp: {{ $business->no_telp ?? '-' }} | Email: {{ $business->email ?? '-' }}</p>
                     </div>
                 </div>
             </div>

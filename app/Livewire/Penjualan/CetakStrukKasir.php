@@ -11,14 +11,17 @@ class CetakStrukKasir extends Component
 {
     public $cashDrawer;
     public $owner;
+    public $business;
     public $salesTotal;
 
     public function mount($id)
     {
         $this->cashDrawer = cashDrawer::with(['user', 'business'])->findOrFail($id);
         
+        $this->business = $this->cashDrawer->business;
+        
         // Fallback owner info
-        $this->owner = Owner::first();
+        $this->owner = tenant() ?? Owner::first();
 
         // Calculate total sales during this session
         $this->salesTotal = Sale::where('business_id', $this->cashDrawer->business_id)
