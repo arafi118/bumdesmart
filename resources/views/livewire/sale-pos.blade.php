@@ -50,7 +50,7 @@
                         </div>
                     </div>
 
-                    <div class="w-100 overflow-x-auto category-scroll p-1">
+                    <div class="w-100 overflow-x-auto category-scroll p-1 d-none d-md-block">
                         <div class="form-selectgroup d-flex flex-nowrap">
                             <label class="form-selectgroup-item flex-shrink-0">
                                 <input type="radio" name="category" class="form-selectgroup-input" checked
@@ -80,7 +80,7 @@
                 </div>
             </div>
         </div>
-        <div class="flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-1">
+        <div class="flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-1 d-none d-md-block">
             <div class="row g-2">
                 @foreach ($products as $product)
                     <div class="col-6 mb-2">
@@ -120,7 +120,9 @@
             </div>
         </div>
 
-        {{ $products->links('components.pos-pagination') }}
+        <div class="d-none d-md-block">
+            {{ $products->links('components.pos-pagination') }}
+        </div>
     </div>
 
     <div class="col-12 col-md-7 col-lg-8 overflow-hidden d-flex flex-column" wire:ignore>
