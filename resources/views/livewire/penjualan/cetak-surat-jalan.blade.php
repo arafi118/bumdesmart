@@ -145,68 +145,38 @@
         <!-- Header -->
         <table class="header-table">
             <tr>
-                <!-- Left Side: Business Info -->
-                <td style="width: 50%;">
+                <!-- Business Info & Title -->
+                <td style="text-align: center; border-bottom: 1px double #000; padding-bottom: 5px;">
                     @if ($logoUrl)
                         <img src="{{ $logoUrl }}" alt="Logo" class="business-logo">
                     @else
-                        <div style="font-size: 18px; font-weight: bold;">{{ $business->nama_usaha ?? '' }}</div>
+                        <div style="font-size: 14px; font-weight: bold;">{{ $business->nama_usaha ?? '' }}</div>
                     @endif
-                    <div class="doc-title">SURAT JALAN</div>
-                    <div style="margin-top: 5px;">
-                        <table>
-                            <tr>
-                                <td class="label-col">Phone</td>
-                                <td class="value-col">:</td>
-                                <td>{{ $business->no_telp ?? '-' }}</td>
-                            </tr>
-                            <tr>
-                                <td class="label-col">No. Transaksi</td>
-                                <td class="value-col">:</td>
-                                <td>{{ $sale->no_invoice }}</td>
-                            </tr>
-                            <tr>
-                                <td class="label-col">Admin/Marketing</td>
-                                <td class="value-col">:</td>
-                                <td>{{ strtoupper($sale->user->nama_lengkap ?? 'Admin') }}</td>
-                            </tr>
-                        </table>
-                    </div>
+                    <div class="doc-title" style="margin: 5px 0;">SURAT JALAN</div>
+                    <div style="font-size: 8px;">{{ $business->no_telp ?? '-' }}</div>
                 </td>
-                <!-- Right Side: Customer Info -->
-                <td style="width: 50%;">
-                    <div style="margin-top: 25px;">
-                        <table>
-                            <tr>
-                                <td class="label-col">Kepada</td>
-                                <td class="value-col">:</td>
-                                <td class="fw-bold">{{ $sale->customer->nama_pelanggan ?? 'Umum' }}</td>
-                            </tr>
-                            <tr>
-                                <td class="label-col">Alamat</td>
-                                <td class="value-col">:</td>
-                                <td>{{ $sale->customer->alamat ?? '-' }}</td>
-                            </tr>
-                            <tr>
-                                <td style="height: 10px;"></td>
-                            </tr>
-                            <tr>
-                                <td class="label-col">Tanggal</td>
-                                <td class="value-col">:</td>
-                                <td>{{ $tanggal }}</td>
-                            </tr>
-                            <tr>
-                                <td class="label-col">Tempo</td>
-                                <td class="value-col">:</td>
-                                <td>{{ $tempo }}</td>
-                            </tr>
-                            <tr>
-                                <td class="label-col">Kode Toko</td>
-                                <td class="value-col">:</td>
-                                <td>{{ $sale->customer->kode_pelanggan ?? '-' }}</td>
-                            </tr>
-                        </table>
-                    </div>
+            </tr>
+            <tr>
+                <!-- Transaction Info -->
+                <td style="padding-top: 5px;">
+                    <table style="width: 100%;">
+                        <tr>
+                            <td class="label-col">No. Transaksi</td>
+                            <td class="value-col">:</td>
+                            <td>{{ $sale->no_invoice }}</td>
+                            <td class="label-col" style="text-align: right;">Tanggal</td>
+                            <td class="value-col">:</td>
+                            <td style="text-align: right;">{{ $tanggal }}</td>
+                        </tr>
+                        <tr>
+                            <td class="label-col">Kepada</td>
+                            <td class="value-col">:</td>
+                            <td class="fw-bold">{{ $sale->customer->nama_pelanggan ?? 'Umum' }}</td>
+                            <td class="label-col" style="text-align: right;">Admin</td>
+                            <td class="value-col">:</td>
+                            <td style="text-align: right;">{{ strtoupper($sale->user->nama_lengkap ?? 'Admin') }}</td>
+                        </tr>
+                    </table>
                 </td>
             </tr>
         </table>
