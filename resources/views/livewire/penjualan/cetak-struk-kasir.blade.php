@@ -16,8 +16,8 @@
             color: #000;
             margin: 0;
             padding: 2mm;
-            width: 58mm;
-            max-width: 58mm;
+            width: 48mm;
+            max-width: 48mm;
         }
 
         h3 {
@@ -74,9 +74,9 @@
             }
 
             body {
-                width: 58mm;
+                width: 48mm;
                 margin: 0;
-                padding: 0 2mm;
+                padding: 0 1mm;
             }
 
             .d-print-none {
