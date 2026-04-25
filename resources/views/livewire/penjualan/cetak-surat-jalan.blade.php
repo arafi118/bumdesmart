@@ -7,28 +7,28 @@
     <title>Surat Jalan {{ $sale->no_invoice }}</title>
     <style>
         @page {
-            size: A5 landscape;
-            margin: 5mm;
+            size: 11cm 15cm;
+            margin: 3mm;
         }
 
         body {
             font-family: 'Courier New', Courier, monospace;
-            font-size: 11px;
+            font-size: 9px;
             color: #000;
             margin: 0;
             padding: 0;
             background-color: #fff;
+            line-height: 1.2;
         }
 
         .container {
             width: 100%;
-            padding: 10px;
         }
 
         .header-table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 10px;
+            margin-bottom: 5px;
         }
 
         .header-table td {
@@ -38,45 +38,47 @@
         }
 
         .business-logo {
-            max-width: 60px;
-            max-height: 40px;
+            max-width: 40px;
+            max-height: 30px;
             margin-bottom: 2px;
         }
 
         .doc-title {
-            font-size: 16px;
+            font-size: 12px;
             font-weight: bold;
             margin: 0;
             line-height: 1;
         }
 
         .label-col {
-            width: 100px;
+            width: 65px;
         }
 
         .value-col {
-            width: 10px;
+            width: 5px;
             text-align: center;
         }
 
         table.main-table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 10px;
+            margin-bottom: 5px;
         }
 
         table.main-table th {
             border-top: 1px solid #000;
             border-bottom: 1px solid #000;
-            padding: 5px;
+            padding: 3px 2px;
             text-align: left;
             font-weight: bold;
             text-transform: uppercase;
+            font-size: 8px;
         }
 
         table.main-table td {
-            padding: 4px 5px;
-            border-bottom: 0.5px solid #eee;
+            padding: 2px;
+            border-bottom: 0.1px solid #eee;
+            font-size: 8px;
         }
 
         .text-right { text-align: right; }
@@ -90,7 +92,7 @@
         }
 
         .signature-section {
-            width: 60%;
+            width: 100%;
             display: flex;
             justify-content: space-between;
         }
@@ -101,14 +103,14 @@
         }
 
         .signature-space {
-            height: 40px;
+            height: 30px;
         }
 
         .total-box {
             width: 35%;
             text-align: right;
             border-top: 1px solid #000;
-            padding-top: 5px;
+            padding-top: 3px;
         }
 
         .notes {
@@ -213,10 +215,10 @@
         <table class="main-table">
             <thead>
                 <tr>
-                    <th style="width: 150px;">Barcode</th>
+                    <th style="width: 60px;">Barcode</th>
                     <th>Nama Barang</th>
-                    <th style="width: 120px;" class="text-center">Isi Per Dus</th>
-                    <th style="width: 80px;" class="text-right">Qty</th>
+                    <th style="width: 70px;" class="text-center">Isi Per Dus</th>
+                    <th style="width: 40px;" class="text-right">Qty</th>
                 </tr>
             </thead>
             <tbody>
@@ -225,18 +227,18 @@
                         <td>{{ $item->product->barcode ?? $item->product->sku ?? '-' }}</td>
                         <td>{{ $item->product->nama_produk ?? 'Produk' }}</td>
                         <td class="text-center">@1 {{ $item->product->unit->nama_satuan ?? 'PCS' }}</td>
-                        <td class="text-right">{{ number_format($item->jumlah, 0, ',', '.') }} {{ $item->product->unit->nama_satuan ?? 'PCS' }}</td>
+                        <td class="text-right">{{ number_format($item->jumlah, 0, ',', '.') }}</td>
                     </tr>
                 @endforeach
             </tbody>
         </table>
 
-        <div class="fw-bold" style="text-align: right; margin-right: 5px;">
+        <div class="fw-bold" style="text-align: right; margin-right: 2px; font-size: 8px;">
             Total Qty {{ number_format($totalQty, 0, ',', '.') }}
         </div>
 
         <!-- Footer -->
-        <div style="text-align: center; margin-top: 10px; font-weight: bold; text-transform: uppercase;">
+        <div style="text-align: center; margin-top: 5px; font-weight: bold; text-transform: uppercase; font-size: 8px;">
             HARGA SUDAH TERMASUK PPN 11%
         </div>
         <div style="text-align: center; font-size: 9px; margin-top: 5px;">

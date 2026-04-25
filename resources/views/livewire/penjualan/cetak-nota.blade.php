@@ -7,28 +7,28 @@
     <title>Nota Penjualan {{ $sale->no_invoice }}</title>
     <style>
         @page {
-            size: A5 landscape;
-            margin: 5mm;
+            size: 11cm 15cm;
+            margin: 3mm;
         }
 
         body {
             font-family: 'Courier New', Courier, monospace;
-            font-size: 11px;
+            font-size: 9px;
             color: #000;
             margin: 0;
             padding: 0;
             background-color: #fff;
+            line-height: 1.2;
         }
 
         .container {
             width: 100%;
-            padding: 10px;
         }
 
         .header-table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 10px;
+            margin-bottom: 5px;
         }
 
         .header-table td {
@@ -38,45 +38,47 @@
         }
 
         .business-logo {
-            max-width: 60px;
-            max-height: 40px;
+            max-width: 40px;
+            max-height: 30px;
             margin-bottom: 2px;
         }
 
         .doc-title {
-            font-size: 16px;
+            font-size: 12px;
             font-weight: bold;
             margin: 0;
             line-height: 1;
         }
 
         .label-col {
-            width: 100px;
+            width: 65px;
         }
 
         .value-col {
-            width: 10px;
+            width: 5px;
             text-align: center;
         }
 
         table.main-table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 10px;
+            margin-bottom: 5px;
         }
 
         table.main-table th {
             border-top: 1px solid #000;
             border-bottom: 1px solid #000;
-            padding: 5px;
+            padding: 3px 2px;
             text-align: left;
             font-weight: bold;
             text-transform: uppercase;
+            font-size: 8px;
         }
 
         table.main-table td {
-            padding: 4px 5px;
-            border-bottom: 0.5px solid #eee;
+            padding: 2px;
+            border-bottom: 0.1px solid #eee;
+            font-size: 8px;
         }
 
         .text-right { text-align: right; }
@@ -230,12 +232,11 @@
         <table class="main-table">
             <thead>
                 <tr>
-                    <th style="width: 100px;">Barcode</th>
-                    <th>Nama Barang</th>
-                    <th style="width: 80px;" class="text-right">Harga</th>
-                    <th style="width: 60px;" class="text-center">Qty</th>
-                    <th style="width: 70px;" class="text-right">Disc</th>
-                    <th style="width: 90px;" class="text-right">Total</th>
+                    <th style="width: 60px;">Barcode</th>
+                    <th>Barang</th>
+                    <th style="width: 50px;" class="text-right">Harga</th>
+                    <th style="width: 30px;" class="text-center">Qty</th>
+                    <th style="width: 50px;" class="text-right">Total</th>
                 </tr>
             </thead>
             <tbody>
@@ -244,8 +245,7 @@
                         <td>{{ $item->product->barcode ?? $item->product->sku ?? '-' }}</td>
                         <td>{{ $item->product->nama_produk ?? 'Produk' }}</td>
                         <td class="text-right">{{ number_format($item->harga_satuan, 0, ',', '.') }}</td>
-                        <td class="text-center">{{ number_format($item->jumlah, 0, ',', '.') }} {{ $item->product->unit->nama_satuan ?? '' }}</td>
-                        <td class="text-right">{{ $item->jumlah_diskon > 0 ? number_format($item->jumlah_diskon, 0, ',', '.') : '-' }}</td>
+                        <td class="text-center">{{ number_format($item->jumlah, 0, ',', '.') }}</td>
                         <td class="text-right">{{ number_format($item->subtotal, 0, ',', '.') }}</td>
                     </tr>
                 @endforeach
@@ -253,23 +253,9 @@
         </table>
 
         <!-- Footer Section -->
-        <div style="display: flex; justify-content: space-between;">
-            <!-- Signatures -->
-            <div style="width: 60%; display: flex; justify-content: space-between; margin-top: 10px;">
-                <div class="signature-box">
-                    <p>Penerima,</p>
-                    <div class="signature-space"></div>
-                    <p>( ................................ )</p>
-                </div>
-                <div class="signature-box">
-                    <p>Hormat Kami,</p>
-                    <div class="signature-space"></div>
-                    <p>( {{ strtoupper($sale->user->nama_lengkap ?? 'Admin') }} )</p>
-                </div>
-            </div>
-
-            <!-- Totals -->
-            <div class="totals-box" style="width: 35%; text-align: right; margin-top: 5px;">
+        <div style="display: flex; justify-content: space-between; font-size: 8px;">
+            <!-- Totals (Moved up/left or kept right) -->
+            <div class="totals-box" style="width: 100%; text-align: right; margin-top: 2px;">
                 <table style="width: 100%; border-collapse: collapse;">
                     <tr>
                         <td style="text-align: left;">Subtotal</td>
@@ -281,13 +267,6 @@
                         <td style="text-align: left;">Diskon</td>
                         <td style="text-align: center;">:</td>
                         <td class="text-right">-{{ number_format($sale->jumlah_diskon, 0, ',', '.') }}</td>
-                    </tr>
-                    @endif
-                    @if ($sale->jumlah_cashback > 0)
-                    <tr>
-                        <td style="text-align: left;">Cashback</td>
-                        <td style="text-align: center;">:</td>
-                        <td class="text-right">{{ number_format($sale->jumlah_cashback, 0, ',', '.') }}</td>
                     </tr>
                     @endif
                     <tr class="fw-bold" style="border-top: 1px solid #000;">
@@ -302,18 +281,26 @@
                     </tr>
                     @if($sale->jumlah_utang > 0)
                     <tr class="fw-bold">
-                        <td style="text-align: left;">Sisa Tagihan</td>
+                        <td style="text-align: left;">Sisa</td>
                         <td style="text-align: center;">:</td>
                         <td class="text-right">{{ number_format($sale->jumlah_utang, 0, ',', '.') }}</td>
                     </tr>
-                    @else
-                    <tr>
-                        <td style="text-align: left;">Kembalian</td>
-                        <td style="text-align: center;">:</td>
-                        <td class="text-right">{{ number_format($sale->kembalian, 0, ',', '.') }}</td>
-                    </tr>
                     @endif
                 </table>
+            </div>
+        </div>
+
+        <!-- Signatures -->
+        <div style="width: 100%; display: flex; justify-content: space-between; margin-top: 10px; font-size: 8px;">
+            <div class="signature-box" style="width: 45%; text-align: center;">
+                <p>Penerima,</p>
+                <div class="signature-space" style="height: 25px;"></div>
+                <p>( ................ )</p>
+            </div>
+            <div class="signature-box" style="width: 45%; text-align: center;">
+                <p>Hormat Kami,</p>
+                <div class="signature-space" style="height: 25px;"></div>
+                <p>( {{ strtoupper($sale->user->nama_lengkap ?? 'Admin') }} )</p>
             </div>
         </div>
 
