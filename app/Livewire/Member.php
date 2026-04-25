@@ -23,7 +23,7 @@ class Member extends Component
 
     public $deskripsi;
 
-    public $diskon;
+    public $diskon = 0;
 
     protected function rules()
     {
@@ -37,6 +37,7 @@ class Member extends Component
     public function resetForm()
     {
         $this->reset('namaGroup', 'deskripsi', 'diskon', 'id');
+        $this->diskon = 0;
     }
 
     public function create()

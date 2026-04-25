@@ -40,6 +40,20 @@
                             <small class="fw-bold text-success" x-text="formatRupiah(kembalian)"></small>
                         </div>
                     </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Metode Pembayaran</label>
+                        <div wire:ignore>
+                            <select class="form-select" id="metodePembayaranSelect" x-model="metodePembayaran">
+                                <option value="cash">Tunai (Cash)</option>
+                                <option value="transfer">Transfer Bank</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3" x-show="metodePembayaran === 'transfer'" x-transition>
+                        <label class="form-label">No. Referensi / Rekening</label>
+                        <input type="text" class="form-control" wire:model="noRekening"
+                            placeholder="Contoh: BCA 123456789" />
+                    </div>
                     <div class="col-md-12 mb-3">
                         <label class="form-label">Keterangan</label>
                         <textarea class="form-control" rows="3" wire:model="keterangan" placeholder="Keterangan"></textarea>
@@ -64,8 +78,10 @@
                 jumlahPembayaran: 0,
                 formattedJumlahPembayaran: '',
                 formattedSudahDibayar: '',
+                metodePembayaran: 'cash',
                 kembalian: 0,
                 picker: null,
+                tomSelect: null,
 
                 initModal() {
                     // Sync initial data from Livewire
@@ -77,8 +93,23 @@
                     this.formattedJumlahPembayaran = '';
                     this.jumlahPembayaran = 0;
                     this.kembalian = 0;
+                    this.metodePembayaran = 'cash';
 
                     this.initDatePicker();
+                    this.initTomSelect();
+                },
+
+                initTomSelect() {
+                    if (this.tomSelect) {
+                        this.tomSelect.destroy();
+                    }
+                    this.tomSelect = new TomSelect('#metodePembayaranSelect', {
+                        onChange: (value) => {
+                            this.metodePembayaran = value;
+                            @this.set('metodePembayaran', value);
+                        }
+                    });
+                    this.tomSelect.setValue('cash');
                 },
 
                 initDatePicker() {

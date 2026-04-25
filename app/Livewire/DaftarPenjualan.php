@@ -35,6 +35,10 @@ class DaftarPenjualan extends Component
 
     public $paymentList = [];
 
+    public $metodePembayaran = 'cash';
+
+    public $noRekening = '';
+
     public function detailPenjualan($id)
     {
         $sale = \App\Models\Sale::with([
@@ -278,6 +282,8 @@ class DaftarPenjualan extends Component
         $this->keterangan = '';
         $this->jumlahPembayaran = 0;
         $this->kembalian = 0;
+        $this->metodePembayaran = 'cash';
+        $this->noRekening = '';
 
         // Calculate
         $this->sudahDibayar = $sale->dibayar;
@@ -305,7 +311,7 @@ class DaftarPenjualan extends Component
             $this->nomorPembayaran = 'PAY-SALE-'.date('YmdHis');
         }
 
-        $rekeningKas = '1.1.01.01'; // Default Cash
+        $rekeningKas = ($this->metodePembayaran == 'transfer') ? '1.1.01.03' : '1.1.01.01'; // Default Cash vs Bank
 
         // Calculate Splits
         $totalHpp = $this->detailSale->saleDetails->sum(function ($detail) {
@@ -337,8 +343,8 @@ class DaftarPenjualan extends Component
                 'jenis_transaksi' => 'sale',
                 'transaction_id' => $this->detailSale->id,
                 'total_harga' => $payForHpp,
-                'metode_pembayaran' => 'cash',
-                'no_referensi' => null,
+                'metode_pembayaran' => $this->metodePembayaran,
+                'no_referensi' => $this->noRekening ?: null,
                 'catatan' => $this->keterangan ?: 'Pembayaran (HPP)',
                 'rekening_debit' => $rekeningKas,
                 'rekening_kredit' => '1.1.03.01', // Piutang (clearing initial HPP debt)
@@ -357,8 +363,8 @@ class DaftarPenjualan extends Component
                 'jenis_transaksi' => 'sale',
                 'transaction_id' => $this->detailSale->id,
                 'total_harga' => $payForProfit,
-                'metode_pembayaran' => 'cash',
-                'no_referensi' => null,
+                'metode_pembayaran' => $this->metodePembayaran,
+                'no_referensi' => $this->noRekening ?: null,
                 'catatan' => $this->keterangan ?: 'Pembayaran (Laba)',
                 'rekening_debit' => $rekeningKas,
                 'rekening_kredit' => '4.1.01.01', // Laba/Pendapatan

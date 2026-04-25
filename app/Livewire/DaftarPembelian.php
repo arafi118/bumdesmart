@@ -34,6 +34,10 @@ class DaftarPembelian extends Component
 
     public $sisaTagihan = 0;
 
+    public $metodePembayaran = 'cash';
+
+    public $noRekening = '';
+
     public function detailPembelian($id)
     {
         $purchase = \App\Models\Purchase::with([
@@ -91,6 +95,8 @@ class DaftarPembelian extends Component
         $this->keterangan = '';
         $this->jumlahPembayaran = 0;
         $this->kembalian = 0;
+        $this->metodePembayaran = 'cash';
+        $this->noRekening = '';
 
         // Calculate paid and remaining
         $this->sudahDibayar = $purchase->payments->sum('total_harga');
@@ -123,7 +129,7 @@ class DaftarPembelian extends Component
             $this->nomorPembayaran = 'PAY-'.date('YmdHis');
         }
 
-        $rekening = PaymentUtil::ambilRekening('purchase', 'cash', 'cash');
+        $rekening = PaymentUtil::ambilRekening('purchase', 'cash', $this->metodePembayaran, $this->noRekening);
 
         $payment = \App\Models\Payment::create([
             'business_id' => $this->businessId,
@@ -133,8 +139,8 @@ class DaftarPembelian extends Component
             'jenis_transaksi' => 'purchase',
             'transaction_id' => $this->detailPurchase->id,
             'total_harga' => $jumlahBayar,
-            'metode_pembayaran' => 'cash',
-            'no_referensi' => null,
+            'metode_pembayaran' => $this->metodePembayaran,
+            'no_referensi' => $this->noRekening ?: null,
             'catatan' => $this->keterangan,
             'rekening_debit' => $rekening['purchase']['rekening_debit'],
             'rekening_kredit' => $rekening['purchase']['rekening_kredit'],
