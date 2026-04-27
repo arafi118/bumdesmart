@@ -18,7 +18,7 @@
                             ? asset('storage/' . $owner->logo)
                             : asset('assets/img/logo/logo-transparent.png');
                 @endphp
-                <img src="{{ $logoUrl }}" alt="{{ env('APP_NAME') }}" style="max-height: 40px; width: auto;">
+                <img src="{{ $logoUrl }}" alt="{{ config('app.name') }}" style="max-height: 40px; width: auto;">
             </a>
         </div>
         <!-- END NAVBAR LOGO -->

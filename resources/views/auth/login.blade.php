@@ -11,7 +11,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta http-equiv="X-UA-Compatible" content="ie=edge" />
-    <title>Login &mdash; {{ $appName }} | {{ env('APP_TITLE', 'Sistem') }}</title>
+    <title>Login &mdash; {{ $appName }} | {{ config('app.title', 'Sistem') }}</title>
     <link rel="icon" href="{{ $logoUrl }}">
 
     <!-- BEGIN GLOBAL MANDATORY STYLES -->

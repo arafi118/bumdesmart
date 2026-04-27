@@ -17,6 +17,8 @@ return [
 
     'name' => env('APP_NAME', 'Laravel'),
 
+    'title' => env('APP_TITLE', 'BUMDes Smart'),
+
     /*
     |--------------------------------------------------------------------------
     | Application Environment

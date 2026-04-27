@@ -726,7 +726,7 @@ class Cetak extends Controller
         $owner = $business?->owner ?? \App\Models\Owner::first();
         
         $headerData = [
-            'namaUsaha' => $business?->nama_usaha ?? ($owner?->nama_usaha ?? env('APP_NAME', 'BUMDes Smart')),
+            'namaUsaha' => $business?->nama_usaha ?? ($owner?->nama_usaha ?? config('app.name', 'BUMDes Smart')),
             'alamatUsaha' => $business?->alamat ?? '',
             'telpUsaha' => $business?->no_telp ?? '',
             'emailUsaha' => $business?->email ?? '',

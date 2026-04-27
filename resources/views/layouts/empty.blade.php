@@ -6,7 +6,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta http-equiv="X-UA-Compatible" content="ie=edge" />
-    <title>{{ $title ?? '' }} &mdash; {{ env('APP_NAME') }} | {{ env('APP_TITLE') }}</title>
+    <title>{{ $title ?? '' }} &mdash; {{ config('app.name') }} | {{ config('app.title') }}</title>
     <link rel="icon" href="{{ asset('assets/img/logo/logo.png') }}">
 
     <!-- BEGIN PAGE LEVEL STYLES -->
