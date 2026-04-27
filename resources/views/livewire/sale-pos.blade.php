@@ -883,6 +883,15 @@
                 addToCart(product) {
                     const existingItem = this.cart.find(item => item.id === product.id);
                     if (existingItem) {
+                        if (existingItem.qty >= product.stock) {
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'Stok Tidak Mencukupi',
+                                text: `Maksimal unit yang dapat dijual adalah ${product.stock}`,
+                                confirmButtonColor: '#3085d6',
+                            });
+                            return;
+                        }
                         existingItem.qty++;
                     } else {
                         let originalPrice = parseFloat(product.price);
@@ -930,7 +939,17 @@
                     if (newQty <= 0) {
                         this.removeFromCart(id);
                     } else {
-                        item.qty = newQty;
+                        if (newQty > item.stock) {
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'Stok Tidak Mencukupi',
+                                text: `Maksimal unit yang dapat dijual adalah ${item.stock}`,
+                                confirmButtonColor: '#3085d6',
+                            });
+                            item.qty = item.stock;
+                        } else {
+                            item.qty = newQty;
+                        }
                     }
                 },
 
@@ -956,7 +975,17 @@
                     if (newQty <= 0) {
                         this.removeFromCart(id);
                     } else {
-                        item.qty = newQty;
+                        if (newQty > item.stock) {
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'Stok Tidak Mencukupi',
+                                text: `Maksimal unit yang dapat dijual adalah ${item.stock}`,
+                                confirmButtonColor: '#3085d6',
+                            });
+                            item.qty = item.stock;
+                        } else {
+                            item.qty = newQty;
+                        }
                     }
                 },
 

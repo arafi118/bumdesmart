@@ -35,6 +35,16 @@
                                     let d = selectedItem.unit ? selectedItem.unit.desimal : null;
                                     let allow = d == 1 || d == '1' || d === true || (typeof d === 'string' && d.toLowerCase() === 'ya');
                                     if (!allow && val % 1 !== 0) val = Math.floor(val);
+                                    
+                                    if (val > selectedItem.stock) {
+                                        Swal.fire({
+                                            icon: 'warning',
+                                            title: 'Stok Tidak Mencukupi',
+                                            text: `Maksimal unit yang dapat dijual adalah ${selectedItem.stock}`,
+                                            confirmButtonColor: '#3085d6',
+                                        });
+                                        val = selectedItem.stock;
+                                    }
                                     selectedItem.qty = val;
                                 "
                                 placeholder="Masukkan Jumlah">

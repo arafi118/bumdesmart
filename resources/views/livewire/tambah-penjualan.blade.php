@@ -288,10 +288,13 @@
                                     x-transition class="mb-3">
                                     <label class="form-label">Pilih Bank</label>
                                     <div wire:ignore>
-                                        <select id="bankAccountSelectSales" class="form-select" x-model="noRekening" placeholder="Pilih Rekening Bank...">
+                                        <select id="bankAccountSelectSales" class="form-select" x-model="noRekening"
+                                            placeholder="Pilih Rekening Bank...">
                                             <option value=""></option>
-                                            @foreach($bankAccounts as $bank)
-                                                <option value="{{ $bank->id }}">{{ $bank->nama }}{{ $bank->no_rek_bank ? ' ('.$bank->no_rek_bank.')' : '' }}</option>
+                                            @foreach ($bankAccounts as $bank)
+                                                <option value="{{ $bank->id }}">
+                                                    {{ $bank->nama }}{{ $bank->no_rek_bank ? ' (' . $bank->no_rek_bank . ')' : '' }}
+                                                </option>
                                             @endforeach
                                         </select>
                                     </div>
@@ -305,7 +308,8 @@
                                 <button class="btn btn-primary w-100 btn-lg mt-3" x-on:click="saveAll"
                                     wire:loading.attr="disabled" :disabled="isLoading">
                                     <span wire:loading.remove x-show="!isLoading">SIMPAN</span>
-                                    <span wire:loading x-show="true" class="spinner-border spinner-border-sm" role="status"></span>
+                                    <span wire:loading x-show="true" class="spinner-border spinner-border-sm"
+                                        role="status"></span>
                                     <span x-show="isLoading" class="spinner-border spinner-border-sm"
                                         role="status"></span>
                                 </button>
@@ -597,15 +601,25 @@
                     let id = product.id;
                     if (this.products[id]) {
                         let maxStock = this.products[id].stok_tersedia;
-                        if (this.products[id].jumlah_jual >= maxStock) {
-                            alert(`Stok tidak mencukupi! Maksimal ${maxStock} unit`);
+                        if (this.products[id].jumlah_jual > maxStock) {
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'Stok Tidak Mencukupi',
+                                text: `Maksimal unit yang dapat dijual adalah ${maxStock}`,
+                                confirmButtonColor: '#3085d6',
+                            });
                             return;
                         }
                         this.products[id].jumlah_jual++;
                     } else {
                         if (!product || (product.stok_tersedia !== undefined && product.stok_tersedia <=
                                 0)) {
-                            alert('Produk tidak tersedia atau stok habis');
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Produk Habis',
+                                text: 'Produk tidak tersedia atau stok telah habis.',
+                                confirmButtonColor: '#3085d6',
+                            });
                             return;
                         }
 
@@ -655,7 +669,12 @@
                     }
 
                     if (qty > p.stok_tersedia) {
-                        alert(`Stok tidak mencukupi! Maksimal ${p.stok_tersedia} unit`);
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Stok Tidak Mencukupi',
+                            text: `Maksimal unit yang dapat dijual adalah ${p.stok_tersedia}`,
+                            confirmButtonColor: '#3085d6',
+                        });
                         p.jumlah_jual = p.stok_tersedia;
                         qty = p.stok_tersedia;
                     }
@@ -838,7 +857,12 @@
                         .catch(err => {
                             this.isLoading = false;
                             console.error(err);
-                            alert('Gagal menyimpan transaksi');
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Gagal Menyimpan',
+                                text: 'Gagal menyimpan transaksi. Silakan cek koneksi atau inputan Anda.',
+                                confirmButtonColor: '#3085d6',
+                            });
                         });
                 }
             }));
