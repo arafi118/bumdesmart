@@ -110,22 +110,56 @@ class TambahReturPenjualan extends Component
                 \App\Models\Product::where('id', $retur['product_id'])->increment('stok_aktual', $retur['jumlah']);
             }
 
-            $payment = \App\Models\Payment::create([
-                'business_id' => $this->businessId,
-                'user_id' => auth()->user()->id,
-                'no_pembayaran' => $salesReturn->no_return,
-                'tanggal_pembayaran' => $salesReturn->tanggal_return,
-                'jenis_transaksi' => 'sales_return',
-                'transaction_id' => $salesReturn->id,
-                'total_harga' => $data['total_retur'],
-                'metode_pembayaran' => 'tunai',
-                'no_referensi' => '-',
-                'catatan' => 'Refund Retur Penjualan '.$salesReturn->no_return,
-                'rekening_debit' => '4.1.01.03',
-                'rekening_kredit' => '1.1.01.01',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
+            $totalRetur = $data['total_retur'];
+            $sale = \App\Models\Sale::find($data['sale_id']);
+            $piutangTersedia = $sale->jumlah_utang ?? 0;
+
+            $potongPiutang = min($totalRetur, $piutangTersedia);
+            $refundTunai = $totalRetur - $potongPiutang;
+
+            if ($potongPiutang > 0) {
+                \App\Models\Payment::create([
+                    'business_id' => $this->businessId,
+                    'user_id' => auth()->user()->id,
+                    'no_pembayaran' => $salesReturn->no_return . '-P',
+                    'tanggal_pembayaran' => $salesReturn->tanggal_return,
+                    'jenis_transaksi' => 'sales_return',
+                    'transaction_id' => $salesReturn->id,
+                    'total_harga' => $potongPiutang,
+                    'metode_pembayaran' => 'potong_piutang',
+                    'no_referensi' => $sale->no_invoice,
+                    'catatan' => 'Potong Piutang (Retur Penjualan ' . $salesReturn->no_return . ')',
+                    'rekening_debit' => '4.1.01.03', // Retur Penjualan
+                    'rekening_kredit' => '1.1.04.01', // Piutang Dagang
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+
+                $sale->decrement('jumlah_utang', $potongPiutang);
+            }
+
+            if ($refundTunai > 0) {
+                \App\Models\Payment::create([
+                    'business_id' => $this->businessId,
+                    'user_id' => auth()->user()->id,
+                    'no_pembayaran' => $salesReturn->no_return . '-R',
+                    'tanggal_pembayaran' => $salesReturn->tanggal_return,
+                    'jenis_transaksi' => 'sales_return',
+                    'transaction_id' => $salesReturn->id,
+                    'total_harga' => $refundTunai,
+                    'metode_pembayaran' => 'tunai',
+                    'no_referensi' => $sale->no_invoice,
+                    'catatan' => 'Refund Tunai (Retur Penjualan ' . $salesReturn->no_return . ')',
+                    'rekening_debit' => '4.1.01.03', // Retur Penjualan
+                    'rekening_kredit' => '1.1.01.01', // Buku Kas Umum
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            }
+
+            if ($sale->jumlah_utang <= 0) {
+                $sale->update(['status' => 'completed']);
+            }
 
             DB::commit();
             $this->dispatch('alert', type: 'success', message: 'Retur penjualan berhasil disimpan');

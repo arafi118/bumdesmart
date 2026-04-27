@@ -115,6 +115,7 @@ Route::middleware([
             Route::get('/keuangan/coa', \App\Livewire\Keuangan\ChartOfAccount::class);
 
             Route::get('/keuangan/jurnal-umum', JurnalUmum::class);
+            Route::get('/keuangan/daftar-transaksi', \App\Livewire\Keuangan\DaftarTransaksi::class);
             Route::get('/master-pengaturan', Pengaturan::class);
         });
 

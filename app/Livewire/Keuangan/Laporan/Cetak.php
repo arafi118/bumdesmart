@@ -19,8 +19,7 @@ use App\Models\StockOpname;
 use App\Models\cashDrawer;
 use App\Utils\KeuanganUtil;
 use Carbon\Carbon;
-use Dompdf\Dompdf;
-use Dompdf\Options;
+use Barryvdh\Snappy\Facades\SnappyPdf as PDF;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -723,19 +722,39 @@ class Cetak extends Controller
 
     private function streamPdf($html, $filename, $orientation = 'portrait')
     {
-        $options = new Options;
-        $options->set('defaultFont', 'sans-serif');
-        $options->set('isRemoteEnabled', true);
+        $business = Business::find(auth()->user()?->business_id) ?? Business::first();
+        $owner = $business?->owner ?? \App\Models\Owner::first();
+        
+        $headerData = [
+            'namaUsaha' => $business?->nama_usaha ?? ($owner?->nama_usaha ?? env('APP_NAME', 'BUMDes Smart')),
+            'alamatUsaha' => $business?->alamat ?? '',
+            'telpUsaha' => $business?->no_telp ?? '',
+            'emailUsaha' => $business?->email ?? '',
+            'base64Logo' => null,
+        ];
 
-        $dompdf = new Dompdf($options);
-        $dompdf->loadHtml($html);
-        $dompdf->setPaper('A4', $orientation);
-        $dompdf->render();
+        $logoPath = $owner && $owner->logo ? storage_path('app/public/' . $owner->logo) : null;
+        if ($logoPath && file_exists($logoPath)) {
+            $type = pathinfo($logoPath, PATHINFO_EXTENSION);
+            $data = file_get_contents($logoPath);
+            $headerData['base64Logo'] = 'data:image/' . $type . ';base64,' . base64_encode($data);
+        }
 
-        $output = $dompdf->output();
+        $headerHtml = view('layouts.pdf-header', $headerData)->render();
+        $footerHtml = view('layouts.pdf-footer')->render();
 
-        return response($output, 200)
-            ->header('Content-Type', 'application/pdf')
-            ->header('Content-Disposition', 'inline; filename="'.$filename.'"');
+        $pdf = PDF::loadHTML($html)
+            ->setPaper('a4')
+            ->setOrientation($orientation)
+            ->setOption('margin-top', '40mm')
+            ->setOption('margin-bottom', '20mm')
+            ->setOption('margin-left', '15mm')
+            ->setOption('margin-right', '15mm')
+            ->setOption('header-html', $headerHtml)
+            ->setOption('footer-html', $footerHtml)
+            ->setOption('header-spacing', 5)
+            ->setOption('enable-local-file-access', true);
+
+        return $pdf->inline($filename);
     }
 }
