@@ -669,9 +669,22 @@ class TambahPenjualan extends Component
             $totalCashbackAll += $detail->jumlah_cashback;
         }
 
-        // Add global discounts/cashback
-        $totalDiskonAll += $this->parseNumber($data['globalDiskon']['jumlah'] ?? 0);
-        $totalCashbackAll += $this->parseNumber($data['globalCashback']['jumlah'] ?? 0);
+        // Add global discounts/cashback with proper percentage calculation
+        $subtotalAfterItems = $totalGrossAll - $totalDiskonAll;
+        
+        $globalDiskonVal = $this->parseNumber($data['globalDiskon']['jumlah'] ?? 0);
+        if (($data['globalDiskon']['jenis'] ?? 'nominal') === 'persen') {
+            $totalDiskonAll += ($subtotalAfterItems * $globalDiskonVal / 100);
+        } else {
+            $totalDiskonAll += $globalDiskonVal;
+        }
+
+        $globalCashbackVal = $this->parseNumber($data['globalCashback']['jumlah'] ?? 0);
+        if (($data['globalCashback']['jenis'] ?? 'nominal') === 'persen') {
+            $totalCashbackAll += ($subtotalAfterItems * $globalCashbackVal / 100);
+        } else {
+            $totalCashbackAll += $globalCashbackVal;
+        }
 
         $payments = [];
         $timestamp = now();
