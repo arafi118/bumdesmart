@@ -62,11 +62,12 @@ class TambahPenjualan extends Component
         }
 
         $this->bankAccounts = \App\Models\Account::where('business_id', $this->businessId)
-            ->whereNotNull('no_rek_bank')
+            ->where('parent_id', 111)
+            ->where('nama', 'like', 'Bank%')
             ->get();
             
-        $this->defaultTransferAccount = $this->bankAccounts->where('is_default_transfer', true)->first()?->no_rek_bank;
-        $this->defaultQrisAccount = $this->bankAccounts->where('is_default_qris', true)->first()?->no_rek_bank;
+        $this->defaultTransferAccount = $this->bankAccounts->where('is_default_transfer', true)->first()?->id;
+        $this->defaultQrisAccount = $this->bankAccounts->where('is_default_qris', true)->first()?->id;
     }
 
     public function loadSaleData($id)
@@ -465,7 +466,10 @@ class TambahPenjualan extends Component
 
         $keterangan = $data['catatan'] ?? '';
         if (! empty($data['noRekening'])) {
-            $keterangan .= ' [Transfer: '.$data['noRekening'].']';
+            $bankAcc = \App\Models\Account::find($data['noRekening']);
+            if ($bankAcc) {
+                $keterangan .= ' [Bank: '.$bankAcc->nama.']';
+            }
         }
 
         return Sale::create([

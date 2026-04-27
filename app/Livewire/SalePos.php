@@ -22,10 +22,12 @@ class SalePos extends Component
     use WithPagination;
 
     public $businessId;
-    public $bankAccounts = [];
-    public $defaultTransferAccount = null;
-    public $defaultQrisAccount = null;
 
+    public $bankAccounts = [];
+
+    public $defaultTransferAccount = null;
+
+    public $defaultQrisAccount = null;
 
     public $cashDrawer = null;
 
@@ -36,7 +38,6 @@ class SalePos extends Component
     public $closingBalanceManual = 0;
 
     public $cashDrawerNote = '';
-
 
     public $selectedCategory = '';
 
@@ -54,11 +55,14 @@ class SalePos extends Component
             ->first();
 
         $this->bankAccounts = \App\Models\Account::where('business_id', $this->businessId)
-            ->whereNotNull('no_rek_bank')
+            ->where('parent_id', 111)
+            ->where('nama', 'like', 'Bank%')
             ->get();
 
-        $this->defaultTransferAccount = $this->bankAccounts->where('is_default_transfer', true)->first()?->no_rek_bank;
-        $this->defaultQrisAccount = $this->bankAccounts->where('is_default_qris', true)->first()?->no_rek_bank;
+        $this->defaultTransferAccount = $this->bankAccounts->where('is_default_transfer', true)->first()?->id
+            ?? $this->bankAccounts->first()?->id;
+        $this->defaultQrisAccount = $this->bankAccounts->where('is_default_qris', true)->first()?->id
+            ?? $this->bankAccounts->first()?->id;
     }
 
     public function checkCashDrawer()
@@ -119,9 +123,9 @@ class SalePos extends Component
     {
         $product = Product::where('business_id', $this->businessId)
             ->where('is_active', true)
-            ->where(function($q) use ($barcode) {
+            ->where(function ($q) use ($barcode) {
                 $q->where('sku', $barcode)
-                  ->orWhere('barcode', $barcode);
+                    ->orWhere('barcode', $barcode);
             })
             ->with(['unit', 'category', 'brand'])
             ->first();
@@ -134,11 +138,11 @@ class SalePos extends Component
                     'name' => $product->nama_produk,
                     'sku' => $product->sku,
                     'barcode' => $product->barcode,
-                    'price' => (float)$product->harga_jual,
-                    'stock' => (float)$product->stok_aktual,
+                    'price' => (float) $product->harga_jual,
+                    'stock' => (float) $product->stok_aktual,
                     'unit' => $product->unit,
-                    'image' => ($product->gambar && $product->gambar !== 'products/no-image.png') ? ('/storage/' . $product->gambar) : 'https://placehold.co/400x400?text=No+Image',
-                ]
+                    'image' => ($product->gambar && $product->gambar !== 'products/no-image.png') ? ('/storage/'.$product->gambar) : 'https://placehold.co/400x400?text=No+Image',
+                ],
             ];
         }
 
@@ -229,7 +233,10 @@ class SalePos extends Component
 
         $keterangan = $data['note'] ?? 'POS Transaction';
         if (! empty($data['no_rekening'])) {
-            $keterangan .= ' [Transfer: '.$data['no_rekening'].']';
+            $bankAcc = \App\Models\Account::find($data['no_rekening']);
+            if ($bankAcc) {
+                $keterangan .= ' [Bank: '.$bankAcc->nama.']';
+            }
         }
 
         return Sale::create([
@@ -277,7 +284,7 @@ class SalePos extends Component
         $timestamp = now();
 
         foreach ($products as $item) {
-            $qty = (float)$item['qty'];
+            $qty = (float) $item['qty'];
             $productId = $item['id'];
 
             $needed = $qty;
@@ -397,7 +404,7 @@ class SalePos extends Component
         $kodeRekening = PaymentUtil::ambilRekening('sales', $jenisPembayaran, $metodeBayar, $data['no_rekening'] ?? null);
 
         $details = $sale->saleDetails;
-        
+
         // Calculate totals for accounting
         $totalHppAll = 0;
         $totalGrossAll = 0;
@@ -429,7 +436,7 @@ class SalePos extends Component
             'total_harga' => $totalGrossAll,
             'metode_pembayaran' => $metodeBayar,
             'no_referensi' => $data['no_rekening'] ?? null,
-            'catatan' => 'Penjualan POS ' . $nomorPenjualan,
+            'catatan' => 'Penjualan POS '.$nomorPenjualan,
             'rekening_debit' => $kodeRekening['sales']['rekening_debit'],
             'rekening_kredit' => $kodeRekening['sales']['rekening_kredit'],
             'created_at' => $timestamp,
@@ -441,14 +448,14 @@ class SalePos extends Component
             $payments[] = [
                 'business_id' => $this->businessId,
                 'user_id' => $user->id,
-                'no_pembayaran' => $nomorPenjualan . '-HPP',
+                'no_pembayaran' => $nomorPenjualan.'-HPP',
                 'tanggal_pembayaran' => $tgl,
                 'jenis_transaksi' => 'sale',
                 'transaction_id' => $sale->id,
                 'total_harga' => $totalHppAll,
                 'metode_pembayaran' => 'system',
                 'no_referensi' => null,
-                'catatan' => 'HPP Penjualan POS ' . $nomorPenjualan,
+                'catatan' => 'HPP Penjualan POS '.$nomorPenjualan,
                 'rekening_debit' => $kodeRekening['hpp']['rekening_debit'],
                 'rekening_kredit' => $kodeRekening['hpp']['rekening_kredit'],
                 'created_at' => $timestamp,
@@ -549,6 +556,7 @@ class SalePos extends Component
         if (strpos($str, ',') !== false) {
             $clean = str_replace('.', '', $str);
             $clean = str_replace(',', '.', $clean);
+
             return (float) $clean;
         }
 
@@ -556,17 +564,17 @@ class SalePos extends Component
         if (strpos($str, '.') !== false) {
             $lastDotIdx = strrpos($str, '.');
             $remainingLength = strlen($str) - $lastDotIdx - 1;
-            
+
             // In Indonesian, thousands dots are ALWAYS followed by 3 digits.
             if ($remainingLength !== 3) {
                 return (float) $str;
             }
-            
+
             // If there's another dot, it's thousands
             if (strpos($str, '.') !== $lastDotIdx) {
                 return (float) str_replace('.', '', $str);
             }
-            
+
             // Ambiguous 1.250 -> Treat as 1250 for Indonesian apps
             return (float) str_replace('.', '', $str);
         }

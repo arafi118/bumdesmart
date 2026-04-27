@@ -84,7 +84,7 @@
                         <select id="bankAccountSelectPos" class="form-select" x-model="checkOut.no_rekening" placeholder="Pilih Rekening Bank...">
                             <option value=""></option>
                             @foreach($bankAccounts as $bank)
-                                <option value="{{ $bank->no_rek_bank }}">{{ $bank->nama }} ({{ $bank->no_rek_bank }})</option>
+                                <option value="{{ $bank->id }}">{{ $bank->nama }}{{ $bank->no_rek_bank ? ' ('.$bank->no_rek_bank.')' : '' }}</option>
                             @endforeach
                         </select>
                     </div>

@@ -305,7 +305,7 @@
                                         <select id="bankAccountSelectPurchase" class="form-select" x-model="noRekening" placeholder="Pilih Rekening Bank...">
                                             <option value=""></option>
                                             @foreach($bankAccounts as $bank)
-                                                <option value="{{ $bank->no_rek_bank }}">{{ $bank->nama }} ({{ $bank->no_rek_bank }})</option>
+                                                <option value="{{ $bank->id }}">{{ $bank->nama }}{{ $bank->no_rek_bank ? ' ('.$bank->no_rek_bank.')' : '' }}</option>
                                             @endforeach
                                         </select>
                                     </div>
@@ -595,6 +595,21 @@
                     });
                     this.$watch('jenisPajak', () => this.updateTotals());
                     this.$watch('bayar', () => this.calculateKembalian());
+
+                    this.$watch('noRekening', (value) => {
+                        let select = document.getElementById('bankAccountSelectPurchase');
+                        if (select && select.tomselect) {
+                            select.tomselect.setValue(value, true);
+                        }
+                    });
+
+                    this.$watch('metodeBayar', (value) => {
+                        if (value === 'transfer') {
+                            this.noRekening = @js($defaultTransferAccount);
+                        } else if (value === 'qris') {
+                            this.noRekening = @js($defaultQrisAccount);
+                        }
+                    });
 
                     this.$watch('jenisPembayaran', (val) => {
                         if (val === 'cash') {

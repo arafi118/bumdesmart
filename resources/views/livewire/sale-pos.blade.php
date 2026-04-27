@@ -829,12 +829,22 @@
 
                     this.resetCheckout();
 
+                    this.$watch('checkOut.no_rekening', (value) => {
+                        console.log('Syncing TomSelect with value:', value);
+                        let select = document.getElementById('bankAccountSelectPos');
+                        if (select && select.tomselect) {
+                            select.tomselect.setValue(value, true);
+                        }
+                    });
+
                     this.$watch('checkOut.payment_method', (value) => {
-                        if (value === 'transfer' && @js($defaultTransferAccount)) {
+                        console.log('Payment method changed:', value);
+                        if (value === 'transfer') {
                             this.checkOut.no_rekening = @js($defaultTransferAccount);
-                        } else if (value === 'qris' && @js($defaultQrisAccount)) {
+                        } else if (value === 'qris') {
                             this.checkOut.no_rekening = @js($defaultQrisAccount);
                         }
+                        console.log('Selected account ID:', this.checkOut.no_rekening);
                     });
                 },
 
