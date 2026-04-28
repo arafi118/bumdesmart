@@ -51,13 +51,14 @@ class KeuanganUtil
 
     public static function saldoLabaRugi($tahun, $bulan = '00'): string
     {
-        $return = 0;
         $labaRugi = self::labaRugi($tahun, $bulan);
-        foreach ($labaRugi as $lr) {
-            $return = $lr['total'];
+        // labaRugi returns ['groups' => [...], 'metrics' => [...]]
+        // Laba Bersih is in the 4th group (index 3) -> 'total'
+        if (isset($labaRugi['groups']) && isset($labaRugi['groups'][3]['total'])) {
+            return (string) $labaRugi['groups'][3]['total'];
         }
 
-        return $return;
+        return '0';
     }
 
     public static function labaRugi($tahun, $bulan = '00'): array
