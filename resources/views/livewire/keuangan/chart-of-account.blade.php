@@ -1,15 +1,4 @@
 <div class="container-xl">
-    <!-- Page title -->
-    <div class="page-header d-print-none">
-        <div class="row align-items-center">
-            <div class="col">
-                <h2 class="page-title">
-                    Chart of Accounts (COA)
-                </h2>
-                <div class="text-muted mt-1">Daftar Rekening Akun (Level 1 - Account)</div>
-            </div>
-        </div>
-    </div>
 
     <div class="page-body">
         <div class="card">
