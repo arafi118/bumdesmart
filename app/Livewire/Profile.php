@@ -18,6 +18,12 @@ class Profile extends Component
 
     public $no_hp;
 
+    public $email;
+
+    public $alamat;
+
+    public $initial;
+
     public $username;
 
     public $password;
@@ -28,13 +34,23 @@ class Profile extends Component
 
     public $fotoPath;
 
+    public $roleName;
+
+    public $businessName;
+
     public function mount()
     {
         $user = auth()->user();
         $this->nama_lengkap = $user->nama_lengkap;
         $this->no_hp = $user->no_hp;
+        $this->email = $user->email;
+        $this->alamat = $user->alamat;
+        $this->initial = $user->initial;
         $this->username = $user->username;
         $this->fotoPath = $user->foto;
+
+        $this->roleName = $user->role->nama_role ?? '-';
+        $this->businessName = $user->business->nama_usaha ?? '-';
 
         $this->title = 'Profil Pengguna';
     }
@@ -44,6 +60,9 @@ class Profile extends Component
         $this->validate([
             'nama_lengkap' => 'required|string|max:255',
             'no_hp' => 'nullable|string|max:20',
+            'email' => 'nullable|email|max:255|unique:users,email,'.auth()->id(),
+            'alamat' => 'nullable|string',
+            'initial' => 'required|string|max:10',
             'username' => 'required|string|max:255|unique:users,username,'.auth()->id(),
             'foto' => 'nullable|image|max:2048', // Max 2MB
             'password' => 'nullable|string|min:6|confirmed',
@@ -62,6 +81,9 @@ class Profile extends Component
 
         $user->nama_lengkap = $this->nama_lengkap;
         $user->no_hp = $this->no_hp;
+        $user->email = $this->email;
+        $user->alamat = $this->alamat;
+        $user->initial = $this->initial;
         $user->username = $this->username;
 
         if (! empty($this->password)) {

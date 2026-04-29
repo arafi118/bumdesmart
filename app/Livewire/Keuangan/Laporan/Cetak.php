@@ -53,7 +53,7 @@ class Cetak extends Controller
         $bulan = $data['bulan'] ?? '-';
         $hari = $data['periode'] ?? '-';
 
-        $query = Sale::with(['customer', 'payments'])
+        $query = Sale::with(['customer', 'payments', 'user'])
             ->whereYear('tanggal_transaksi', $tahun);
 
         if ($bulan != '-') {
@@ -62,6 +62,23 @@ class Cetak extends Controller
 
         if ($hari != '-') {
             $query->whereDay('tanggal_transaksi', $hari);
+        }
+
+        if (isset($data['sub_laporan']) && $data['sub_laporan'] != '') {
+            if (str_contains($data['sub_laporan'], ':')) {
+                [$type, $id] = explode(':', $data['sub_laporan']);
+                if ($type === 'user') {
+                    $query->where('user_id', $id);
+                } elseif ($type === 'cat') {
+                    $query->whereHas('saleDetails.product', function ($q) use ($id) {
+                        $q->where('category_id', $id);
+                    });
+                } elseif ($type === 'cus') {
+                    $query->where('customer_id', $id);
+                }
+            } else {
+                $query->where('user_id', $data['sub_laporan']);
+            }
         }
 
         $sales = $query->orderBy('tanggal_transaksi', 'desc')->get();
@@ -119,10 +136,16 @@ class Cetak extends Controller
 
     public function stokMinimum(array $data)
     {
-        $products = Product::with('category')
+        $query = Product::with('category')
             ->whereColumn('stok_aktual', '<=', 'stok_minimal')
-            ->where('is_active', true)
-            ->get()
+            ->where('is_active', true);
+
+        if (isset($data['sub_laporan']) && str_starts_with($data['sub_laporan'], 'cat:')) {
+            $catId = str_replace('cat:', '', $data['sub_laporan']);
+            $query->where('category_id', $catId);
+        }
+
+        $products = $query->get()
             ->map(function ($product) {
                 $product->kekurangan = $product->stok_minimal - $product->stok_aktual;
                 $product->suggested_order = ($product->stok_minimal * 2) - $product->stok_aktual;
@@ -352,11 +375,17 @@ class Cetak extends Controller
             DB::raw('SUM(subtotal) as total_revenue'),
             DB::raw('SUM(profit) as total_profit')
         )
-            ->whereHas('sale', function ($q) use ($tahun, $bulan) {
+            ->whereHas('sale', function ($q) use ($tahun, $bulan, $data) {
                 $q->whereYear('tanggal_transaksi', $tahun);
                 if ($bulan != '-') {
                     $q->whereMonth('tanggal_transaksi', $bulan);
                 }
+            })
+            ->when(isset($data['sub_laporan']) && str_starts_with($data['sub_laporan'], 'cat:'), function($q) use ($data) {
+                $catId = str_replace('cat:', '', $data['sub_laporan']);
+                $q->whereHas('product', function ($sq) use ($catId) {
+                    $sq->where('category_id', $catId);
+                });
             })
             ->groupBy('product_id')
             ->orderByDesc('total_terjual')
@@ -448,6 +477,20 @@ class Cetak extends Controller
 
         if ($bulan != '-') {
             $query->whereMonth('tanggal_opname', $bulan);
+        }
+
+        if (isset($data['sub_laporan']) && $data['sub_laporan'] != '') {
+            if (str_starts_with($data['sub_laporan'], 'rak:')) {
+                $rakId = str_replace('rak:', '', $data['sub_laporan']);
+                $query->whereHas('details.product', function($q) use ($rakId) {
+                    $q->where('shelf_id', $rakId);
+                });
+            } elseif (str_starts_with($data['sub_laporan'], 'cat:')) {
+                $catId = str_replace('cat:', '', $data['sub_laporan']);
+                $query->whereHas('details.product', function($q) use ($catId) {
+                    $q->where('category_id', $catId);
+                });
+            }
         }
 
         $opnames = $query->orderBy('tanggal_opname', 'desc')->get();
@@ -548,6 +591,11 @@ class Cetak extends Controller
 
         if ($bulan != '-') {
             $query->whereMonth('tanggal_pembelian', $bulan);
+        }
+
+        if (isset($data['sub_laporan']) && str_starts_with($data['sub_laporan'], 'sup:')) {
+            $supId = str_replace('sup:', '', $data['sub_laporan']);
+            $query->where('supplier_id', $supId);
         }
 
         $purchases = $query->orderBy('tanggal_pembelian', 'desc')->get();

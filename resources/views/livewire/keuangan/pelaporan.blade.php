@@ -111,11 +111,19 @@
             jenis_sub_laporan: @entangle('jenis_sub_laporan'),
             daftarAkun: @entangle('daftarAkun'),
             daftarUser: @entangle('daftarUser'),
+            daftarKategori: @entangle('daftarKategori'),
+            daftarPelanggan: @entangle('daftarPelanggan'),
+            daftarSupplier: @entangle('daftarSupplier'),
+            daftarRak: @entangle('daftarRak'),
             init() {
                 this.$watch('jenis_laporan', (value) => this.jenisLaporan(value));
             },
             jenisLaporan(value) {
                 Select['jenis_sub_laporan'].clearOptions();
+                Select['jenis_sub_laporan'].addOption({
+                    value: '',
+                    text: '-'
+                });
 
                 if (value === 'bukuBesar') {
                     this.daftarAkun.forEach(account => {
@@ -124,11 +132,54 @@
                             text: `${account.kode}. ${account.nama}`
                         });
                     });
-                } else if (value === 'cashierReport') {
-                    this.daftarUser.forEach(user => {
+                } else if (value === 'penjualanHarian' || value === 'cashierReport') {
+                    if (this.daftarUser.length > 1) {
+                        this.daftarUser.forEach(user => {
+                            Select['jenis_sub_laporan'].addOption({
+                                value: `user:${user.id}`,
+                                text: `Kasir: ${user.nama}`
+                            });
+                        });
+                    }
+
+                    this.daftarKategori.forEach(cat => {
                         Select['jenis_sub_laporan'].addOption({
-                            value: user.id,
-                            text: user.nama
+                            value: `cat:${cat.id}`,
+                            text: `Kategori: ${cat.nama}`
+                        });
+                    });
+
+                    this.daftarPelanggan.forEach(cus => {
+                        Select['jenis_sub_laporan'].addOption({
+                            value: `cus:${cus.id}`,
+                            text: `Pelanggan: ${cus.nama}`
+                        });
+                    });
+                } else if (value === 'pembelian' || value === 'hutang') {
+                    this.daftarSupplier.forEach(sup => {
+                        Select['jenis_sub_laporan'].addOption({
+                            value: `sup:${sup.id}`,
+                            text: `Supplier: ${sup.nama}`
+                        });
+                    });
+                } else if (value === 'stokOpname') {
+                    this.daftarRak.forEach(rak => {
+                        Select['jenis_sub_laporan'].addOption({
+                            value: `rak:${rak.id}`,
+                            text: `Rak: ${rak.nama}`
+                        });
+                    });
+                    this.daftarKategori.forEach(cat => {
+                        Select['jenis_sub_laporan'].addOption({
+                            value: `cat:${cat.id}`,
+                            text: `Kategori: ${cat.nama}`
+                        });
+                    });
+                } else if (value === 'produkTerlaris' || value === 'stokMinimum' || value === 'marginProduk' || value === 'inventoryTurnover') {
+                    this.daftarKategori.forEach(cat => {
+                        Select['jenis_sub_laporan'].addOption({
+                            value: `cat:${cat.id}`,
+                            text: `Kategori: ${cat.nama}`
                         });
                     });
                 }

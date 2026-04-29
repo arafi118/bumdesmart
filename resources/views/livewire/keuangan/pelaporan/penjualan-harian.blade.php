@@ -28,6 +28,7 @@
                         <th>Waktu</th>
                         <th>Pelanggan</th>
                         <th>Pembayaran</th>
+                        <th>Inisial</th>
                         <th>Nominal</th>
                         <th>Status</th>
                     </tr>
@@ -40,6 +41,7 @@
                             <td>{{ $item['sale']->tanggal_transaksi }}</td>
                             <td>{{ $item['sale']->customer->nama_pelanggan ?? 'Guest' }}</td>
                             <td>{{ ucfirst($item['metode']) }}</td>
+                            <td style="text-align: center;">{{ $item['sale']->user->initial ?? '-' }}</td>
                             <td style="text-align: right;">Rp {{ number_format($item['amount'], 0, ',', '.') }}</td>
                             <td
                                 style="text-align: center; color: {{ $item['sale']->status === 'paid' || $item['sale']->status === 'completed' ? 'green' : ($item['sale']->status === 'cancelled' ? 'red' : 'orange') }}">
@@ -50,7 +52,7 @@
                 </tbody>
                 <tfoot>
                     <tr>
-                        <th colspan="5" style="text-align: right;">Total {{ $groupName }}</th>
+                        <th colspan="6" style="text-align: right;">Total {{ $groupName }}</th>
                         <th style="text-align: right;">Rp {{ number_format($groupData['total'], 0, ',', '.') }}</th>
                         <th></th>
                     </tr>

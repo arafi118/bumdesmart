@@ -1,22 +1,22 @@
 <div>
     <div class="row row-cards">
         <div class="col-12 col-md-4">
-            <div class="card">
+            <div class="card mb-3">
                 <div class="card-body text-center py-5">
                     <span class="avatar avatar-xl mb-4 rounded-circle shadow-sm"
                         style="width: 120px; height: 120px;
                         @if ($foto) background-image: url({{ $foto->temporaryUrl() }})
                         @elseif($fotoPath) background-image: url({{ asset('storage/' . $fotoPath) }}) @endif">
                         @if (!$foto && !$fotoPath)
-                            <span style="font-size: 2.5rem;">{{ strtoupper(substr($nama_lengkap, 0, 2)) }}</span>
+                            <span style="font-size: 2.5rem;">{{ $initial }}</span>
                         @endif
                     </span>
                     <h3 class="m-0 mb-1">{{ $nama_lengkap }}</h3>
                     <div class="text-muted mb-4">{{ '@' . $username }}</div>
 
-                    <div>
+                    <div class="mb-3">
                         <input type="file" id="foto-upload" wire:model="foto" class="d-none" accept="image/*">
-                        <label for="foto-upload" class="btn btn-outline-primary btn-pill">
+                        <label for="foto-upload" class="btn btn-outline-primary btn-pill btn-sm">
                             <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-sm" width="24" height="24"
                                 viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
                                 stroke-linecap="round" stroke-linejoin="round">
@@ -30,6 +30,22 @@
                             <div class="text-danger small mt-2">{{ $message }}</div>
                         @enderror
                         <div wire:loading wire:target="foto" class="mt-2 text-muted small">Mengunggah...</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Informasi Pekerjaan</h3>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label text-muted small uppercase">Jabatan / Role</label>
+                        <div class="form-control-plaintext fw-bold">{{ $roleName }}</div>
+                    </div>
+                    <div class="mb-0">
+                        <label class="form-label text-muted small uppercase">Unit Bisnis</label>
+                        <div class="form-control-plaintext fw-bold">{{ $businessName }}</div>
                     </div>
                 </div>
             </div>
@@ -61,12 +77,22 @@
                     @endif
 
                     <div class="row row-cards">
-                        <div class="col-md-6">
+                        <div class="col-md-8">
                             <div class="mb-3">
                                 <label class="form-label required">Nama Lengkap</label>
                                 <input type="text" class="form-control @error('nama_lengkap') is-invalid @enderror"
                                     wire:model="nama_lengkap" placeholder="Masukkan nama lengkap">
                                 @error('nama_lengkap')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label required">Inisial</label>
+                                <input type="text" class="form-control @error('initial') is-invalid @enderror"
+                                    wire:model="initial" placeholder="Misal: TO">
+                                @error('initial')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>
@@ -83,6 +109,16 @@
                         </div>
                         <div class="col-md-6">
                             <div class="mb-3">
+                                <label class="form-label">Email</label>
+                                <input type="email" class="form-control @error('email') is-invalid @enderror"
+                                    wire:model="email" placeholder="contoh@email.com">
+                                @error('email')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
                                 <label class="form-label">Nomor HP</label>
                                 <input type="text" class="form-control @error('no_hp') is-invalid @enderror"
                                     wire:model="no_hp" placeholder="Contoh: 08123456789">
@@ -91,7 +127,16 @@
                                 @enderror
                             </div>
                         </div>
-                        <div class="col-md-6"></div>
+                        <div class="col-12">
+                            <div class="mb-3">
+                                <label class="form-label">Alamat</label>
+                                <textarea class="form-control @error('alamat') is-invalid @enderror" rows="3" wire:model="alamat"
+                                    placeholder="Masukkan alamat lengkap"></textarea>
+                                @error('alamat')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        </div>
                     </div>
 
                     <h3 class="card-title mt-4 border-bottom py-2">Keamanan Akun</h3>
