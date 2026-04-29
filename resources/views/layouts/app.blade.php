@@ -240,20 +240,53 @@
 
         window.addEventListener('show-modal', (event) => {
             var modalId = event.detail.modalId;
+            var value = event.detail.value;
             $('#' + modalId).modal('show');
+
+            if (value) {
+                setTimeout(() => {
+                    $('#' + modalId).find('.tom-select').each(function() {
+                        if (this.tomselect) {
+                            this.tomselect.setValue(value, true);
+                        }
+                    });
+                }, 400);
+            }
         });
 
         $(document).on('shown.bs.modal', '.modal', function() {
             setTimeout(() => {
                 initTomSelect();
                 initLitepicker();
-            }, 200);
+
+                // Force sync Tom Select with Livewire state on modal open
+                $(this).find('.tom-select').each(function() {
+                    if (this.tomselect) {
+                        const model = this.getAttribute('wire:model') || this.getAttribute('wire:model.live');
+                        if (model) {
+                            try {
+                                const component = this.__livewire || Livewire.find($(this).closest('[wire:id]').attr('wire:id'));
+                                if (component) {
+                                    const val = component.get(model);
+                                    if (val !== undefined && val !== null) {
+                                        this.tomselect.setValue(val, true);
+                                    }
+                                }
+                            } catch (e) {}
+                        }
+                    }
+                });
+            }, 350);
         });
 
         $(document).on('hidden.bs.modal', '.modal', function() {
             $(this).find('.tom-select').each(function() {
+                const selectId = $(this).attr('id');
                 if (this.tomselect) {
                     this.tomselect.destroy();
+                }
+                if (selectId && Select[selectId]) {
+                    delete Select[selectId];
                 }
             });
         });
@@ -331,8 +364,8 @@
                 return;
             }
 
-            // Prevent re-initialization on the same element (supports wire:ignore)
-            if (Select[selectId] && Select[selectId].input === el) {
+            // Prevent re-initialization on the same element if it's already active
+            if (Select[selectId] && Select[selectId].input === el && el.tomselect) {
                 return;
             }
 
@@ -343,6 +376,22 @@
                     Select[selectId].destroy();
                 } catch (e) {}
                 delete Select[selectId];
+            }
+
+            // Sync with Livewire state if value is still empty
+            if (!initialValue) {
+                const model = el.getAttribute('wire:model') || el.getAttribute('wire:model.live');
+                if (model) {
+                    try {
+                        const component = el.__livewire || Livewire.find(el.closest('[wire:id]')?.getAttribute('wire:id'));
+                        if (component) {
+                            const val = component.get(model);
+                            if (val !== undefined && val !== null) {
+                                initialValue = val;
+                            }
+                        }
+                    } catch (e) {}
+                }
             }
 
             try {

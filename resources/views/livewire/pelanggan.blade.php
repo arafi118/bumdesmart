@@ -57,15 +57,16 @@
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Member</label>
-                                <select class="form-select tom-select" id="member" wire:model="member">
-                                    <option value=""></option>
-                                    @foreach ($customerGroups as $customerGroup)
-                                        <option value="{{ $customerGroup->id }}"
-                                            {{ $member == $customerGroup->id ? 'selected' : '' }}>
-                                            {{ $customerGroup->nama_group }}
-                                        </option>
-                                    @endforeach
-                                </select>
+                                <div wire:ignore>
+                                    <select class="form-select tom-select" id="member" wire:model="member">
+                                        <option value=""></option>
+                                        @foreach ($customerGroups as $customerGroup)
+                                            <option value="{{ $customerGroup->id }}">
+                                                {{ $customerGroup->nama_group }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
                                 @error('member')
                                     <small class="text-danger">{{ $message }}</small>
                                 @enderror
@@ -138,3 +139,4 @@
         </div>
     </div>
 </div>
+

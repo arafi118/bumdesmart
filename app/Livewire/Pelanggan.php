@@ -37,6 +37,11 @@ class Pelanggan extends Component
 
     public $limitHutang;
 
+    public function mount()
+    {
+        $this->businessId = auth()->user()->business_id;
+    }
+
     protected function rules()
     {
         return [
@@ -65,15 +70,22 @@ class Pelanggan extends Component
         $this->resetForm();
         $this->titleModal = 'Tambah Pelanggan';
 
-        // Set Default Values
         $this->kodePelanggan = $this->generateKodePelanggan();
-        
-        $firstGroup = \App\Models\CustomerGroup::where('business_id', $this->businessId)->first();
-        if ($firstGroup) {
-            $this->member = $firstGroup->id;
+
+        $umumGroup = \App\Models\CustomerGroup::where('business_id', $this->businessId)
+            ->where('nama_group', 'LIKE', '%Umum%')
+            ->first();
+
+        if ($umumGroup) {
+            $this->member = (string) $umumGroup->id;
+        } else {
+            $firstGroup = \App\Models\CustomerGroup::where('business_id', $this->businessId)->first();
+            if ($firstGroup) {
+                $this->member = (string) $firstGroup->id;
+            }
         }
 
-        $this->dispatch('show-modal', modalId: 'pelangganModal');
+        $this->dispatch('show-modal', modalId: 'pelangganModal', value: $this->member);
     }
 
     private function generateKodePelanggan()
@@ -99,7 +111,7 @@ class Pelanggan extends Component
         $this->limitHutang = number_format($customer->limit_hutang);
         $this->id = $customer->id;
 
-        $this->dispatch('show-modal', modalId: 'pelangganModal');
+        $this->dispatch('show-modal', modalId: 'pelangganModal', value: $this->member);
     }
 
     public function store()
@@ -117,34 +129,30 @@ class Pelanggan extends Component
             'username' => $this->username,
         ];
 
-        if ($this->password) {
-            $data['password'] = Hash::make($this->password);
-        }
-
         if ($this->id) {
-            \App\Models\Customer::find($this->id)->update($data);
-            $message = 'Pelanggan berhasil diubah';
+            $user = \App\Models\Customer::find($this->id);
+            $user->update($data);
+            $this->dispatch('alert', type: 'success', message: 'Data pelanggan berhasil diubah');
         } else {
+            $data['password'] = Hash::make('123456');
             \App\Models\Customer::create($data);
-            $message = 'Pelanggan berhasil ditambahkan';
+            $this->dispatch('alert', type: 'success', message: 'Data pelanggan berhasil ditambah');
         }
 
-        $this->dispatch('hide-modal', modalId: 'pelangganModal');
-        $this->dispatch('alert', type: 'success', message: $message);
         $this->resetForm();
+        $this->dispatch('hide-modal', modalId: 'pelangganModal');
     }
 
-    #[On('delete-confirmed')]
-    public function destroy($id)
+    #[On('confirm-delete')]
+    public function delete($id)
     {
         \App\Models\Customer::find($id)->delete();
-        $this->dispatch('alert', type: 'success', message: 'Pelanggan berhasil dihapus');
+        $this->dispatch('alert', type: 'success', message: 'Data pelanggan berhasil dihapus');
     }
 
     public function render()
     {
         $this->title = 'Pelanggan';
-        $this->businessId = auth()->user()->business_id;
 
         $query = \App\Models\Customer::where('business_id', $this->businessId)->with('customerGroup');
         $customerGroups = \App\Models\CustomerGroup::where('business_id', $this->businessId)->get();

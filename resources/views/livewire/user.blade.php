@@ -6,7 +6,7 @@
                     <input type="search" wire:model.live.debounce.300ms="search" class="form-control"
                         placeholder="🔍 Cari user...">
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-3 text-end">
                     <button class="btn btn-primary w-100" wire:click="create">
                         <i class="fas fa-plus"></i> Tambah User
                     </button>
@@ -19,17 +19,19 @@
                         <td>{{ $loop->iteration + ($users->currentPage() - 1) * $users->perPage() }}</td>
                         <td>{{ $user->nama_lengkap }}</td>
                         <td>{{ $user->no_hp }}</td>
-                        <td>{{ $user->role->nama_role }}</td>
                         <td>
-                            @if ($user->role->nama_role != 'owner')
-                                <button class="btn btn-sm btn-primary" wire:click="edit({{ $user->id }})">
-                                    <i class="fas fa-edit"></i> Edit
-                                </button>
-                                <button class="btn btn-sm btn-danger"
-                                    wire:click="$dispatch('confirm-delete', {id: {{ $user->id }}})">
-                                    <i class="fas fa-trash"></i> Hapus
-                                </button>
-                            @endif
+                            <span class="badge bg-blue-lt">
+                                {{ $user->role->nama_role ?? '-' }}
+                            </span>
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-primary" wire:click="edit({{ $user->id }})">
+                                <i class="fas fa-edit"></i> Edit
+                            </button>
+                            <button class="btn btn-sm btn-danger"
+                                wire:click="$dispatch('confirm-delete', {id: {{ $user->id }}})">
+                                <i class="fas fa-trash"></i> Hapus
+                            </button>
                         </td>
                     </tr>
                 @empty
@@ -44,7 +46,7 @@
         </div>
     </div>
 
-    <div class="modal fade" id="userModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal fade" id="userModal" tabindex="-1" role="dialog" aria-hidden="true" wire:ignore.self>
         <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
             <div class="modal-content">
                 <div class="modal-header">
@@ -54,7 +56,7 @@
                 <div class="modal-body">
                     <form>
                         <div class="row">
-                            <div class="col-md-12 mb-3">
+                            <div class="col-md-4 mb-3">
                                 <label class="form-label">Nama Lengkap</label>
                                 <input type="text" class="form-control" wire:model="namaLengkap"
                                     placeholder="Nama Lengkap" />
@@ -64,12 +66,14 @@
                             </div>
                             <div class="col-md-4 mb-3">
                                 <label class="form-label">Role</label>
-                                <select class="form-select tom-select" id="role" wire:model="role">
-                                    <option value=""></option>
-                                    @foreach ($roles as $role)
-                                        <option value="{{ $role->id }}">{{ $role->nama_role }}</option>
-                                    @endforeach
-                                </select>
+                                <div wire:ignore>
+                                    <select class="form-select tom-select" id="role" wire:model="role">
+                                        <option value=""></option>
+                                        @foreach ($roles as $role)
+                                            <option value="{{ $role->id }}">{{ $role->nama_role }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
                                 @error('role')
                                     <small class="text-danger">{{ $message }}</small>
                                 @enderror
@@ -83,20 +87,19 @@
                             </div>
                             <div class="col-md-4 mb-3">
                                 <label class="form-label">No HP.</label>
-                                <input type="number" class="form-control" wire:model="noHp" placeholder="No HP" />
+                                <input type="text" class="form-control" wire:model="noHp" placeholder="No HP." />
                                 @error('noHp')
                                     <small class="text-danger">{{ $message }}</small>
                                 @enderror
                             </div>
-                            <div class="col-md-6 mb-3">
+                            <div class="col-md-4 mb-3">
                                 <label class="form-label">Username</label>
-                                <input type="text" class="form-control" wire:model="username"
-                                    placeholder="Username" />
+                                <input type="text" class="form-control" wire:model="username" placeholder="Username" />
                                 @error('username')
                                     <small class="text-danger">{{ $message }}</small>
                                 @enderror
                             </div>
-                            <div class="col-md-6 mb-3">
+                            <div class="col-md-4 mb-3">
                                 <label class="form-label">Password</label>
                                 <input type="password" class="form-control" wire:model="password"
                                     placeholder="Password" />
@@ -109,7 +112,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary ms-auto" data-bs-dismiss="modal" wire:click="store">
+                    <button type="button" class="btn btn-primary ms-auto" wire:click="store">
                         Simpan
                     </button>
                 </div>
@@ -117,41 +120,3 @@
         </div>
     </div>
 </div>
-
-@section('script')
-    <script>
-        document.addEventListener('livewire:navigated', () => {
-            initTomSelect();
-        });
-
-        window.addEventListener('show-modal', event => {
-            if (event.detail.modalId === 'userModal') {
-                setTimeout(() => {
-                    initTomSelect();
-                }, 100);
-            }
-        });
-
-        function initTomSelect() {
-            document.querySelectorAll('.tom-select').forEach(el => {
-                if (el.tomselect) return;
-
-                new TomSelect(el, {
-                    plugins: ['dropdown_input'],
-                    onChange: function(value) {
-                        @this.set(el.getAttribute('wire:model'), value);
-                    }
-                });
-            });
-        }
-
-        // Handle Livewire updates
-        document.addEventListener('livewire:load', () => {
-            initTomSelect();
-        });
-
-        document.addEventListener('DOMContentLoaded', () => {
-            initTomSelect();
-        });
-    </script>
-@endsection

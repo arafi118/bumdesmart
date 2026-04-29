@@ -359,6 +359,13 @@ class Produk extends Component
             $this->retailHasilPecah = $existingRetail->harga_beli > 0 ? ($this->detailProduk->harga_beli / $existingRetail->harga_beli) : 0;
         } else {
             $this->retailNamaProduk = $this->detailProduk->nama_produk . ' (Eceran)';
+            
+            $firstUnit = \App\Models\Unit::where('business_id', $this->businessId)->first();
+            if ($firstUnit) {
+                $this->retailSatuanId = (string) $firstUnit->id;
+            }
+            $this->retailHasilPecah = 1;
+            $this->retailHargaJual = 0;
         }
 
         $this->retailJumlahPecahBulk = 1;

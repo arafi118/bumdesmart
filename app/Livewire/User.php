@@ -33,6 +33,11 @@ class User extends Component
 
     public $password;
 
+    public function mount()
+    {
+        $this->businessId = auth()->user()->business_id;
+    }
+
     protected function rules()
     {
         return [
@@ -63,10 +68,10 @@ class User extends Component
 
         $firstRole = \App\Models\Role::where('business_id', $this->businessId)->first();
         if ($firstRole) {
-            $this->role = $firstRole->id;
+            $this->role = (string) $firstRole->id;
         }
 
-        $this->dispatch('show-modal', modalId: 'userModal');
+        $this->dispatch('show-modal', modalId: 'userModal', value: $this->role);
     }
 
     public function updatedNamaLengkap($value)
@@ -96,7 +101,7 @@ class User extends Component
         $this->username = $user->username;
         $this->id = $user->id;
 
-        $this->dispatch('show-modal', modalId: 'userModal');
+        $this->dispatch('show-modal', modalId: 'userModal', value: $this->role);
     }
 
     public function store()
@@ -139,7 +144,6 @@ class User extends Component
     public function render()
     {
         $this->title = 'User';
-        $this->businessId = auth()->user()->business_id;
 
         $query = \App\Models\User::where('business_id', $this->businessId)->with('role');
         $roles = \App\Models\Role::where('business_id', $this->businessId)->get();

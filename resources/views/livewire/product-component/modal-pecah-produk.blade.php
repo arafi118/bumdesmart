@@ -48,12 +48,14 @@
                             
                             <div class="col-md-6 mb-3">
                                 <label class="form-label required">Satuan Eceran</label>
-                                <select class="form-select" wire:model="retailSatuanId">
-                                    <option value="">Pilih Satuan</option>
-                                    @foreach($this->units as $unit)
-                                        <option value="{{ $unit->id }}">{{ $unit->nama_satuan }}</option>
-                                    @endforeach
-                                </select>
+                                <div wire:ignore>
+                                    <select class="form-select tom-select" id="retailSatuanId" wire:model="retailSatuanId">
+                                        <option value="">Pilih Satuan</option>
+                                        @foreach($this->units as $unit)
+                                            <option value="{{ $unit->id }}">{{ $unit->nama_satuan }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
                                 @error('retailSatuanId') <small class="text-danger">{{ $message }}</small> @enderror
                             </div>
 
