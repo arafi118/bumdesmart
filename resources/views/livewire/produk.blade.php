@@ -68,15 +68,15 @@
                                         <div class="dropdown-menu">
                                             <a class="dropdown-item" href="#"
                                                 wire:click="edit({{ $product->id }})">
-                                                Edit
+                                                <span class="material-symbols-outlined me-2">edit</span> Edit
                                             </a>
                                             <a class="dropdown-item" href="#"
                                                 wire:click="modalDetailProduk({{ $product->id }})">
-                                                Detail Produk
+                                                <span class="material-symbols-outlined me-2">visibility</span> Detail Produk
                                             </a>
                                             <a class="dropdown-item" href="#"
                                                 wire:click="modalHargaMember({{ $product->id }})">
-                                                Harga Member
+                                                <span class="material-symbols-outlined me-2">group</span> Harga Member
                                             </a>
                                             @if($product->stok_aktual > 0 && !$product->parent_id)
                                                 <a class="dropdown-item text-primary" href="#"
@@ -94,7 +94,7 @@
                                             <div class="dropdown-divider"></div>
                                             <a class="dropdown-item text-danger" href="#"
                                                 wire:click="$dispatch('confirm-delete', {id: {{ $product->id }}})">
-                                                Hapus
+                                                <span class="material-symbols-outlined me-2">delete</span> Hapus
                                             </a>
                                         </div>
                                     </div>

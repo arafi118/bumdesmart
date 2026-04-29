@@ -215,19 +215,19 @@
                                         <li>
                                             <a class="dropdown-item border-radius-md" target="_blank"
                                                 href="/transaksi/dokumen/struk/{{ $trx->idtp }}">
-                                                Kuitansi
+                                                <i class="fas fa-file-invoice me-2"></i> Kuitansi
                                             </a>
                                         </li>
                                         <li>
                                             <a class="dropdown-item border-radius-md" target="_blank"
                                                 href="/transaksi/dokumen/struk_matrix/{{ $trx->idtp }}">
-                                                Kuitansi Dot Matrix
+                                                <i class="fas fa-print me-2"></i> Kuitansi Dot Matrix
                                             </a>
                                         </li>
                                         <li>
                                             <a class="dropdown-item border-radius-md" target="_blank"
                                                 href="/transaksi/dokumen/struk_thermal/{{ $trx->idtp }}">
-                                                Kuitansi Thermal
+                                                <i class="fas fa-receipt me-2"></i> Kuitansi Thermal
                                             </a>
                                         </li>
                                     </ul>
@@ -240,13 +240,13 @@
                                         <li>
                                             <a class="dropdown-item border-radius-md" target="_blank"
                                                 href="/transaksi/dokumen/kuitansi/{{ $trx->idt }}">
-                                                Kuitansi
+                                                <i class="fas fa-file-invoice me-2"></i> Kuitansi
                                             </a>
                                         </li>
                                         <li>
                                             <a class="dropdown-item border-radius-md" target="_blank"
                                                 href="/transaksi/dokumen/kuitansi_thermal/{{ $trx->idt }}">
-                                                Kuitansi Thermal
+                                                <i class="fas fa-receipt me-2"></i> Kuitansi Thermal
                                             </a>
                                         </li>
                                     </ul>

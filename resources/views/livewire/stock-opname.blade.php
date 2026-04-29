@@ -53,23 +53,23 @@
                                         <div class="dropdown-menu">
                                             <a class="dropdown-item" href="#"
                                                 wire:click="showDetail({{ $opname->id }})">
-                                                Detail
+                                                <span class="material-symbols-outlined me-2">visibility</span> Detail
                                             </a>
                                             <a class="dropdown-item" href="/keuangan/pelaporan/cetak?laporan=buktiStokOpname&id={{ $opname->id }}" target="_blank">
-                                                Cetak Bukti SO
+                                                <span class="material-symbols-outlined me-2">print</span> Cetak Bukti SO
                                             </a>
                                             @if ($opname->status == 'draft')
                                                 <a class="dropdown-item text-success" href="#"
                                                     wire:click="$dispatch('confirm-approve', {id: {{ $opname->id }}})">
-                                                    Approve & Finalize
+                                                    <span class="material-symbols-outlined me-2">check_circle</span> Approve & Finalize
                                                 </a>
                                                 <a class="dropdown-item" href="{{ url('/stock/opname/edit/' . $opname->id) }}">
-                                                    Edit
+                                                    <span class="material-symbols-outlined me-2">edit</span> Edit
                                                 </a>
                                                 <div class="dropdown-divider"></div>
                                                 <a class="dropdown-item text-danger" href="#"
                                                     wire:click="$dispatch('confirm-delete', {id: {{ $opname->id }}})">
-                                                    Hapus
+                                                    <span class="material-symbols-outlined me-2">delete</span> Hapus
                                                 </a>
                                             @endif
                                         </div>
