@@ -140,7 +140,7 @@ class JurnalUmum extends Component
                             'total_harga' => $data['harga_satuan'] * $data['jumlah'] ?? 0,
                             'metode_pembayaran' => 'tunai',
                             'no_referensi' => null,
-                            'catatan' => 'Penghapusan Inventaris',
+                            'catatan' => $data['keterangan'] ?? 'Penghapusan Inventaris',
                             'rekening_debit' => $simpan,
                             'rekening_kredit' => $sumber,
                         ]
@@ -161,7 +161,7 @@ class JurnalUmum extends Component
                     'total_harga' => $data['nominal'] ?? 0,
                     'metode_pembayaran' => 'tunai',
                     'no_referensi' => null,
-                    'catatan' => 'Pembelian Inventaris',
+                    'catatan' => $data['keterangan'] ?? 'Pembelian Inventaris',
                     'rekening_debit' => $simpan,
                     'rekening_kredit' => $sumber,
                 ]);
@@ -207,7 +207,7 @@ class JurnalUmum extends Component
                     'total_harga' => $data['nominal'] ?? 0,
                     'metode_pembayaran' => 'tunai',
                     'no_referensi' => null,
-                    'catatan' => 'Transaksi Jurnal Umum',
+                    'catatan' => $data['keterangan'] ?? 'Transaksi Jurnal Umum',
                     'rekening_debit' => $simpan,
                     'rekening_kredit' => $sumber,
                 ]);

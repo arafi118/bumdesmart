@@ -53,7 +53,7 @@ class Payment extends Model
 
     public function getJurnalAttribute()
     {
-        if ($this->jenis_transaksi !== 'jurnal') {
+        if (!in_array($this->jenis_transaksi, ['jurnal', 'jurnal_umum'])) {
             return null;
         }
 
