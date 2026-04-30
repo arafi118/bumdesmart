@@ -82,6 +82,9 @@ class Produk extends Component
     public $importFile;
     public $importStep = 'idle';
 
+    public $importSoFile;
+    public $soImportStep = 'idle';
+
     public function updatedSelectAll($value)
     {
         if ($value) {
@@ -770,6 +773,135 @@ class Produk extends Component
             echo "Indomie Goreng,Makanan & Snack,Indofood,Pcs,IDM-001,8998866200293,2500,3000,100\n";
             echo "Aqua 600ml,Minuman,Danone,Pcs,AQUA-600,8886008101053,2800,3500,500\n";
         }, 'template_import_produk.csv');
+    }
+
+    public function openStockOpnameImport()
+    {
+        $this->importSoFile = null;
+        $this->soImportStep = 'idle';
+        $this->dispatch('show-modal', modalId: 'importSoModal');
+    }
+
+    public function processStockOpnameImport()
+    {
+        $this->validate([
+            'importSoFile' => 'required|file|mimes:csv,txt|max:10240',
+        ]);
+
+        $this->soImportStep = 'processing';
+
+        try {
+            $path = $this->importSoFile->getRealPath();
+            $file = fopen($path, 'r');
+            
+            // Skip header
+            $header = fgetcsv($file);
+            
+            \DB::beginTransaction();
+
+            $successCount = 0;
+            $now = now();
+            $businessId = $this->businessId;
+            $userId = auth()->id();
+
+            // Create Stock Opname Header
+            $opname = \App\Models\StockOpname::create([
+                'business_id' => $businessId,
+                'user_id' => $userId,
+                'no_opname' => 'SO-INIT-' . $now->format('YmdHis'),
+                'tanggal_opname' => $now,
+                'status' => 'approved',
+                'catatan' => 'Penyesuaian stok awal via impor file',
+                'approved_by' => $userId,
+                'tanggal_approved' => $now,
+            ]);
+
+            while (($row = fgetcsv($file)) !== FALSE) {
+                if (count($row) < 5) continue;
+
+                // Structure: No, Kode Produk, Nama Produk, Sistem, Fisik, Ket
+                $sku = $row[1];
+                $stokFisik = (float) str_replace(['.', ','], ['', '.'], $row[4] ?? 0);
+                $keterangan = $row[5] ?? '';
+
+                $product = \App\Models\Product::where('business_id', $businessId)
+                    ->where('sku', $sku)
+                    ->first();
+
+                if ($product) {
+                    $stokSistem = $product->stok_aktual;
+                    $selisih = $stokFisik - $stokSistem;
+
+                    // 1. Create Detail
+                    \App\Models\StockOpnameDetail::create([
+                        'stock_opname_id' => $opname->id,
+                        'product_id' => $product->id,
+                        'stok_sistem' => $stokSistem,
+                        'stok_fisik' => $stokFisik,
+                        'selisih' => $selisih,
+                        'jenis_selisih' => $selisih > 0 ? 'surplus' : ($selisih < 0 ? 'loss' : 'match'),
+                        'harga_satuan' => $product->harga_beli,
+                        'total_harga' => abs($selisih) * $product->harga_beli,
+                        'alasan' => 'Import Penyesuaian Awal',
+                        'catatan' => $keterangan,
+                    ]);
+
+                    // 2. Update Product Stock
+                    $product->update(['stok_aktual' => $stokFisik]);
+
+                    // 3. Create Stock Movement ONLY if there is a difference
+                    if ($selisih != 0) {
+                        \App\Models\StockMovement::create([
+                            'business_id' => $businessId,
+                            'product_id' => $product->id,
+                            'tanggal_perubahan_stok' => $now,
+                            'jenis_perubahan' => 'stock opname',
+                            'jumlah_perubahan' => $selisih,
+                            'reference_id' => $opname->id,
+                            'reference_type' => 'stock_opname',
+                            'catatan' => 'Penyesuaian stok awal: ' . $keterangan,
+                        ]);
+
+                        // 4. Handle Batch (FIFO) - Simplified for initial stock
+                        // We create a new batch for the physical count if it's "awal"
+                        // Or adjust existing batches? For "awal", creating a new MIGRATION batch is common.
+                        \App\Models\ProductBatch::create([
+                            'business_id' => $businessId,
+                            'product_id' => $product->id,
+                            'no_batch' => 'INIT-' . $now->format('Ymd'),
+                            'tanggal_pembelian' => $now,
+                            'harga_satuan' => $product->harga_beli,
+                            'jumlah_awal' => $stokFisik,
+                            'jumlah_saat_ini' => $stokFisik,
+                            'status' => 'ACTIVE',
+                        ]);
+                    }
+
+                    $successCount++;
+                }
+            }
+
+            \DB::commit();
+            fclose($file);
+
+            $this->dispatch('hide-modal', modalId: 'importSoModal');
+            $this->dispatch('alert', type: 'success', message: $successCount . ' produk berhasil disesuaikan stoknya!');
+            $this->reset('importSoFile', 'soImportStep');
+        } catch (\Exception $e) {
+            \DB::rollBack();
+            $this->dispatch('alert', type: 'error', message: 'Gagal import SO: ' . $e->getMessage());
+        }
+
+        $this->soImportStep = 'idle';
+    }
+
+    public function downloadSoTemplate()
+    {
+        return response()->streamDownload(function () {
+            echo "No,Kode Produk,Nama Produk,Sistem,Fisik,Keterangan\n";
+            echo "1,IDM-001,Indomie Goreng,0,100,Stok Awal\n";
+            echo "2,AQUA-600,Aqua 600ml,0,500,Stok Awal\n";
+        }, 'template_stok_opname_awal.csv');
     }
 
     #[\Livewire\Attributes\Computed]

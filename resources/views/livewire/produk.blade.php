@@ -28,6 +28,9 @@
                                     Cetak ({{ count($selectedProducts) }})
                                 </button>
                             @endif
+                            <button class="btn btn-outline-warning" wire:click="openStockOpnameImport">
+                                <i class="fas fa-clipboard-check me-1"></i> Stok Opname Awal
+                            </button>
                             <button class="btn btn-outline-info" wire:click="openImport">
                                 <i class="fas fa-file-import me-1"></i> Import Excel
                             </button>
@@ -445,6 +448,50 @@
                     <button type="button" class="btn btn-primary" wire:click="processImport"
                         wire:loading.attr="disabled" {{ !$importFile ? 'disabled' : '' }}>
                         Mulai Import
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Modal Import Stok Opname Awal --}}
+    <div wire:ignore.self class="modal fade" id="importSoModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-warning-lt">
+                    <h5 class="modal-title">Import Penyesuaian Stok Awal</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Pilih File (CSV)</label>
+                        <input type="file" class="form-control" wire:model="importSoFile" accept=".csv">
+                        <div wire:loading wire:target="importSoFile" class="text-info small">Memproses file...</div>
+                        @error('importSoFile')
+                            <small class="text-danger">{{ $message }}</small>
+                        @enderror
+                    </div>
+
+                    <div class="alert alert-warning small">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Gunakan fitur ini untuk menyesuaikan stok fisik produk pada saat awal penggunaan aplikasi. 
+                        Pastikan file Anda mengikuti format: <strong>No, Kode Produk, Nama Produk, Sistem, Fisik, Keterangan</strong>.
+                        <br>
+                        <a href="javascript:void(0)" wire:click="downloadSoTemplate" class="fw-bold text-decoration-underline">Unduh Template Penyesuaian</a>
+                    </div>
+
+                    @if ($soImportStep === 'processing')
+                        <div class="text-center py-3">
+                            <div class="spinner-border text-warning mb-2"></div>
+                            <p>Sedang memproses penyesuaian stok... Mohon tunggu.</p>
+                        </div>
+                    @endif
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" class="btn btn-warning" wire:click="processStockOpnameImport"
+                        wire:loading.attr="disabled" {{ !$importSoFile ? 'disabled' : '' }}>
+                        Mulai Penyesuaian
                     </button>
                 </div>
             </div>
