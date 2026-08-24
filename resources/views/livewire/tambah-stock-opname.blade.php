@@ -90,10 +90,14 @@
                         </select>
                     </div>
                     <div class="col-md-6">
-                        <div class="alert alert-info mb-0">
+                        <div class="alert alert-info mb-0" x-show="!isLoadingProducts">
                             <i class="fas fa-info-circle me-1"></i>
                             Pilih Kategori atau Rak untuk memuat produk.
                             Data yang dimuat akan ditambahkan ke tabel di bawah untuk dihitung.
+                        </div>
+                        <div class="alert alert-secondary mb-0" x-show="isLoadingProducts">
+                            <span class="spinner-border spinner-border-sm me-2"></span>
+                            Memuat produk...
                         </div>
                     </div>
                 </div>
@@ -192,6 +196,7 @@
                         search: '',
                         items: [],
                         isSaving: false,
+                        isLoadingProducts: false,
 
                         formatDecimal(val) {
                             if (val === null || val === undefined || val === '') return '0';
@@ -264,11 +269,26 @@
                                     this.mergeItems(value);
                                 }
                             });
+
+                            // Reload products whenever a filter changes
+                            ['categoryId', 'shelfId'].forEach(prop => {
+                                this.$watch(prop, () => this.reloadProducts());
+                            });
                         },
 
                         loadProducts() {
                             if (this.search.length < 2) return;
                             this.$wire.loadProducts(1, this.search);
+                        },
+
+                        isLoadingProducts: false,
+
+                        reloadProducts() {
+                            if (this.isLoadingProducts) return;
+                            this.isLoadingProducts = true;
+                            this.$wire.loadProducts()
+                                .then(() => { this.isLoadingProducts = false; })
+                                .catch(() => { this.isLoadingProducts = false; });
                         },
 
                         mergeItems(newItems) {

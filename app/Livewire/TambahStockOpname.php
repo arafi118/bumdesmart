@@ -143,7 +143,7 @@ class TambahStockOpname extends Component
                 return [
                     'id' => $product->id,
                     'nama_produk' => $product->nama_produk,
-                    'kode_produk' => $product->kode_produk,
+                    'kode_produk' => $product->sku,
                     'harga_beli' => $product->harga_beli,
                     'sistem' => $product->stok_aktual,
                     'fisik' => $product->stok_aktual, // Default to system stock
