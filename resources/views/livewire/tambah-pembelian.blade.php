@@ -45,9 +45,9 @@
                     <thead>
                         <tr>
                             <th width="3%">No</th>
-                            <th width="16%">Nama Produk</th>
-                            <th width="10%">Harga Satuan</th>
-                            <th width="6%">Qty</th>
+                            <th width="14%">Nama Produk</th>
+                            <th width="9%">Harga Satuan</th>
+                            <th width="10%">Qty</th>
                             <th width="8%">Exp. Date</th>
                             <th width="7%">Diskon</th>
                             <th width="7%">Cashback</th>
