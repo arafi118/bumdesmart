@@ -19,9 +19,13 @@
                         </td>
                         <td>{{ $retur->no_return }}</td>
                         <td>
-                            <a href="#" wire:click="detailPenjualan({{ $retur->sale_id }})">
-                                {{ $retur->sale->no_invoice }}
-                            </a>
+                            @if ($retur->sale)
+                                <a href="#" wire:click="detailPenjualan({{ $retur->sale_id }})">
+                                    {{ $retur->sale->no_invoice }}
+                                </a>
+                            @else
+                                <span class="text-muted">-</span>
+                            @endif
                         </td>
                         <td>
                             @if ($retur->status == 'approved')
