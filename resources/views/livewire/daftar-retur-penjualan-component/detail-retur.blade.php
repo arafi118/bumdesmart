@@ -35,14 +35,22 @@
                     <div class="row justify-content-between mt-3">
                         <div class="col-md-3">
                             <div class="fw-bold">Pelanggan :</div>
-                            <div>{{ $detailRetur->sale->customer->nama_pelanggan }}</div>
-                            <div>{{ $detailRetur->sale->customer->no_hp }}</div>
-                            <div>{{ $detailRetur->sale->customer->alamat }}</div>
+                            @if ($detailRetur->sale && $detailRetur->sale->customer)
+                                <div>{{ $detailRetur->sale->customer->nama_pelanggan }}</div>
+                                <div>{{ $detailRetur->sale->customer->no_hp }}</div>
+                                <div>{{ $detailRetur->sale->customer->alamat }}</div>
+                            @else
+                                <div class="text-muted">-</div>
+                            @endif
                         </div>
                         <div class="col-md-3">
                             <div class="fw-bold">Usaha :</div>
-                            <div>{{ $detailRetur->business->nama_usaha }}</div>
-                            <div>{{ $detailRetur->business->alamat }}</div>
+                            @if ($detailRetur->business)
+                                <div>{{ $detailRetur->business->nama_usaha }}</div>
+                                <div>{{ $detailRetur->business->alamat }}</div>
+                            @else
+                                <div class="text-muted">-</div>
+                            @endif
                         </div>
                     </div>
                     <table class="table table-bordered mt-2">
