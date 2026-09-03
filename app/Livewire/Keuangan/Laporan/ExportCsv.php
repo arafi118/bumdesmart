@@ -1789,18 +1789,17 @@ class ExportCsv extends Controller
 
         $products = $query->orderBy('nama_produk')->get()
             ->map(function ($p) use ($startDate, $endDate) {
-                $masuk = $p->stockMovements()
-                    ->whereIn('jenis_perubahan', ['masuk', 'pembelian', 'retur_pembelian', 'koreksi_tambah'])
+                $movements = $p->stockMovements()
                     ->whereBetween('tanggal_perubahan_stok', [$startDate, $endDate])
-                    ->sum('jumlah_perubahan');
-                $keluar = $p->stockMovements()
-                    ->whereIn('jenis_perubahan', ['keluar', 'penjualan', 'retur_penjualan', 'koreksi_kurang', 'rusak'])
-                    ->whereBetween('tanggal_perubahan_stok', [$startDate, $endDate])
-                    ->sum('jumlah_perubahan');
-                $p->stok_awal_periode = $p->stok_aktual - ($masuk - $keluar);
-                $p->stok_masuk = (int) $masuk;
-                $p->stok_keluar = (int) $keluar;
-                $p->stok_akhir = $p->stok_aktual;
+                    ->get(['jumlah_perubahan']);
+
+                $masuk = (float) $movements->where('jumlah_perubahan', '>', 0)->sum('jumlah_perubahan');
+                $keluar = (float) abs($movements->where('jumlah_perubahan', '<', 0)->sum('jumlah_perubahan'));
+
+                $p->stok_akhir = (int) $p->stok_aktual;
+                $p->stok_masuk = (int) round($masuk);
+                $p->stok_keluar = (int) round($keluar);
+                $p->stok_awal_periode = $p->stok_akhir - ($p->stok_masuk - $p->stok_keluar);
                 $p->nilai_stok = $p->stok_aktual * $p->biaya_rata_rata;
                 return $p;
             });

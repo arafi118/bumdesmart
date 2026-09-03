@@ -99,11 +99,19 @@
             </div>
 
             <div class="d-flex justify-content-end gap-2">
-                <button @click="openReportExcel" class="btn btn-success">
-                    Download Excel
+                <button @click="openReportExcel" :disabled="loading" class="btn btn-success" wire:loading.attr="disabled" wire:target="openReportExcel">
+                    <span wire:loading.remove wire:target="openReportExcel">Download Excel</span>
+                    <span wire:loading wire:target="openReportExcel">
+                        <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                        Memproses...
+                    </span>
                 </button>
-                <button @click="openReport" class="btn btn-secondary">
-                    Preview (New Window)
+                <button @click="openReport" :disabled="loading" class="btn btn-secondary" wire:loading.attr="disabled" wire:target="openReport">
+                    <span wire:loading.remove wire:target="openReport">Preview (New Window)</span>
+                    <span wire:loading wire:target="openReport">
+                        <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                        Memproses...
+                    </span>
                 </button>
             </div>
         </div>
@@ -124,6 +132,7 @@
             daftarPelanggan: @entangle('daftarPelanggan'),
             daftarSupplier: @entangle('daftarSupplier'),
             daftarRak: @entangle('daftarRak'),
+            loading: false,
             init() {
                 this.$watch('jenis_laporan', (value) => this.jenisLaporan(value));
             },
@@ -240,6 +249,7 @@
                     return;
                 }
 
+                this.loading = true;
                 let params = new URLSearchParams({
                     tahun: this.tahun,
                     bulan: this.bulan,
@@ -249,6 +259,7 @@
                 });
 
                 window.open('/keuangan/pelaporan/cetak?' + params.toString(), '_blank');
+                setTimeout(() => { this.loading = false; }, 1500);
             },
             openReportExcel() {
                 if (!this.jenis_laporan) {
@@ -260,6 +271,7 @@
                     return;
                 }
 
+                this.loading = true;
                 let params = new URLSearchParams({
                     tahun: this.tahun,
                     bulan: this.bulan,
@@ -269,6 +281,7 @@
                 });
 
                 window.open('/keuangan/pelaporan/export?' + params.toString(), '_blank');
+                setTimeout(() => { this.loading = false; }, 1500);
             }
         }
     }
