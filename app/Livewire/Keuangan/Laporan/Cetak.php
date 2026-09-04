@@ -1079,15 +1079,23 @@ class Cetak extends Controller
                 $masuk = (float) $movements->where('jumlah_perubahan', '>', 0)->sum('jumlah_perubahan');
                 $keluar = (float) abs($movements->where('jumlah_perubahan', '<', 0)->sum('jumlah_perubahan'));
 
+                $batchMigs = \DB::table('product_batches')
+                    ->where('product_id', $p->id)
+                    ->where('no_batch', 'LIKE', '%MIGRATION%');
+
                 $p->stok_masuk = (int) round($masuk);
                 $p->stok_keluar = (int) round($keluar);
-                $p->stok_awal_periode = (int) \DB::table('product_batches')
-                    ->where('product_id', $p->id)
-                    ->sum('jumlah_awal');
-                $p->stok_akhir = (int) \DB::table('product_batches')
-                    ->where('product_id', $p->id)
-                    ->sum('jumlah_saat_ini');
-                $p->nilai_stok = $p->stok_akhir * $p->biaya_rata_rata;
+                $p->stok_awal_periode = (int) (clone $batchMigs)->sum('jumlah_awal');
+                $p->stok_akhir = (int) (clone $batchMigs)->sum('jumlah_saat_ini');
+                $p->nilai_stok = (float) (clone $batchMigs)->sum(\DB::raw('harga_satuan * jumlah_awal'));
+                $p->hpp_tampil = $p->stok_akhir > 0
+                    ? (float) \DB::table('product_batches')
+                        ->where('product_id', $p->id)
+                        ->where('no_batch', 'LIKE', '%MIGRATION%')
+                        ->where('jumlah_saat_ini', '>', 0)
+                        ->selectRaw('COALESCE(SUM(harga_satuan * jumlah_saat_ini) / NULLIF(SUM(jumlah_saat_ini),0), 0) AS hpp')
+                        ->value('hpp')
+                    : 0;
 
                 return $p;
             });
