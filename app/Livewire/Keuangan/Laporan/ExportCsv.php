@@ -1796,11 +1796,15 @@ class ExportCsv extends Controller
                 $masuk = (float) $movements->where('jumlah_perubahan', '>', 0)->sum('jumlah_perubahan');
                 $keluar = (float) abs($movements->where('jumlah_perubahan', '<', 0)->sum('jumlah_perubahan'));
 
-                $p->stok_akhir = (int) $p->stok_aktual;
+                $movementSebelum = (float) $p->stockMovements()
+                    ->where('tanggal_perubahan_stok', '<', $startDate)
+                    ->sum('jumlah_perubahan');
+
                 $p->stok_masuk = (int) round($masuk);
                 $p->stok_keluar = (int) round($keluar);
-                $p->stok_awal_periode = $p->stok_akhir - ($p->stok_masuk - $p->stok_keluar);
-                $p->nilai_stok = $p->stok_aktual * $p->biaya_rata_rata;
+                $p->stok_awal_periode = (int) round($movementSebelum);
+                $p->stok_akhir = $p->stok_awal_periode + $p->stok_masuk - $p->stok_keluar;
+                $p->nilai_stok = $p->stok_akhir * $p->biaya_rata_rata;
                 return $p;
             });
 
