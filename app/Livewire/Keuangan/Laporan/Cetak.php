@@ -1079,27 +1079,14 @@ class Cetak extends Controller
                 $masuk = (float) $movements->where('jumlah_perubahan', '>', 0)->sum('jumlah_perubahan');
                 $keluar = (float) abs($movements->where('jumlah_perubahan', '<', 0)->sum('jumlah_perubahan'));
 
-                $batches = \DB::table('product_batches')
-                    ->where('product_id', $p->id)
-                    ->selectRaw('COALESCE(SUM(jumlah_awal),0) as total_awal, COALESCE(SUM(jumlah_saat_ini),0) as total_saat_ini')
-                    ->first();
-
-                $stokBatchSaatIni = (int) ($batches->total_saat_ini ?? 0);
-                $totalBatchMasuk  = (int) ($batches->total_awal ?? 0);
-                $movementSebelum  = (float) $p->stockMovements()
-                    ->where('tanggal_perubahan_stok', '<', $startDate)
-                    ->sum('jumlah_perubahan');
-
-                $stokAkhirPeriode = $stokBatchSaatIni
-                    + ($masuk - $keluar)
-                    + 0;
-
-                $stokAwalPeriode = $stokAkhirPeriode - $masuk + $keluar;
-
                 $p->stok_masuk = (int) round($masuk);
                 $p->stok_keluar = (int) round($keluar);
-                $p->stok_awal_periode = (int) round($stokAwalPeriode);
-                $p->stok_akhir = $p->stok_awal_periode + $p->stok_masuk - $p->stok_keluar;
+                $p->stok_awal_periode = (int) \DB::table('product_batches')
+                    ->where('product_id', $p->id)
+                    ->sum('jumlah_awal');
+                $p->stok_akhir = (int) \DB::table('product_batches')
+                    ->where('product_id', $p->id)
+                    ->sum('jumlah_saat_ini');
                 $p->nilai_stok = $p->stok_akhir * $p->biaya_rata_rata;
 
                 return $p;
