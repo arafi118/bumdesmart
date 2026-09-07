@@ -20,6 +20,7 @@ use App\Models\SalesReturn;
 use App\Models\StockOpname;
 use App\Utils\InventarisUtil;
 use App\Utils\KeuanganUtil;
+use App\Utils\StokUtil;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -1789,21 +1790,15 @@ class ExportCsv extends Controller
 
         $products = $query->orderBy('nama_produk')->get()
             ->map(function ($p) use ($startDate, $endDate) {
-                $movements = $p->stockMovements()
-                    ->whereBetween('tanggal_perubahan_stok', [$startDate, $endDate])
-                    ->get(['jumlah_perubahan']);
+                // Sumber tunggal perhitungan stok per periode (StokUtil::stokPeriode):
+                // Stok Awal  = seluruh mutasi sebelum periode (termasuk stok awal migrasi)
+                // Stok Akhir = Stok Awal + Masuk - Keluar
+                $stok = StokUtil::stokPeriode($p, $startDate, $endDate);
 
-                $masuk = (float) $movements->where('jumlah_perubahan', '>', 0)->sum('jumlah_perubahan');
-                $keluar = (float) abs($movements->where('jumlah_perubahan', '<', 0)->sum('jumlah_perubahan'));
-
-                $movementSebelum = (float) $p->stockMovements()
-                    ->where('tanggal_perubahan_stok', '<', $startDate)
-                    ->sum('jumlah_perubahan');
-
-                $p->stok_masuk = (int) round($masuk);
-                $p->stok_keluar = (int) round($keluar);
-                $p->stok_awal_periode = (int) round($movementSebelum);
-                $p->stok_akhir = $p->stok_awal_periode + $p->stok_masuk - $p->stok_keluar;
+                $p->stok_masuk = $stok['masuk'];
+                $p->stok_keluar = $stok['keluar'];
+                $p->stok_awal_periode = $stok['stok_awal'];
+                $p->stok_akhir = $stok['stok_akhir'];
                 $p->nilai_stok = $p->stok_akhir * $p->biaya_rata_rata;
                 return $p;
             });
