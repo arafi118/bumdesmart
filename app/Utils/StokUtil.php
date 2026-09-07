@@ -18,10 +18,10 @@ class StokUtil
      * - Stok Akhir = Stok Awal + Masuk - Keluar.
      *
      * Perlakuan khusus data migrasi (reference_type = 'migration'):
-     * - Movement migrasi TIDAK dihitung sebagai Masuk; ia adalah Stok Awal.
-     * - Movement non-migrasi yang bertanggal SEBELUM movement migrasi pertama produk
-     *   diabaikan (riwayat pra-sistem yang sudah "terbake" di dalam snapshot migrasi),
-     *   sehingga tidak terjadi double-count antara snapshot dan riwayat historis.
+     * - Movement migrasi TIDAK dihitung sebagai Masuk; ia adalah komponen Stok Awal.
+     * - Mutasi non-migrasi (termasuk riwayat impor yang tanggalnya backdate) dihitung
+     *   kronologis normal — di dataset production terbukti konsisten:
+     *   stok_aktual = migrasi + seluruh mutasi non-migrasi (deviasi 1 unit).
      * - Untuk periode yang berakhir SEBELUM tanggal migrasi, stok migrasi tetap
      *   tampil sebagai Stok Awal/Stok Akhir (stok fisik memang sudah ada).
      *
@@ -39,11 +39,9 @@ class StokUtil
             ->get(['jumlah_perubahan', 'tanggal_perubahan_stok', 'reference_type']);
 
         $stokMigrasi = 0;
-        $t0 = null; // tanggal movement migrasi pertama = epoch sistem produk ini
 
         foreach ($movements as $m) {
             if (self::isMigration($m)) {
-                $t0 ??= Carbon::parse($m->tanggal_perubahan_stok);
                 $stokMigrasi += (int) round((float) $m->jumlah_perubahan);
             }
         }
@@ -54,16 +52,10 @@ class StokUtil
 
         foreach ($movements as $m) {
             if (self::isMigration($m)) {
-                continue; // migrasi = Stok Awal, bukan mutasi
+                continue; // migrasi = Stok Awal, bukan mutasi Masuk/Keluar
             }
 
             $tanggal = Carbon::parse($m->tanggal_perubahan_stok);
-
-            // Riwayat pra-sistem: sudah tercermin di snapshot migrasi, jangan dihitung ulang.
-            if ($t0 !== null && $tanggal->lt($t0)) {
-                continue;
-            }
-
             $jumlah = (int) round((float) $m->jumlah_perubahan);
 
             if ($tanggal->lt($mulai)) {

@@ -79,11 +79,8 @@ class StokPeriodeTest extends TestCase
     /** Spec: Awal=migrasi, Masuk=pembelian periode, Keluar=penjualan periode. */
     public function test_stok_awal_migrasi_bukan_masuk(): void
     {
-        $p = $this->buatProduk(4);
-        // Migration 20 Aug +4; penjualan historis 1-8 Aug -4 (pra-sistem, diabaikan)
-        $this->mutasi($p, '2026-08-01 00:00:00', -4, 'sale', 'sale');
-        $this->mutasi($p, '2026-08-05 00:00:00', -4, 'sale', 'sale');
-        $this->mutasi($p, '2026-08-08 00:00:00', 4, 'purchase', 'purchase');
+        $p = $this->buatProduk(12); // master = migrasi 4 + beli 10 - jual 2
+        // Snapshot migrasi 20 Aug +4 (bukan Masuk)
         $this->mutasi($p, '2026-08-20 09:24:17', 4, 'adjustment', 'migration');
         // Pembelian & penjualan September
         $this->mutasi($p, '2026-09-02 00:00:00', 10, 'purchase', 'purchase');
@@ -92,7 +89,7 @@ class StokPeriodeTest extends TestCase
         // Periode September
         $hasil = StokUtil::stokPeriode($p, new Carbon('2026-09-01'), new Carbon('2026-09-30'));
         $this->assertSame(4, $hasil['stok_awal'], 'Stok Awal = migrasi 4');
-        $this->assertSame(10, $hasil['masuk'], 'Masuk = pembelian September saja');
+        $this->assertSame(10, $hasil['masuk'], 'Masuk = pembelian September saja, migrasi TIDAK dihitung Masuk');
         $this->assertSame(2, $hasil['keluar']);
         $this->assertSame(12, $hasil['stok_akhir']);
         $this->assertSame(12, $hasil['stok_awal'] + $hasil['masuk'] - $hasil['keluar']);
@@ -126,31 +123,32 @@ class StokPeriodeTest extends TestCase
         $this->assertSame(10, $hasilJuli['stok_akhir']);
     }
 
-    /** Migrasi di tengah riwayat: pra-sistem diabaikan, pasca-sistem dihitung. */
-    public function test_migrasi_ditengah_riwayat_tidak_double_count(): void
+    /** Riwayat impor backdate dihitung kronologis normal (tidak diabaikan). */
+    public function test_riwayat_backdate_dihitung_kronologis(): void
     {
-        $p = $this->buatProduk(12);
-        // Riwayat historis import: 10 Aug jual 1 (diabaikan: pra-migrasi)
+        $p = $this->buatProduk(9); // master = migrasi 6 - riwayat 1 + beli 10 - jual 4 - jual 2
+        // Riwayat impor backdate (dibuat setelah migrasi, tanggal Agustus awal)
         $this->mutasi($p, '2026-08-10 00:00:00', -1, 'sale', 'sale');
-        // Snapshot migrasi 20 Aug: sisa fisik 6
+        // Snapshot migrasi 20 Aug
         $this->mutasi($p, '2026-08-20 09:24:17', 6, 'adjustment', 'migration');
         // Pasca migrasi
         $this->mutasi($p, '2026-08-21 00:00:00', 10, 'purchase', 'purchase');
         $this->mutasi($p, '2026-08-23 00:00:00', -4, 'sale', 'sale');
         $this->mutasi($p, '2026-09-02 00:00:00', -2, 'sale', 'sale');
 
-        // Agustus: awal = migrasi 6, masuk 10, keluar 4 -> akhir 12 (cocok master)
+        // Agustus: awal = migrasi 6; keluar = backdate 1 + jual 4 = 5; masuk 10 -> akhir 11
         $hasil = StokUtil::stokPeriode($p, new Carbon('2026-08-01'), new Carbon('2026-08-31'));
         $this->assertSame(6, $hasil['stok_awal']);
         $this->assertSame(10, $hasil['masuk']);
-        $this->assertSame(4, $hasil['keluar']);
-        $this->assertSame(12, $hasil['stok_akhir']);
+        $this->assertSame(5, $hasil['keluar']);
+        $this->assertSame(11, $hasil['stok_akhir']);
 
-        // September: awal = 12, keluar 2 -> akhir 10
+        // September: awal = 11, keluar 2 -> akhir 9 = master
         $hasilSep = StokUtil::stokPeriode($p, new Carbon('2026-09-01'), new Carbon('2026-09-30'));
-        $this->assertSame(12, $hasilSep['stok_awal']);
+        $this->assertSame(11, $hasilSep['stok_awal']);
         $this->assertSame(2, $hasilSep['keluar']);
-        $this->assertSame(10, $hasilSep['stok_akhir']);
+        $this->assertSame(9, $hasilSep['stok_akhir']);
+        $this->assertSame((int) $p->stok_aktual, $hasilSep['stok_akhir']);
     }
 
     /** Produk tanpa movement sama sekali. */
