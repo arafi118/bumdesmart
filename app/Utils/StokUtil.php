@@ -4,27 +4,28 @@ namespace App\Utils;
 
 use App\Models\Product;
 use Carbon\Carbon;
+use Illuminate\Support\Collection;
 
 class StokUtil
 {
     /**
      * Hitung posisi stok satu produk untuk periode [startDate, endDate].
      *
-     * Prinsip: products.stok_aktual adalah KENYATAAN (stok master/fisik sistem).
-     * Riwayat mutasi bisa tidak sempurna (import dijalankan ulang, data pra-sistem),
-     * sehingga menjumlahkan mutasi saja bisa meleset dari stok master.
+     * Aturan laporan (spec):
+     * - Stok Awal  = Stok Awal Migrasi (saldo awal saat import/migrasi) + mutasi sistem sebelum periode.
+     * - Masuk      = mutasi positif dalam periode (pembelian, retur penjualan, penyesuaian naik).
+     * - Keluar     = mutasi negatif dalam periode (penjualan, retur pembelian, penyesuaian turun).
+     * - Stok Akhir = Stok Awal + Masuk - Keluar.
      *
-     * Karena itu perhitungan DI-ANCHOR ke stok master dan di-unwind mundur
-     * menggunakan mutasi yang tercatat:
+     * Perlakuan khusus data migrasi (reference_type = 'migration'):
+     * - Movement migrasi TIDAK dihitung sebagai Masuk; ia adalah Stok Awal.
+     * - Movement non-migrasi yang bertanggal SEBELUM movement migrasi pertama produk
+     *   diabaikan (riwayat pra-sistem yang sudah "terbake" di dalam snapshot migrasi),
+     *   sehingga tidak terjadi double-count antara snapshot dan riwayat historis.
+     * - Untuk periode yang berakhir SEBELUM tanggal migrasi, stok migrasi tetap
+     *   tampil sebagai Stok Awal/Stok Akhir (stok fisik memang sudah ada).
      *
-     * - Stok Akhir  = stok_aktual - (seluruh mutasi BERDATED SETELAH endDate)
-     *               -> untuk periode berjalan (endDate >= hari ini) = stok_aktual persis.
-     * - Masuk       = mutasi positif dalam periode (pembelian, retur penjualan, penyesuaian/opname naik).
-     * - Keluar      = mutasi negatif dalam periode (penjualan, retur pembelian, penyesuaian/opname turun).
-     * - Stok Awal   = Stok Akhir - Masuk + Keluar
-     *               -> untuk periode pertama setelah migrasi = nilai Stok Awal Migrasi.
-     *
-     * Identitas Stok Akhir = Stok Awal + Masuk - Keluar selalu terpenuhi.
+     * Produk tanpa movement migrasi dihitung kumulatif normal dari seluruh mutasinya.
      *
      * @return array{stok_awal: int, masuk: int, keluar: int, stok_akhir: int}
      */
@@ -33,35 +34,61 @@ class StokUtil
         $mulai = $startDate->copy()->startOfDay();
         $selesai = $endDate->copy()->endOfDay();
 
-        $stokSekarang = (int) round((float) $product->stok_aktual);
+        $movements = $product->stockMovements()
+            ->orderBy('tanggal_perubahan_stok')
+            ->get(['jumlah_perubahan', 'tanggal_perubahan_stok', 'reference_type']);
 
-        // Unwind: kembalikan mutasi yang terjadi SETELAH akhir periode
-        $mutasiSetelahPeriode = (float) $product->stockMovements()
-            ->where('tanggal_perubahan_stok', '>', $selesai)
-            ->sum('jumlah_perubahan');
+        $stokMigrasi = 0;
+        $t0 = null; // tanggal movement migrasi pertama = epoch sistem produk ini
 
-        $stokAkhir = $stokSekarang - (int) round($mutasiSetelahPeriode);
+        foreach ($movements as $m) {
+            if (self::isMigration($m)) {
+                $t0 ??= Carbon::parse($m->tanggal_perubahan_stok);
+                $stokMigrasi += (int) round((float) $m->jumlah_perubahan);
+            }
+        }
 
-        $masuk = (float) $product->stockMovements()
-            ->whereBetween('tanggal_perubahan_stok', [$mulai, $selesai])
-            ->where('jumlah_perubahan', '>', 0)
-            ->sum('jumlah_perubahan');
+        $masuk = 0;
+        $keluar = 0;
+        $netSebelumPeriode = 0;
 
-        $keluar = (float) abs($product->stockMovements()
-            ->whereBetween('tanggal_perubahan_stok', [$mulai, $selesai])
-            ->where('jumlah_perubahan', '<', 0)
-            ->sum('jumlah_perubahan'));
+        foreach ($movements as $m) {
+            if (self::isMigration($m)) {
+                continue; // migrasi = Stok Awal, bukan mutasi
+            }
 
-        $masuk = (int) round($masuk);
-        $keluar = (int) round($keluar);
+            $tanggal = Carbon::parse($m->tanggal_perubahan_stok);
 
-        $stokAwal = $stokAkhir - $masuk + $keluar;
+            // Riwayat pra-sistem: sudah tercermin di snapshot migrasi, jangan dihitung ulang.
+            if ($t0 !== null && $tanggal->lt($t0)) {
+                continue;
+            }
+
+            $jumlah = (int) round((float) $m->jumlah_perubahan);
+
+            if ($tanggal->lt($mulai)) {
+                $netSebelumPeriode += $jumlah;
+            } elseif ($tanggal->lte($selesai)) {
+                if ($jumlah > 0) {
+                    $masuk += $jumlah;
+                } else {
+                    $keluar += abs($jumlah);
+                }
+            }
+        }
+
+        $stokAwal = $stokMigrasi + $netSebelumPeriode;
 
         return [
             'stok_awal' => $stokAwal,
             'masuk' => $masuk,
             'keluar' => $keluar,
-            'stok_akhir' => $stokAkhir,
+            'stok_akhir' => $stokAwal + $masuk - $keluar,
         ];
+    }
+
+    private static function isMigration($movement): bool
+    {
+        return ($movement->reference_type ?? '') === 'migration';
     }
 }
